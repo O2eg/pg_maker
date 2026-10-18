@@ -17,7 +17,15 @@ Requires Linux and Python 3.10+. Container operations require a local Docker dae
 Git development sessions also require Git. Installing the Python package and reading
 capabilities do not require Docker.
 
-From a source checkout:
+From PyPI:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install pg-maker
+.venv/bin/pg-maker --help
+```
+
+For development, from a source checkout:
 
 ```bash
 python3 -m venv .venv
@@ -28,8 +36,6 @@ python3 -m venv .venv
 ```
 
 A built wheel can be installed with `python -m pip install /path/to/pg_maker-VERSION-py3-none-any.whl`.
-The Python package is prepared for PyPI publication; these instructions do not
-imply that a release has already been uploaded.
 
 ## Build a distribution
 

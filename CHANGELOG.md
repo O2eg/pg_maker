@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 — prepared, not yet published
+## 0.1.0 — 2026-10-18
 
 Initial alpha of the PostgreSQL distribution controller:
 
