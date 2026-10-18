@@ -9,14 +9,14 @@ from pathlib import Path
 import pytest
 import yaml
 from lxml import html
-from test_build_cancellation import prepared_build
+from test_build_cancellation import prepared_build, resolve_fixture_lock
 from test_distribution import CONFIGURE
 
 from pg_maker.config import environment_requirements, load_config
 from pg_maker.documentation.translation import PLACEHOLDER
 from pg_maker.packaging.deb import inspect_deb
 from pg_maker.planning.documents import seal
-from pg_maker.storage import content_hash, read_json, write_json
+from pg_maker.storage import content_hash, file_hash, read_json, write_json
 
 pytestmark = pytest.mark.docker
 CORPUS = Path(__file__).parents[1] / "fixtures/stage7"
@@ -54,14 +54,7 @@ def resolve(service, root, environment):
             },
         ),
     )
-    started = service.resolve(
-        root / "build.yaml",
-        environments=root / "env.json",
-        output=root / "lock.json",
-        input_store=root / "inputs",
-    )
-    state = service.wait(service.directory / started["operation_id"], timeout_seconds=30)
-    assert state["status"] == "succeeded", state
+    resolve_fixture_lock(service, root)
 
 
 def project(
@@ -123,6 +116,14 @@ def test_docbook_html_man_pdf_offline(tmp_path, monkeypatch, version):
     assert set(manifest["languages"]["en"]["validation"]) == {"html", "man", "pdf"}
     assert len(list(output.glob("*.tar.xz"))) == 3
     assert state["result"]["db_tests"] == "skipped"
+    # Earlier resolutions must remain exportable after the documentation profile changes.
+    for request in service.directory.glob("*/input.json"):
+        if read_json(request)["operation_kind"] != "resolve_inputs":
+            continue
+        destination = tmp_path / "resolve-exports" / request.parent.name
+        service.export(request.parent, destination)
+        expected = service.status(request.parent)["result"]["sha256"]
+        assert file_hash(destination / "prepared-document.json") == expected
 
 
 def test_docs_package_has_weak_dependency_and_installed_offline_files(tmp_path, monkeypatch):

@@ -1,9 +1,11 @@
 """Real ownership/cancellation checks at the build-engine/runner boundary."""
 
 import os
+import shutil
 import signal
 import subprocess
 import time
+import uuid
 from functools import lru_cache
 from pathlib import Path
 
@@ -47,6 +49,20 @@ def image_repository(image):
         if files
         else None
     )
+
+
+def resolve_fixture_lock(service, root):
+    # CI exports every operation after the suite; keep earlier resolve outputs intact.
+    output = root / "resolved-locks" / (uuid.uuid4().hex + ".json")
+    started = service.resolve(
+        root / "build.yaml",
+        environments=root / "env.json",
+        output=output,
+        input_store=root / "inputs",
+    )
+    state = service.wait(service.directory / started["operation_id"], timeout_seconds=30)
+    assert state["status"] == "succeeded", state
+    shutil.copyfile(output, root / "lock.json")
 
 
 def prepared_build(tmp_path, configure, *, source_files=None, extra_feature=False):
@@ -139,16 +155,7 @@ SETTINGS
         seal("environment", {"requirements_hash": content_hash(requirements), "images": images}),
     )
     service = MakerService(tmp_path / "operations")
-    state = service.resolve(
-        tmp_path / "build.yaml",
-        environments=tmp_path / "env.json",
-        output=tmp_path / "lock.json",
-        input_store=tmp_path / "inputs",
-    )
-    assert (
-        service.wait(service.directory / state["operation_id"], timeout_seconds=20)["status"]
-        == "succeeded"
-    )
+    resolve_fixture_lock(service, tmp_path)
     return service
 
 
