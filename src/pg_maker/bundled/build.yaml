@@ -1,0 +1,29 @@
+api_version: pg_maker/v1
+kind: PostgreSQLBuild
+metadata:
+  name: test-18-1
+spec:
+  config_dir: ./config
+  source:
+    kind: git
+    repository: https://github.com/postgres/postgres.git
+    ref: REL_18_1
+  postgresql:
+    version: '18.1'
+  product:
+    release: 0
+    package_revision: 1
+  features:
+  - my-feature
+  targets:
+  - id: debian13-x64
+    platform: debian-13
+    architecture: x86_64
+    cpu_target: x86-64
+    artifacts:
+    - deb
+  documentation:
+    profile: ./config/documentation.yaml
+  validation:
+    profile: full
+    baseline: auto

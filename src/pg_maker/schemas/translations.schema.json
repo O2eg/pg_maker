@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:pg_maker:schema:translations:v1",
+  "$ref": "urn:pg_maker:schema:planning-common:v1#/$defs/TranslationBundle"
+}

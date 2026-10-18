@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:pg_maker:schema:component-envelope:v1",
+  "type": "object",
+  "properties": {
+    "contract_version": {
+      "const": "pg_play/component/v1"
+    },
+    "component": {
+      "const": "pg_maker"
+    },
+    "component_version": {
+      "type": "string"
+    },
+    "command": {
+      "type": "string"
+    },
+    "request_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "enum": [
+        "planned",
+        "running",
+        "succeeded",
+        "partial",
+        "failed",
+        "cancelled",
+        "skipped",
+        "blocked"
+      ]
+    },
+    "result": {},
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "error": {
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "contract_version",
+    "component",
+    "component_version",
+    "command",
+    "request_id",
+    "status",
+    "result",
+    "artifacts",
+    "warnings",
+    "error"
+  ],
+  "additionalProperties": false
+}

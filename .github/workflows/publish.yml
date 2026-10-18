@@ -1,0 +1,34 @@
+name: Publish to PyPI
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pypi-publish
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify and build the tagged source
+    uses: ./.github/workflows/tests.yml
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: pypi
+      url: https://pypi.org/p/pg-maker
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: python-distributions
+          path: dist/
+      - name: Publish verified artifacts with Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1

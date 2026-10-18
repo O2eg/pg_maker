@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:pg_maker:schema:run-event:v1",
+  "type": "object",
+  "properties": {
+    "api_version": {
+      "const": "pg_maker/run-event/v1"
+    },
+    "kind": {
+      "const": "BuildRunEvent"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "timestamp": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "null"
+    },
+    "operation_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$"
+    },
+    "target_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "step_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "attempt_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "type": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "$ref": "urn:pg_maker:schema:operation-state:v1"
+        }
+      },
+      "required": [
+        "state"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "api_version",
+    "kind",
+    "sequence",
+    "timestamp",
+    "run_id",
+    "operation_id",
+    "target_id",
+    "step_id",
+    "attempt_id",
+    "type",
+    "data"
+  ],
+  "additionalProperties": false
+}

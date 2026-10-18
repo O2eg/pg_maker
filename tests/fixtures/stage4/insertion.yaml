@@ -1,0 +1,18 @@
+api_version: pg_maker/insertions/v1
+kind: TextInsertions
+target_file: src/backend/utils/adt/version.c
+input_sha256: null
+modifications:
+- id: guc-header
+  top: '#include "postgres.h"'
+  bot: '#include "utils/builtins.h"'
+  alignment: bot
+  expect_matches: 1
+  txt: '#include "utils/guc.h"'
+- id: marker
+  top: pgsql_version(PG_FUNCTION_ARGS)
+  bot: PG_RETURN_TEXT_P
+  alignment: bot
+  expect_matches: 1
+  txt: "    if (strcmp(GetConfigOption(\"application_name\", false, false), \"pg_maker_acceptance\"\
+    ) == 0)\n        elog(LOG, \"pg_maker stage4 marker\");"

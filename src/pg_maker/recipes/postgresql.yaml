@@ -1,0 +1,114 @@
+api_version: pg_maker/postgresql-catalog/v1
+kind: PostgreSQLCatalog
+metadata:
+  id: upstream
+  revision: 1
+spec:
+  # Upstream minima, not a claim that every compiler/library combination was tested.
+  # OS package names and concrete compiler selections belong to PlatformRecipe.
+  defaults:
+    source_backends: [autotools]
+    execution_backends: [autotools]
+    autoconf_regenerate: '2.69'
+    documentation:
+      format: docbook-xml-4.5
+      source_directory: doc/src/sgml
+      entrypoint: postgres.sgml
+      generated_variable: GENERATED_SGML
+      check_target: check
+      html_target: html
+      man_target: man
+      pdf_target: postgres-A4.pdf
+      tools: [xmllint, xsltproc]
+      pdf_tool: fop
+    # make --output-sync is a pg_maker requirement, higher than upstream's minimum.
+    maker_make_minimum: '4.0'
+  majors:
+    '14':
+      c_standard: c99
+      tools: {make: '3.80', perl: '5.8.3', bison: '1.875', flex: '2.5.31'}
+      generators_required: git-or-modified-inputs
+      llvm_minimum: '3.9'
+      meson_minimum: null
+      unavailable_options: [zstd]
+      extra_tests: []
+      db_test_adapter: unavailable
+      documentation_input: direct-entities
+      documentation_fixes: []
+      reference: REL_14_STABLE
+    '15':
+      c_standard: c99
+      tools: {make: '3.81', perl: '5.8.3', bison: '1.875', flex: '2.5.31'}
+      generators_required: git-or-modified-inputs
+      llvm_minimum: '3.9'
+      meson_minimum: null
+      unavailable_options: []
+      extra_tests: []
+      db_test_adapter: unavailable
+      documentation_input: direct-entities
+      documentation_fixes: []
+      reference: REL_15_STABLE
+    '16':
+      c_standard: c99
+      tools: {make: '3.81', perl: '5.14', bison: '2.3', flex: '2.5.35'}
+      generators_required: git-or-modified-inputs
+      llvm_minimum: '3.9'
+      meson_minimum: '0.54'
+      unavailable_options: []
+      extra_tests: []
+      db_test_adapter: unavailable
+      documentation_input: expanded-xml
+      documentation_fixes: []
+      reference: REL_16_STABLE
+    '17':
+      c_standard: c99
+      tools: {make: '3.81', perl: '5.14', bison: '2.3', flex: '2.5.35'}
+      generators_required: always
+      llvm_minimum: '10'
+      meson_minimum: '0.54'
+      unavailable_options: []
+      extra_tests: []
+      db_test_adapter: unavailable
+      documentation_input: expanded-xml
+      documentation_fixes: []
+      reference: REL_17_STABLE
+    '18':
+      c_standard: c99
+      tools: {make: '3.81', perl: '5.14', bison: '2.3', flex: null}
+      generators_required: always
+      llvm_minimum: '14'
+      meson_minimum: '0.54'
+      unavailable_options: []
+      extra_tests: [libpq_encryption]
+      db_test_adapter: pg18
+      documentation_input: expanded-xml
+      documentation_fixes: []
+      reference: REL_18_STABLE
+    '19':
+      c_standard: c11
+      tools: {make: '3.81', perl: '5.14', bison: '2.3', flex: null}
+      generators_required: always
+      llvm_minimum: '14'
+      meson_minimum: '0.57.2'
+      unavailable_options: []
+      extra_tests: [libpq_encryption]
+      db_test_adapter: unavailable
+      documentation_input: expanded-xml
+      # The upstream HTML stylesheet uppercases IDs. %S and %s otherwise collide.
+      # No other source references the lowercase ID in these two releases.
+      documentation_fixes:
+        - compatible_postgresql: '>=19.0b4,<=19.0rc1'
+          document:
+            api_version: pg_maker/doc-rules/v1
+            kind: DocumentationRules
+            metadata: {id: pg19-psql-prompt-anchor, revision: 1}
+            spec:
+              rules:
+                - id: lowercase-search-path-anchor
+                  action: set-attribute
+                  file: ref/psql-ref.sgml
+                  selector: {id: app-psql-prompting-s}
+                  expect_matches: 1
+                  attribute: id
+                  text: app-psql-prompting-s-lc
+      reference: REL_19_RC1

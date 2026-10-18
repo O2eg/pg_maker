@@ -1,0 +1,17 @@
+api_version: pg_maker/feature/v1
+kind: FeatureProfile
+metadata:
+  id: my-feature
+  revision: 2
+spec:
+  description: Test
+  numeric_id: null
+  changes: []
+  components:
+  - ../../components/pg-stat-statements.yaml
+  - ../../components/pg-stat-kcache.yaml
+  - ../../components/pg-wait-sampling.yaml
+  build_options: {}
+  documentation:
+    rules: []
+  required_tests: []

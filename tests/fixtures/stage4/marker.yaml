@@ -1,0 +1,22 @@
+api_version: pg_maker/change-set/v1
+kind: ChangeSet
+metadata: {id: version-marker, revision: 1}
+spec:
+  compatible_postgresql: '==18.1'
+  requires: []
+  conflicts: []
+  operations:
+  - {id: marker, kind: insert_text, file: ./insertion.yaml}
+  acceptance:
+  - id: version-log-marker
+    requirement_ids: [version-log]
+    kind: sql-and-server-log
+    setup: {cluster: fresh, database: postgres}
+    script: ./marker.sql
+    assertions:
+    - {id: marker, source: server-log, contains: 'pg_maker stage4 marker'}
+    timeout_seconds: 30
+    expectations:
+      candidate: {outcome: pass}
+      baseline: {outcome: assertion-failure, assertion_id: marker}
+  compatibility: {data_format: unchanged, wal_format: unchanged, extension_abi: unchanged}

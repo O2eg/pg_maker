@@ -1,0 +1,99 @@
+<sect1 id="pg-stat-kcache">
+ <title>pg_stat_kcache — operating system resource statistics</title>
+ <para><filename>pg_stat_kcache</filename> supplements
+ <xref linkend="pgstatstatements"/> with CPU consumption and filesystem I/O
+ counters. Use the two extensions together to identify queries that consume
+ CPU or cause reads and writes beyond PostgreSQL's shared buffers.</para>
+ <para>This distribution includes release 2.3.2. Installing its server package
+ supplies the library and SQL files; statistics collection is enabled separately
+ for an initialized cluster.</para>
+
+ <sect2 id="pg-stat-kcache-enable">
+  <title>Enabling collection</title>
+  <para>Add the required libraries to <filename>postgresql.conf</filename> inside
+  <envar>PGDATA</envar>, keeping any libraries already needed by the cluster.
+  The following example enables all three bundled diagnostic extensions:</para>
+  <programlisting>shared_preload_libraries = 'pg_stat_statements,pg_stat_kcache,pg_wait_sampling'
+compute_query_id = auto</programlisting>
+  <para>Restart the server after changing <varname>shared_preload_libraries</varname>.
+  Then connect as an administrator to each database where the SQL interface is
+  needed and execute:</para>
+  <programlisting>CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+CREATE EXTENSION IF NOT EXISTS pg_stat_kcache;</programlisting>
+  <para>The matching client is <filename>${paths.runtime_prefix}/bin/psql</filename>.
+  Use libraries from the same PostgreSQL build and major version as the server.
+  Existing databases are not modified by installing the package.</para>
+ </sect2>
+
+ <sect2 id="pg-stat-kcache-settings">
+  <title>Configuration</title>
+  <variablelist>
+   <varlistentry><term><varname>pg_stat_kcache.track</varname></term><listitem>
+    <para><literal>top</literal>, the default, records top-level statements;
+    <literal>all</literal> also records nested statements; <literal>none</literal>
+    disables collection. Nested and parent totals can overlap.</para>
+   </listitem></varlistentry>
+   <varlistentry><term><varname>pg_stat_kcache.track_planning</varname></term><listitem>
+    <para>Controls planning measurements. The default is <literal>off</literal>;
+    planning counters remain zero while disabled.</para>
+   </listitem></varlistentry>
+   <varlistentry><term><varname>pg_stat_kcache.linux_hz</varname></term><listitem>
+    <para>Kernel clock frequency used to compensate for CPU measurement sampling.
+    The default, <literal>-1</literal>, requests automatic detection at startup.</para>
+   </listitem></varlistentry>
+  </variablelist>
+ </sect2>
+
+ <sect2 id="pg-stat-kcache-views">
+  <title>Views, counters and reset</title>
+  <para><structname>pg_stat_kcache_detail</structname> joins kernel counters to
+  query statistics. Its identity fields are <structfield>query</structfield>,
+  <structfield>top</structfield>, <structfield>datname</structfield> and
+  <structfield>rolname</structfield>.
+  <structname>pg_stat_kcache</structname> aggregates top-level statistics by database.
+  The function <function>pg_stat_kcache()</function> exposes the underlying rows,
+  including query, user and database identifiers.</para>
+  <para>Most measurements have a <literal>plan_</literal> and an
+  <literal>exec_</literal> variant. For example,
+  <structfield>exec_user_time</structfield> is execution CPU time in user mode.</para>
+  <informaltable><tgroup cols="2"><thead><row><entry>Counter suffix</entry><entry>Meaning</entry></row></thead><tbody>
+   <row><entry><literal>user_time</literal>, <literal>system_time</literal></entry><entry>CPU time in seconds, in user and kernel mode.</entry></row>
+   <row><entry><literal>reads</literal>, <literal>writes</literal></entry><entry>Filesystem I/O bytes attributed by the operating system.</entry></row>
+   <row><entry><literal>reads_blks</literal>, <literal>writes_blks</literal></entry><entry>The corresponding byte values divided by PostgreSQL's configured <varname>block_size</varname> in the SQL views (normally 8 KiB).</entry></row>
+   <row><entry><literal>minflts</literal>, <literal>majflts</literal></entry><entry>Minor and major page faults.</entry></row>
+   <row><entry><literal>nswaps</literal></entry><entry>Swaps reported by the operating system.</entry></row>
+   <row><entry><literal>msgsnds</literal>, <literal>msgrcvs</literal>, <literal>nsignals</literal></entry><entry>IPC messages sent/received and delivered signals.</entry></row>
+   <row><entry><literal>nvcsws</literal>, <literal>nivcsws</literal></entry><entry>Voluntary and involuntary context switches.</entry></row>
+  </tbody></tgroup></informaltable>
+  <para><structfield>stats_since</structfield> records when an entry began collecting
+  statistics. Availability and precision of operating system counters vary by
+  platform. Filesystem counters are different from PostgreSQL buffer hit/read
+  counters; CPU time is different from elapsed query time.</para>
+  <para>A superuser can clear the extension's counters with
+  <literal>SELECT pg_stat_kcache_reset();</literal>. This changes the measurement
+  baseline for other monitoring clients; take a snapshot before resetting.</para>
+ </sect2>
+
+ <sect2 id="pg-stat-kcache-examples">
+  <title>Finding resource-intensive queries</title>
+  <programlisting>SELECT datname, rolname, query,
+       exec_user_time + exec_system_time AS cpu_seconds,
+       exec_reads, exec_writes
+FROM pg_stat_kcache_detail
+WHERE top
+ORDER BY cpu_seconds DESC
+LIMIT 20;</programlisting>
+  <para>Collect two snapshots over a known interval and compare counter deltas to
+  measure current activity. A row can disappear when associated query statistics
+  are evicted. Access to other users' query text follows PostgreSQL's statistics
+  privileges.</para>
+ </sect2>
+
+ <sect2 id="pg-stat-kcache-source">
+  <title>Source and license</title>
+  <para>The extension is maintained by the PoWA community and distributed under
+  the PostgreSQL license. This guide accompanies the pinned
+  <ulink url="https://github.com/powa-team/pg_stat_kcache/blob/1e39814453ab747a3817cfdf4f6f6bd5c0fb9507/README.rst">2.3.2 upstream documentation</ulink>.
+  Source licenses are included in the installed package's copyright directory.</para>
+ </sect2>
+</sect1>

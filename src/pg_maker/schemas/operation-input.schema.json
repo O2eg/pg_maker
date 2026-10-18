@@ -1,0 +1,306 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:pg_maker:schema:operation-input:v1",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "api_version": {
+          "const": "pg_maker/operation-input/v1"
+        },
+        "kind": {
+          "const": "OperationInput"
+        },
+        "operation_kind": {
+          "const": "container_commands"
+        },
+        "environment": {
+          "type": "object",
+          "properties": {
+            "image": {
+              "type": "string",
+              "pattern": "^(sha256:[0-9a-f]{64}|[A-Za-z0-9][A-Za-z0-9._:/-]*@sha256:[0-9a-f]{64})$"
+            },
+            "user": {
+              "type": "string",
+              "pattern": "^[0-9]+:[0-9]+$"
+            },
+            "target_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$"
+            }
+          },
+          "required": [
+            "image",
+            "user",
+            "target_id"
+          ],
+          "additionalProperties": false
+        },
+        "commands": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100,
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$"
+              },
+              "argv": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 256,
+                "items": {
+                  "type": "string",
+                  "maxLength": 32768
+                }
+              },
+              "cwd": {
+                "type": "string"
+              },
+              "env": {
+                "type": "object",
+                "propertyNames": {
+                  "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "pattern": "^[^\\u0000]*$"
+                }
+              },
+              "secret_env": {
+                "type": "object",
+                "propertyNames": {
+                  "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                },
+                "additionalProperties": {
+                  "type": "string",
+                  "pattern": "^[^\\u0000]*$"
+                }
+              },
+              "timeout_seconds": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 604800
+              }
+            },
+            "required": [
+              "id",
+              "argv",
+              "cwd",
+              "env",
+              "secret_env",
+              "timeout_seconds"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "api_version",
+        "kind",
+        "operation_kind",
+        "environment",
+        "commands",
+        "outputs"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "api_version": {
+          "const": "pg_maker/operation-input/v1"
+        },
+        "kind": {
+          "const": "OperationInput"
+        },
+        "operation_kind": {
+          "enum": [
+            "prepare_environments",
+            "resolve_inputs"
+          ]
+        },
+        "config": {
+          "type": "object"
+        },
+        "bindings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "output": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "input_store": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "environments": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "offline": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "api_version",
+        "kind",
+        "operation_kind",
+        "config",
+        "bindings",
+        "output",
+        "input_store",
+        "environments",
+        "offline"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "api_version": {
+          "const": "pg_maker/operation-input/v1"
+        },
+        "kind": {
+          "const": "OperationInput"
+        },
+        "operation_kind": {
+          "const": "build"
+        },
+        "lock": {
+          "$ref": "urn:pg_maker:schema:lock:v1"
+        },
+        "plan": {
+          "$ref": "urn:pg_maker:schema:plan:v1"
+        },
+        "input_store": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "cache_store": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^/"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reuse_from": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^/"
+        }
+      },
+      "required": [
+        "api_version",
+        "kind",
+        "operation_kind",
+        "lock",
+        "plan",
+        "input_store"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "api_version": {
+          "const": "pg_maker/operation-input/v1"
+        },
+        "kind": {
+          "const": "OperationInput"
+        },
+        "operation_kind": {
+          "const": "runtime_image"
+        },
+        "plan": {
+          "type": "object"
+        },
+        "output": {
+          "type": "string",
+          "pattern": "^/"
+        }
+      },
+      "required": [
+        "api_version",
+        "kind",
+        "operation_kind",
+        "plan",
+        "output"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "api_version": {
+          "const": "pg_maker/operation-input/v1"
+        },
+        "kind": {
+          "const": "OperationInput"
+        },
+        "operation_kind": {
+          "const": "development_command"
+        },
+        "source_run": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "source_input_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "step": {
+          "$ref": "urn:pg_maker:schema:planning-common:v1#/$defs/StepSpec"
+        },
+        "argv": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "cwd": {
+          "type": "string",
+          "pattern": "^(obj|components)(/[^.][^/]*)*$"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "api_version",
+        "kind",
+        "operation_kind",
+        "source_run",
+        "source_input_hash",
+        "step",
+        "argv",
+        "cwd",
+        "timeout_seconds"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

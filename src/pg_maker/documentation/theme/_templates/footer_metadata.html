@@ -1,0 +1,13 @@
+<div class="pg-maker-footer">
+  <strong>{{ maker.product | e }} {{ maker.version | e }}</strong>
+  <div class="pg-maker-footer-details">
+    {% if maker.feature %}<span>{{ label_feature }}: {{ maker.feature | e }}</span>{% endif %}
+    {% if maker.feature and maker.postgresql_version %}<span>{{ label_postgresql }} {{ maker.postgresql_version | e }}</span>{% endif %}
+    <span>{{ maker.language | upper | e }}</span>
+    {% if maker.company %}<span>{{ maker.company | e }}</span>{% endif %}
+  </div>
+  {% if maker.links %}<nav class="pg-maker-footer-links">
+    {% if maker.links.homepage %}<a href="{{ maker.links.homepage | e }}">{{ label_home }}</a>{% endif %}
+    {% if maker.links.documentation_url %}<a href="{{ maker.links.documentation_url | e }}">{{ label_docs }}</a>{% endif %}
+  </nav>{% endif %}
+</div>

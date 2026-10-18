@@ -1,0 +1,13 @@
+api_version: pg_maker/vendor/v1
+kind: VendorConfig
+metadata:
+  id: test
+spec:
+  company: Test
+  brand: Test
+  product_name: Test
+  description: Test
+  slug: test
+  homepage: null
+  documentation_url: null
+  contact_email: test@example.invalid

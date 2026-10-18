@@ -1,0 +1,9 @@
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary
+*.whl binary
+*.gz binary
+*.xz binary
+# PostgreSQL regression output preserves psql alignment and final blank lines.
+tests/fixtures/stage4/**/expected/*.out -whitespace

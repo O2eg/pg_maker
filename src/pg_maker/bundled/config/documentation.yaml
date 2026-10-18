@@ -1,0 +1,24 @@
+api_version: pg_maker/documentation/v1
+kind: DocumentationProfile
+metadata:
+  id: default
+spec:
+  enabled: false
+  source: postgres-tree
+  source_language: en
+  languages:
+  - en
+  language_aliases: {en: en, en-US: en, ru: ru, ru-RU: ru}
+  formats:
+  - html
+  - man
+  html_backend: sphinx
+  branding: vendor-metadata
+  rules: []
+  translations: []
+  missing_translation: error
+  require_reviewed: false
+  glossary: {revision: '1', terms: {}}
+  install:
+    html: docs-package
+    man: owning-package

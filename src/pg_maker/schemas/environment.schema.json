@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:pg_maker:schema:environment:v1",
+  "type": "object",
+  "properties": {
+    "api_version": {
+      "const": "pg_maker/environment/v1"
+    },
+    "kind": {
+      "const": "EnvironmentManifest"
+    },
+    "spec": {
+      "type": "object",
+      "properties": {
+        "requirements_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "target": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,63}$"
+              },
+              "role": {
+                "enum": [
+                  "build",
+                  "test"
+                ]
+              },
+              "image_id": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              "base_image_id": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              "base_registry_digests": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "registry_manifest_digest": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "image_archive_sha256": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "os": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "version": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "version"
+                ],
+                "additionalProperties": false
+              },
+              "architecture": {
+                "type": "string"
+              },
+              "packages": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "string"
+                    },
+                    "architecture": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "version",
+                    "architecture"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "tools": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "method": {
+                "const": "apt-commit"
+              },
+              "reproducibility": {
+                "type": "string"
+              },
+              "runtime_repository": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string"
+                      },
+                      "files": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "path": {
+                              "type": "string"
+                            },
+                            "sha256": {
+                              "type": "string",
+                              "pattern": "^sha256:[0-9a-f]{64}$"
+                            },
+                            "size_bytes": {
+                              "type": "integer",
+                              "minimum": 0
+                            }
+                          },
+                          "required": [
+                            "path",
+                            "sha256",
+                            "size_bytes"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "repository_hash": {
+                        "type": "string",
+                        "pattern": "^sha256:[0-9a-f]{64}$"
+                      }
+                    },
+                    "required": [
+                      "path",
+                      "files",
+                      "repository_hash"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "target",
+              "role",
+              "image_id",
+              "base_image_id",
+              "base_registry_digests",
+              "registry_manifest_digest",
+              "image_archive_sha256",
+              "os",
+              "architecture",
+              "packages",
+              "tools",
+              "method",
+              "reproducibility"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "requirements_hash",
+        "images"
+      ],
+      "additionalProperties": false
+    },
+    "environment_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "transport": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "created_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "api_version",
+    "kind",
+    "spec",
+    "environment_hash",
+    "transport",
+    "created_at"
+  ],
+  "additionalProperties": false
+}

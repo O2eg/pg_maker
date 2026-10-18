@@ -1,0 +1,284 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:pg_maker:schema:plan:v1",
+  "type": "object",
+  "properties": {
+    "api_version": {
+      "const": "pg_maker/plan/v1"
+    },
+    "kind": {
+      "const": "BuildPlan"
+    },
+    "spec": {
+      "type": "object",
+      "properties": {
+        "lock_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "goal": {
+          "enum": [
+            "source",
+            "build",
+            "package",
+            "verified",
+            "docs",
+            "translations",
+            "doc-source",
+            "translated-docs"
+          ]
+        },
+        "run_db_tests": {
+          "type": "boolean"
+        },
+        "implementation": {
+          "type": "object",
+          "properties": {
+            "version": {
+              "type": "string"
+            },
+            "code_hash": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "version",
+            "code_hash"
+          ],
+          "additionalProperties": false
+        },
+        "execution_available": {
+          "type": "boolean"
+        },
+        "execution_requires": {
+          "const": null
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "adapter": {
+                "type": "string"
+              },
+              "requires": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "target_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,63}$"
+              },
+              "feature_id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]{0,63}$"
+              },
+              "branch": {
+                "enum": [
+                  "candidate",
+                  "baseline"
+                ]
+              },
+              "environment_id": {
+                "type": "string"
+              },
+              "image_id": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              "user": {
+                "type": "string",
+                "pattern": "^[0-9]+:[0-9]+$"
+              },
+              "cwd": {
+                "type": "object",
+                "properties": {
+                  "root": {
+                    "enum": [
+                      "source",
+                      "build",
+                      "output"
+                    ]
+                  },
+                  "path": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "root",
+                  "path"
+                ],
+                "additionalProperties": false
+              },
+              "argv": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "env": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              },
+              "parameters": {
+                "type": "object"
+              },
+              "inputs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "outputs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "root": {
+                      "enum": [
+                        "source",
+                        "build",
+                        "output"
+                      ]
+                    },
+                    "path": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "root",
+                    "path"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "checks": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "timeout_seconds": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "resources": {
+                "type": "object",
+                "properties": {
+                  "memory_bytes": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "cpu_jobs": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                },
+                "required": [
+                  "memory_bytes",
+                  "cpu_jobs"
+                ],
+                "additionalProperties": false
+              },
+              "cache": {
+                "enum": [
+                  "never",
+                  "verified-outputs"
+                ]
+              },
+              "recovery": {
+                "const": "rerun-in-fresh-environment"
+              },
+              "stage_key": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "adapter",
+              "requires",
+              "target_id",
+              "feature_id",
+              "branch",
+              "environment_id",
+              "image_id",
+              "user",
+              "cwd",
+              "argv",
+              "env",
+              "parameters",
+              "inputs",
+              "outputs",
+              "checks",
+              "timeout_seconds",
+              "resources",
+              "cache",
+              "recovery",
+              "stage_key"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        },
+        "components": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "lock_hash",
+        "goal",
+        "run_db_tests",
+        "implementation",
+        "execution_available",
+        "execution_requires",
+        "steps"
+      ],
+      "additionalProperties": false
+    },
+    "plan_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "transport": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "created_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "api_version",
+    "kind",
+    "spec",
+    "plan_hash",
+    "transport",
+    "created_at"
+  ],
+  "additionalProperties": false
+}

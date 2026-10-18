@@ -1,0 +1,8 @@
+Package: ${Package}
+Version: ${Version}
+Architecture: ${Architecture}
+Section: ${Section}
+Priority: ${Priority}
+Maintainer: ${Maintainer}
+Description: ${Description}
+${optional_fields}

@@ -1,0 +1,122 @@
+<sect1 id="pg-wait-sampling">
+ <title>pg_wait_sampling — sampled wait event statistics</title>
+ <para><filename>pg_wait_sampling</filename> periodically samples backend wait
+ events. It keeps a recent history in a ring buffer and accumulates a profile
+ by process, event and optionally query. This helps identify I/O, lock and other
+ waits that a single inspection of <structname>pg_stat_activity</structname>
+ could miss.</para>
+ <para>This distribution includes release 1.1.11. Its SQL extension version is
+ <literal>1.1</literal>; the SQL version and the source release number are different.</para>
+
+ <sect2 id="pg-wait-sampling-enable">
+  <title>Enabling collection</title>
+  <para>The collector uses shared memory and a background worker. Add it to
+  <varname>shared_preload_libraries</varname> in the cluster's
+  <filename>postgresql.conf</filename> under <envar>PGDATA</envar> and restart the
+  server. Keep existing required libraries. When using
+  <xref linkend="pgstatstatements"/>, put it before
+  <literal>pg_wait_sampling</literal> so utility query identifiers are preserved:</para>
+  <programlisting>shared_preload_libraries = 'pg_stat_statements,pg_stat_kcache,pg_wait_sampling'
+compute_query_id = auto</programlisting>
+  <para>After the restart, connect with
+  <filename>${paths.runtime_prefix}/bin/psql</filename> and create the SQL
+  interface in each database where it is needed:</para>
+  <programlisting>CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+CREATE EXTENSION IF NOT EXISTS pg_wait_sampling;</programlisting>
+  <para>The server package supplies the files but does not start the collector or
+  create extensions in existing databases. The collector can operate without
+  <literal>pg_stat_statements</literal>; combining them adds query statistics
+  useful for interpreting the sampled profile.</para>
+ </sect2>
+
+ <sect2 id="pg-wait-sampling-settings">
+  <title>Configuration</title>
+  <variablelist>
+   <varlistentry><term><varname>pg_wait_sampling.history_size</varname></term><listitem>
+    <para>Number of records retained in the history ring buffer. The default is
+    <literal>5000</literal>.</para>
+   </listitem></varlistentry>
+   <varlistentry><term><varname>pg_wait_sampling.history_period</varname></term><listitem>
+    <para>History sampling interval in milliseconds. The default is
+    <literal>10</literal>.</para>
+   </listitem></varlistentry>
+   <varlistentry><term><varname>pg_wait_sampling.profile_period</varname></term><listitem>
+    <para>Profile sampling interval in milliseconds. The default is
+    <literal>10</literal>.</para>
+   </listitem></varlistentry>
+   <varlistentry><term><varname>pg_wait_sampling.profile_pid</varname></term><listitem>
+    <para>The default, <literal>true</literal>, keeps separate profile rows for
+    processes; <literal>false</literal> aggregates processes with pid zero.</para>
+   </listitem></varlistentry>
+   <varlistentry><term><varname>pg_wait_sampling.profile_queries</varname></term><listitem>
+    <para>The default, <literal>top</literal>, records top-level query identifiers;
+    <literal>all</literal> includes nested queries; <literal>none</literal> records
+    queryid zero.</para>
+   </listitem></varlistentry>
+   <varlistentry><term><varname>pg_wait_sampling.sample_cpu</varname></term><listitem>
+    <para>The default, <literal>true</literal>, also samples processes with no
+    reported wait. Their event fields are NULL.</para>
+   </listitem></varlistentry>
+  </variablelist>
+  <para>Configure these settings in <filename>postgresql.conf</filename> or with
+  <command>ALTER SYSTEM</command>, then reload the configuration. Shorter intervals
+  produce more samples and increase collection work. The history covers a variable
+  amount of time because its capacity is shared by sampled processes.</para>
+ </sect2>
+
+ <sect2 id="pg-wait-sampling-views">
+  <title>Views and functions</title>
+  <variablelist>
+   <varlistentry><term><structname>pg_wait_sampling_current</structname></term><listitem>
+    <para>Current process events: <structfield>pid</structfield>,
+    <structfield>event_type</structfield>, <structfield>event</structfield> and
+    <structfield>queryid</structfield>.
+    <function>pg_wait_sampling_get_current(pid)</function> restricts the result
+    to one process.</para>
+   </listitem></varlistentry>
+   <varlistentry><term><structname>pg_wait_sampling_history</structname></term><listitem>
+    <para>Recent samples with the same identifiers and a sample timestamp
+    <structfield>ts</structfield>. Old rows are overwritten as the buffer fills.</para>
+   </listitem></varlistentry>
+   <varlistentry><term><structname>pg_wait_sampling_profile</structname></term><listitem>
+    <para>Accumulated sample counts in <structfield>count</structfield> (bigint),
+    grouped by process, event and query according to the collection settings.</para>
+   </listitem></varlistentry>
+   <varlistentry><term><function>pg_wait_sampling_reset_profile()</function></term><listitem>
+    <para>Clear the accumulated profile. Coordinate resets with monitoring clients
+    and retain snapshots when historical comparison is required.</para>
+   </listitem></varlistentry>
+  </variablelist>
+ </sect2>
+
+ <sect2 id="pg-wait-sampling-examples">
+  <title>Inspecting the profile</title>
+  <programlisting>SELECT event_type, event, sum(count) AS samples
+FROM pg_wait_sampling_profile
+GROUP BY event_type, event
+ORDER BY samples DESC;
+
+SELECT queryid, event_type, event, sum(count) AS samples
+FROM pg_wait_sampling_profile
+WHERE queryid &lt;&gt; 0
+GROUP BY queryid, event_type, event
+ORDER BY samples DESC
+LIMIT 20;</programlisting>
+  <para>Counts represent samples, not measured event durations. Short waits can
+  fall between samples, and simultaneous processes contribute independently.
+  NULL event fields indicate that no wait was reported at sampling time; they
+  do not prove that a process was executing on a CPU. Query identifiers alone
+  do not uniquely identify database/user rows in
+  <structname>pg_stat_statements</structname>; retain that context when correlating
+  results.</para>
+ </sect2>
+
+ <sect2 id="pg-wait-sampling-source">
+  <title>Source and license</title>
+  <para>The upstream project was authored by Alexander Korotkov and Ildus
+  Kurbangaliev and is distributed under the PostgreSQL license. This guide
+  accompanies the pinned
+  <ulink url="https://github.com/postgrespro/pg_wait_sampling/blob/7e3a5fc937393596c0a51c5881dd63d7208408d1/README.md">1.1.11 upstream documentation</ulink>.
+  Source licenses are included in the installed package's copyright directory.</para>
+ </sect2>
+</sect1>

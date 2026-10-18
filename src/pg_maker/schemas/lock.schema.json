@@ -1,0 +1,3963 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:pg_maker:schema:lock:v1",
+  "type": "object",
+  "properties": {
+    "api_version": {
+      "const": "pg_maker/lock/v1"
+    },
+    "kind": {
+      "const": "BuildLock"
+    },
+    "spec": {
+      "type": "object",
+      "properties": {
+        "config": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]{0,63}$"
+            },
+            "source": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "const": "git"
+                    },
+                    "commit": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"
+                    },
+                    "submodules": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "urn:pg_maker:schema:planning-common:v1#/$defs/Submodule"
+                      }
+                    },
+                    "source_hash": {
+                      "type": "string",
+                      "pattern": "^sha256:[0-9a-f]{64}$"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "commit",
+                    "submodules",
+                    "source_hash"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "const": "snapshot"
+                    },
+                    "selection": {
+                      "type": "object",
+                      "properties": {
+                        "algorithm": {
+                          "const": "fnmatchcase-posix/v1"
+                        },
+                        "include": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "exclude": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "algorithm",
+                        "include",
+                        "exclude"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "source_hash": {
+                      "type": "string",
+                      "pattern": "^sha256:[0-9a-f]{64}$"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "selection",
+                    "source_hash"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "const": "archive"
+                    },
+                    "archive_sha256": {
+                      "type": "string",
+                      "pattern": "^sha256:[0-9a-f]{64}$"
+                    },
+                    "strip_components": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "source_hash": {
+                      "type": "string",
+                      "pattern": "^sha256:[0-9a-f]{64}$"
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "archive_sha256",
+                    "strip_components",
+                    "source_hash"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            },
+            "postgresql": {
+              "type": "object",
+              "properties": {
+                "version": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "version"
+              ],
+              "additionalProperties": false
+            },
+            "postgresql_recipe": {
+              "type": "object",
+              "properties": {
+                "major": {
+                  "type": "integer",
+                  "minimum": 14
+                },
+                "revision": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "source_backends": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "execution_backends": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "autoconf_regenerate": {
+                  "type": "string"
+                },
+                "maker_make_minimum": {
+                  "type": "string"
+                },
+                "documentation": {
+                  "type": "object",
+                  "properties": {
+                    "format": {
+                      "const": "docbook-xml-4.5"
+                    },
+                    "source_directory": {
+                      "type": "string"
+                    },
+                    "entrypoint": {
+                      "type": "string"
+                    },
+                    "generated_variable": {
+                      "type": "string"
+                    },
+                    "check_target": {
+                      "type": "string"
+                    },
+                    "html_target": {
+                      "type": "string"
+                    },
+                    "man_target": {
+                      "type": "string"
+                    },
+                    "pdf_target": {
+                      "type": "string"
+                    },
+                    "pdf_tool": {
+                      "type": "string"
+                    },
+                    "tools": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "format",
+                    "source_directory",
+                    "entrypoint",
+                    "generated_variable",
+                    "check_target",
+                    "html_target",
+                    "man_target",
+                    "pdf_target",
+                    "pdf_tool",
+                    "tools"
+                  ],
+                  "additionalProperties": false
+                },
+                "c_standard": {
+                  "enum": [
+                    "c99",
+                    "c11"
+                  ]
+                },
+                "tools": {
+                  "type": "object",
+                  "properties": {
+                    "make": {
+                      "type": "string"
+                    },
+                    "perl": {
+                      "type": "string"
+                    },
+                    "bison": {
+                      "type": "string"
+                    },
+                    "flex": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "make",
+                    "perl",
+                    "bison",
+                    "flex"
+                  ],
+                  "additionalProperties": false
+                },
+                "generators_required": {
+                  "enum": [
+                    "always",
+                    "git-or-modified-inputs"
+                  ]
+                },
+                "llvm_minimum": {
+                  "type": "string"
+                },
+                "meson_minimum": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "unavailable_options": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "extra_tests": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "db_test_adapter": {
+                  "enum": [
+                    "unavailable",
+                    "pg18"
+                  ]
+                },
+                "documentation_input": {
+                  "enum": [
+                    "direct-entities",
+                    "expanded-xml"
+                  ]
+                },
+                "documentation_fixes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "compatible_postgresql": {
+                        "type": "string"
+                      },
+                      "document": {
+                        "type": "object",
+                        "properties": {
+                          "api_version": {
+                            "const": "pg_maker/doc-rules/v1"
+                          },
+                          "kind": {
+                            "const": "DocumentationRules"
+                          },
+                          "metadata": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                              },
+                              "revision": {
+                                "type": "integer",
+                                "minimum": 1
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "revision"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "spec": {
+                            "type": "object",
+                            "properties": {
+                              "rules": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "features": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "action": {
+                                      "enum": [
+                                        "insert-before",
+                                        "insert-after",
+                                        "append",
+                                        "prepend",
+                                        "replace",
+                                        "remove",
+                                        "set-text",
+                                        "set-attribute",
+                                        "exact-text",
+                                        "copy-file",
+                                        "copy-tree",
+                                        "replace-file",
+                                        "add-page",
+                                        "release-notes"
+                                      ]
+                                    },
+                                    "file": {
+                                      "type": "string"
+                                    },
+                                    "selector": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "tag": {
+                                          "type": "string"
+                                        },
+                                        "parent": {
+                                          "type": "object",
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "tag": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "required": [],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [],
+                                      "additionalProperties": false
+                                    },
+                                    "expect_matches": {
+                                      "type": "integer",
+                                      "minimum": 0
+                                    },
+                                    "fragment": {
+                                      "oneOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "input": {
+                                              "type": "string"
+                                            },
+                                            "sha256": {
+                                              "type": "string",
+                                              "pattern": "^sha256:[0-9a-f]{64}$"
+                                            }
+                                          },
+                                          "required": [
+                                            "input",
+                                            "sha256"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      ]
+                                    },
+                                    "source": {
+                                      "oneOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "input": {
+                                              "type": "string"
+                                            },
+                                            "sha256": {
+                                              "type": "string",
+                                              "pattern": "^sha256:[0-9a-f]{64}$"
+                                            }
+                                          },
+                                          "required": [
+                                            "input",
+                                            "sha256"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      ]
+                                    },
+                                    "text": {
+                                      "type": "string"
+                                    },
+                                    "attribute": {
+                                      "type": "string"
+                                    },
+                                    "old": {
+                                      "type": "string"
+                                    },
+                                    "sha256": {
+                                      "type": "string",
+                                      "pattern": "^sha256:[0-9a-f]{64}$"
+                                    },
+                                    "entity": {
+                                      "type": "string"
+                                    },
+                                    "include_file": {
+                                      "type": "string"
+                                    },
+                                    "language": {
+                                      "type": "string"
+                                    },
+                                    "translate": {
+                                      "type": "boolean"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "action",
+                                    "file",
+                                    "expect_matches"
+                                  ],
+                                  "additionalProperties": false,
+                                  "allOf": [
+                                    {
+                                      "if": {
+                                        "properties": {
+                                          "action": {
+                                            "enum": [
+                                              "copy-file",
+                                              "copy-tree",
+                                              "replace-file"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "then": {
+                                        "required": [
+                                          "source"
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "if": {
+                                        "properties": {
+                                          "action": {
+                                            "enum": [
+                                              "add-page",
+                                              "release-notes"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "then": {
+                                        "required": [
+                                          "fragment",
+                                          "entity",
+                                          "include_file",
+                                          "selector"
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "if": {
+                                        "properties": {
+                                          "action": {
+                                            "enum": [
+                                              "insert-before",
+                                              "insert-after",
+                                              "append",
+                                              "prepend",
+                                              "replace"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "then": {
+                                        "required": [
+                                          "selector",
+                                          "fragment"
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "if": {
+                                        "properties": {
+                                          "action": {
+                                            "enum": [
+                                              "remove"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "then": {
+                                        "required": [
+                                          "selector"
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "if": {
+                                        "properties": {
+                                          "action": {
+                                            "enum": [
+                                              "set-text"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "then": {
+                                        "required": [
+                                          "selector",
+                                          "text"
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "if": {
+                                        "properties": {
+                                          "action": {
+                                            "enum": [
+                                              "set-attribute"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "then": {
+                                        "required": [
+                                          "selector",
+                                          "attribute",
+                                          "text"
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "if": {
+                                        "properties": {
+                                          "action": {
+                                            "enum": [
+                                              "exact-text"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "then": {
+                                        "required": [
+                                          "sha256",
+                                          "old",
+                                          "text"
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "rules"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "api_version",
+                          "kind",
+                          "metadata",
+                          "spec"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "compatible_postgresql",
+                      "document"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "reference": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "major",
+                "revision",
+                "source_backends",
+                "execution_backends",
+                "autoconf_regenerate",
+                "maker_make_minimum",
+                "documentation",
+                "c_standard",
+                "tools",
+                "generators_required",
+                "llvm_minimum",
+                "meson_minimum",
+                "unavailable_options",
+                "extra_tests",
+                "db_test_adapter",
+                "documentation_input",
+                "documentation_fixes",
+                "reference"
+              ],
+              "additionalProperties": false
+            },
+            "product": {
+              "type": "object",
+              "properties": {
+                "release": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "package_revision": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "version": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "release",
+                "package_revision"
+              ],
+              "additionalProperties": false
+            },
+            "vendor": {
+              "type": "object",
+              "properties": {
+                "company": {
+                  "type": "string"
+                },
+                "brand": {
+                  "type": "string"
+                },
+                "product_name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "slug": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                },
+                "homepage": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "documentation_url": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "contact_email": {
+                  "type": "string",
+                  "pattern": "^[^\\s<>@]+@[^\\s<>@]+$"
+                }
+              },
+              "required": [
+                "company",
+                "brand",
+                "product_name",
+                "description",
+                "slug",
+                "homepage",
+                "documentation_url",
+                "contact_email"
+              ],
+              "additionalProperties": false
+            },
+            "defaults": {
+              "type": "object",
+              "properties": {
+                "paths": {
+                  "type": "object",
+                  "properties": {
+                    "runtime_prefix": {
+                      "type": "string"
+                    },
+                    "data_directory": {
+                      "type": "string"
+                    },
+                    "documentation_directory": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "runtime_prefix",
+                    "data_directory",
+                    "documentation_directory"
+                  ],
+                  "additionalProperties": false
+                },
+                "service": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                    },
+                    "group": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                    },
+                    "home": {
+                      "type": "string"
+                    },
+                    "port": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 65535
+                    }
+                  },
+                  "required": [
+                    "user",
+                    "group",
+                    "home",
+                    "port"
+                  ],
+                  "additionalProperties": false
+                },
+                "naming": {
+                  "type": "object",
+                  "properties": {
+                    "package": {
+                      "type": "string"
+                    },
+                    "service": {
+                      "type": "string"
+                    },
+                    "deb_version": {
+                      "type": "string"
+                    },
+                    "rpm_version": {
+                      "type": "string"
+                    },
+                    "rpm_release": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "package",
+                    "service",
+                    "deb_version",
+                    "rpm_version",
+                    "rpm_release"
+                  ],
+                  "additionalProperties": false
+                },
+                "common_changes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "builtin": {
+                        "const": "unix-socket-directory"
+                      }
+                    },
+                    "required": [
+                      "builtin"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "build": {
+                  "type": "object",
+                  "properties": {
+                    "backend": {
+                      "enum": [
+                        "autotools",
+                        "meson"
+                      ]
+                    },
+                    "mode": {
+                      "enum": [
+                        "release",
+                        "debug"
+                      ]
+                    },
+                    "options": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "boolean"
+                      }
+                    },
+                    "nls_languages": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "message_locale": {
+                      "type": "string"
+                    },
+                    "jobs": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "flags": {
+                      "type": "object",
+                      "properties": {
+                        "cppflags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "ldflags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "lto": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "cppflags",
+                        "ldflags",
+                        "lto"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "backend",
+                    "mode",
+                    "options",
+                    "nls_languages",
+                    "message_locale",
+                    "jobs",
+                    "flags"
+                  ],
+                  "additionalProperties": false
+                },
+                "build_modes": {
+                  "type": "object",
+                  "properties": {
+                    "release": {
+                      "type": "object",
+                      "properties": {
+                        "naming_suffix": {
+                          "type": "string"
+                        },
+                        "configure_options": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "cflags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "cppflags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "naming_suffix",
+                        "configure_options",
+                        "cflags",
+                        "cppflags"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "debug": {
+                      "type": "object",
+                      "properties": {
+                        "naming_suffix": {
+                          "type": "string"
+                        },
+                        "configure_options": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "cflags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "cppflags": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "required": [
+                        "naming_suffix",
+                        "configure_options",
+                        "cflags",
+                        "cppflags"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "release",
+                    "debug"
+                  ],
+                  "additionalProperties": false
+                },
+                "validation": {
+                  "type": "object",
+                  "properties": {
+                    "profile": {
+                      "enum": [
+                        "smoke",
+                        "full",
+                        "release"
+                      ]
+                    },
+                    "run_db_tests": {
+                      "type": "boolean"
+                    },
+                    "baseline": {
+                      "enum": [
+                        "auto",
+                        true,
+                        false
+                      ]
+                    },
+                    "database_locales": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [],
+                  "additionalProperties": false
+                },
+                "execution": {
+                  "type": "object",
+                  "properties": {
+                    "runner": {
+                      "const": "docker"
+                    },
+                    "max_parallel_targets": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "build_user": {
+                      "type": "string",
+                      "pattern": "^[1-9][0-9]*:[1-9][0-9]*$"
+                    },
+                    "limits": {
+                      "type": "object",
+                      "properties": {
+                        "memory_bytes": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "min_free_disk_bytes": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "stage_timeout_seconds": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      },
+                      "required": [
+                        "memory_bytes",
+                        "min_free_disk_bytes",
+                        "stage_timeout_seconds"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "keep_failed_environment": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "runner",
+                    "max_parallel_targets",
+                    "build_user",
+                    "limits",
+                    "keep_failed_environment"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "paths",
+                "service",
+                "naming",
+                "common_changes",
+                "build",
+                "build_modes",
+                "validation",
+                "execution"
+              ],
+              "additionalProperties": false
+            },
+            "documentation": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "source": {
+                  "const": "postgres-tree"
+                },
+                "source_language": {
+                  "type": "string"
+                },
+                "languages": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "formats": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "html",
+                      "man",
+                      "pdf"
+                    ]
+                  }
+                },
+                "html_backend": {
+                  "enum": [
+                    "docbook",
+                    "sphinx"
+                  ]
+                },
+                "branding": {
+                  "enum": [
+                    "vendor-metadata",
+                    "none"
+                  ]
+                },
+                "rules": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "api_version": {
+                            "const": "pg_maker/doc-rules/v1"
+                          },
+                          "kind": {
+                            "const": "DocumentationRules"
+                          },
+                          "metadata": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                              },
+                              "revision": {
+                                "type": "integer",
+                                "minimum": 1
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "revision"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "spec": {
+                            "type": "object",
+                            "properties": {
+                              "rules": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "features": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "action": {
+                                      "enum": [
+                                        "insert-before",
+                                        "insert-after",
+                                        "append",
+                                        "prepend",
+                                        "replace",
+                                        "remove",
+                                        "set-text",
+                                        "set-attribute",
+                                        "exact-text",
+                                        "copy-file",
+                                        "copy-tree",
+                                        "replace-file",
+                                        "add-page",
+                                        "release-notes"
+                                      ]
+                                    },
+                                    "file": {
+                                      "type": "string"
+                                    },
+                                    "selector": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string"
+                                        },
+                                        "tag": {
+                                          "type": "string"
+                                        },
+                                        "parent": {
+                                          "type": "object",
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "tag": {
+                                              "type": "string"
+                                            }
+                                          },
+                                          "required": [],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "required": [],
+                                      "additionalProperties": false
+                                    },
+                                    "expect_matches": {
+                                      "type": "integer",
+                                      "minimum": 0
+                                    },
+                                    "fragment": {
+                                      "oneOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "input": {
+                                              "type": "string"
+                                            },
+                                            "sha256": {
+                                              "type": "string",
+                                              "pattern": "^sha256:[0-9a-f]{64}$"
+                                            }
+                                          },
+                                          "required": [
+                                            "input",
+                                            "sha256"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      ]
+                                    },
+                                    "source": {
+                                      "oneOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "object",
+                                          "properties": {
+                                            "input": {
+                                              "type": "string"
+                                            },
+                                            "sha256": {
+                                              "type": "string",
+                                              "pattern": "^sha256:[0-9a-f]{64}$"
+                                            }
+                                          },
+                                          "required": [
+                                            "input",
+                                            "sha256"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      ]
+                                    },
+                                    "text": {
+                                      "type": "string"
+                                    },
+                                    "attribute": {
+                                      "type": "string"
+                                    },
+                                    "old": {
+                                      "type": "string"
+                                    },
+                                    "sha256": {
+                                      "type": "string",
+                                      "pattern": "^sha256:[0-9a-f]{64}$"
+                                    },
+                                    "entity": {
+                                      "type": "string"
+                                    },
+                                    "include_file": {
+                                      "type": "string"
+                                    },
+                                    "language": {
+                                      "type": "string"
+                                    },
+                                    "translate": {
+                                      "type": "boolean"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "action",
+                                    "file",
+                                    "expect_matches"
+                                  ],
+                                  "additionalProperties": false,
+                                  "allOf": [
+                                    {
+                                      "if": {
+                                        "properties": {
+                                          "action": {
+                                            "enum": [
+                                              "copy-file",
+                                              "copy-tree",
+                                              "replace-file"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "then": {
+                                        "required": [
+                                          "source"
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "if": {
+                                        "properties": {
+                                          "action": {
+                                            "enum": [
+                                              "add-page",
+                                              "release-notes"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "then": {
+                                        "required": [
+                                          "fragment",
+                                          "entity",
+                                          "include_file",
+                                          "selector"
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "if": {
+                                        "properties": {
+                                          "action": {
+                                            "enum": [
+                                              "insert-before",
+                                              "insert-after",
+                                              "append",
+                                              "prepend",
+                                              "replace"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "then": {
+                                        "required": [
+                                          "selector",
+                                          "fragment"
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "if": {
+                                        "properties": {
+                                          "action": {
+                                            "enum": [
+                                              "remove"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "then": {
+                                        "required": [
+                                          "selector"
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "if": {
+                                        "properties": {
+                                          "action": {
+                                            "enum": [
+                                              "set-text"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "then": {
+                                        "required": [
+                                          "selector",
+                                          "text"
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "if": {
+                                        "properties": {
+                                          "action": {
+                                            "enum": [
+                                              "set-attribute"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "then": {
+                                        "required": [
+                                          "selector",
+                                          "attribute",
+                                          "text"
+                                        ]
+                                      }
+                                    },
+                                    {
+                                      "if": {
+                                        "properties": {
+                                          "action": {
+                                            "enum": [
+                                              "exact-text"
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "then": {
+                                        "required": [
+                                          "sha256",
+                                          "old",
+                                          "text"
+                                        ]
+                                      }
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            "required": [
+                              "rules"
+                            ],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": [
+                          "api_version",
+                          "kind",
+                          "metadata",
+                          "spec"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "translations": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "input": {
+                            "type": "string"
+                          },
+                          "sha256": {
+                            "type": "string",
+                            "pattern": "^sha256:[0-9a-f]{64}$"
+                          },
+                          "language": {
+                            "type": "string"
+                          },
+                          "feature": {
+                            "type": "string"
+                          },
+                          "target": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "input",
+                          "sha256",
+                          "language",
+                          "feature"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                },
+                "missing_translation": {
+                  "enum": [
+                    "error",
+                    "fallback"
+                  ]
+                },
+                "install": {
+                  "type": "object",
+                  "properties": {
+                    "html": {
+                      "type": "string"
+                    },
+                    "man": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "html",
+                    "man"
+                  ],
+                  "additionalProperties": false
+                },
+                "language_aliases": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                "requested_languages": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "require_reviewed": {
+                  "type": "boolean"
+                },
+                "glossary": {
+                  "type": "object",
+                  "properties": {
+                    "revision": {
+                      "type": "string"
+                    },
+                    "terms": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "revision",
+                    "terms"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "enabled",
+                "source",
+                "source_language",
+                "languages",
+                "formats",
+                "html_backend",
+                "branding",
+                "rules",
+                "translations",
+                "missing_translation",
+                "install"
+              ],
+              "additionalProperties": false
+            },
+            "features": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "api_version": {
+                    "const": "pg_maker/feature/v1"
+                  },
+                  "kind": {
+                    "const": "FeatureProfile"
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                      },
+                      "revision": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "revision"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "spec": {
+                    "type": "object",
+                    "properties": {
+                      "description": {
+                        "type": "string"
+                      },
+                      "numeric_id": {
+                        "type": [
+                          "integer",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "changes": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "api_version": {
+                              "const": "pg_maker/change-set/v1"
+                            },
+                            "kind": {
+                              "const": "ChangeSet"
+                            },
+                            "metadata": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                                },
+                                "revision": {
+                                  "type": "integer",
+                                  "minimum": 1
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "revision"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "spec": {
+                              "type": "object",
+                              "properties": {
+                                "compatible_postgresql": {
+                                  "type": "string"
+                                },
+                                "requires": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "conflicts": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "operations": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                                      },
+                                      "kind": {
+                                        "enum": [
+                                          "insert_text",
+                                          "patch"
+                                        ]
+                                      },
+                                      "file": {
+                                        "type": "object",
+                                        "properties": {
+                                          "input": {
+                                            "type": "string"
+                                          },
+                                          "sha256": {
+                                            "type": "string",
+                                            "pattern": "^sha256:[0-9a-f]{64}$"
+                                          }
+                                        },
+                                        "required": [
+                                          "input",
+                                          "sha256"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "kind",
+                                      "file"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "acceptance": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                                      },
+                                      "requirement_ids": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "kind": {
+                                        "enum": [
+                                          "sql-and-server-log",
+                                          "sql",
+                                          "command"
+                                        ]
+                                      },
+                                      "setup": {
+                                        "type": "object",
+                                        "properties": {
+                                          "cluster": {
+                                            "const": "fresh"
+                                          },
+                                          "database": {
+                                            "type": "string"
+                                          }
+                                        },
+                                        "required": [
+                                          "cluster",
+                                          "database"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "script": {
+                                        "type": "object",
+                                        "properties": {
+                                          "input": {
+                                            "type": "string"
+                                          },
+                                          "sha256": {
+                                            "type": "string",
+                                            "pattern": "^sha256:[0-9a-f]{64}$"
+                                          }
+                                        },
+                                        "required": [
+                                          "input",
+                                          "sha256"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      "assertions": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "id": {
+                                              "type": "string",
+                                              "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                                            },
+                                            "source": {
+                                              "enum": [
+                                                "server-log",
+                                                "stdout",
+                                                "stderr",
+                                                "sql",
+                                                "sqlstate"
+                                              ]
+                                            },
+                                            "contains": {
+                                              "type": "string"
+                                            },
+                                            "equals": {
+                                              "type": [
+                                                "string",
+                                                "integer",
+                                                "boolean"
+                                              ]
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "source"
+                                          ],
+                                          "additionalProperties": false
+                                        }
+                                      },
+                                      "timeout_seconds": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                      },
+                                      "expectations": {
+                                        "type": "object",
+                                        "properties": {
+                                          "candidate": {
+                                            "type": "object",
+                                            "properties": {
+                                              "outcome": {
+                                                "enum": [
+                                                  "pass",
+                                                  "assertion-failure"
+                                                ]
+                                              },
+                                              "assertion_id": {
+                                                "type": "string",
+                                                "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                                              }
+                                            },
+                                            "required": [
+                                              "outcome"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "baseline": {
+                                            "type": "object",
+                                            "properties": {
+                                              "outcome": {
+                                                "enum": [
+                                                  "pass",
+                                                  "assertion-failure"
+                                                ]
+                                              },
+                                              "assertion_id": {
+                                                "type": "string",
+                                                "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                                              }
+                                            },
+                                            "required": [
+                                              "outcome"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        },
+                                        "required": [
+                                          "candidate"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "requirement_ids",
+                                      "kind",
+                                      "setup",
+                                      "script",
+                                      "assertions",
+                                      "timeout_seconds",
+                                      "expectations"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "compatibility": {
+                                  "type": "object",
+                                  "properties": {
+                                    "data_format": {
+                                      "enum": [
+                                        "unchanged",
+                                        "changed",
+                                        "unknown"
+                                      ]
+                                    },
+                                    "wal_format": {
+                                      "enum": [
+                                        "unchanged",
+                                        "changed",
+                                        "unknown"
+                                      ]
+                                    },
+                                    "extension_abi": {
+                                      "enum": [
+                                        "unchanged",
+                                        "changed",
+                                        "unknown"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "data_format",
+                                    "wal_format",
+                                    "extension_abi"
+                                  ],
+                                  "additionalProperties": false
+                                },
+                                "postconditions": {
+                                  "type": "object",
+                                  "properties": {
+                                    "socket_directory": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "required": [],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "compatible_postgresql",
+                                "requires",
+                                "conflicts",
+                                "operations",
+                                "acceptance",
+                                "compatibility"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "api_version",
+                            "kind",
+                            "metadata",
+                            "spec"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "components": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "api_version": {
+                              "const": "pg_maker/component/v1"
+                            },
+                            "kind": {
+                              "const": "ComponentRecipe"
+                            },
+                            "metadata": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                                },
+                                "revision": {
+                                  "type": "integer",
+                                  "minimum": 1
+                                }
+                              },
+                              "required": [
+                                "id",
+                                "revision"
+                              ],
+                              "additionalProperties": false
+                            },
+                            "spec": {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "enum": [
+                                    "contrib",
+                                    "pgxs",
+                                    "source-tree",
+                                    "utility",
+                                    "library"
+                                  ]
+                                },
+                                "source": {
+                                  "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "const": "git"
+                                        },
+                                        "commit": {
+                                          "type": "string",
+                                          "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"
+                                        },
+                                        "submodules": {
+                                          "type": "array",
+                                          "items": {
+                                            "$ref": "urn:pg_maker:schema:planning-common:v1#/$defs/Submodule"
+                                          }
+                                        },
+                                        "source_hash": {
+                                          "type": "string",
+                                          "pattern": "^sha256:[0-9a-f]{64}$"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "commit",
+                                        "submodules",
+                                        "source_hash"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "const": "snapshot"
+                                        },
+                                        "selection": {
+                                          "type": "object",
+                                          "properties": {
+                                            "algorithm": {
+                                              "const": "fnmatchcase-posix/v1"
+                                            },
+                                            "include": {
+                                              "type": "array",
+                                              "items": {
+                                                "type": "string"
+                                              }
+                                            },
+                                            "exclude": {
+                                              "type": "array",
+                                              "items": {
+                                                "type": "string"
+                                              }
+                                            }
+                                          },
+                                          "required": [
+                                            "algorithm",
+                                            "include",
+                                            "exclude"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "source_hash": {
+                                          "type": "string",
+                                          "pattern": "^sha256:[0-9a-f]{64}$"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "selection",
+                                        "source_hash"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "const": "archive"
+                                        },
+                                        "archive_sha256": {
+                                          "type": "string",
+                                          "pattern": "^sha256:[0-9a-f]{64}$"
+                                        },
+                                        "strip_components": {
+                                          "type": "integer",
+                                          "minimum": 0
+                                        },
+                                        "source_hash": {
+                                          "type": "string",
+                                          "pattern": "^sha256:[0-9a-f]{64}$"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "archive_sha256",
+                                        "strip_components",
+                                        "source_hash"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  ]
+                                },
+                                "compatible_postgresql": {
+                                  "type": "string"
+                                },
+                                "requires": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "conflicts": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "source_directory": {
+                                  "type": "string"
+                                },
+                                "build_dependencies": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "runtime_dependencies": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "configure_args": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "make_targets": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "test_targets": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "install_targets": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required_tests": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "runtime_files": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "sql_extension": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "shared_library": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "preload": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "installed_checks": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "argv": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "timeout_seconds": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                      },
+                                      "stdout_contains": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "argv",
+                                      "timeout_seconds"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "documentation": {
+                                  "type": "object",
+                                  "properties": {
+                                    "rules": {
+                                      "type": "array",
+                                      "items": {
+                                        "oneOf": [
+                                          {
+                                            "type": "string"
+                                          },
+                                          {
+                                            "type": "object",
+                                            "properties": {
+                                              "api_version": {
+                                                "const": "pg_maker/doc-rules/v1"
+                                              },
+                                              "kind": {
+                                                "const": "DocumentationRules"
+                                              },
+                                              "metadata": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "id": {
+                                                    "type": "string",
+                                                    "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                                                  },
+                                                  "revision": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                  }
+                                                },
+                                                "required": [
+                                                  "id",
+                                                  "revision"
+                                                ],
+                                                "additionalProperties": false
+                                              },
+                                              "spec": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "rules": {
+                                                    "type": "array",
+                                                    "items": {
+                                                      "type": "object",
+                                                      "properties": {
+                                                        "id": {
+                                                          "type": "string"
+                                                        },
+                                                        "features": {
+                                                          "type": "array",
+                                                          "items": {
+                                                            "type": "string"
+                                                          }
+                                                        },
+                                                        "action": {
+                                                          "enum": [
+                                                            "insert-before",
+                                                            "insert-after",
+                                                            "append",
+                                                            "prepend",
+                                                            "replace",
+                                                            "remove",
+                                                            "set-text",
+                                                            "set-attribute",
+                                                            "exact-text",
+                                                            "copy-file",
+                                                            "copy-tree",
+                                                            "replace-file",
+                                                            "add-page",
+                                                            "release-notes"
+                                                          ]
+                                                        },
+                                                        "file": {
+                                                          "type": "string"
+                                                        },
+                                                        "selector": {
+                                                          "type": "object",
+                                                          "properties": {
+                                                            "id": {
+                                                              "type": "string"
+                                                            },
+                                                            "tag": {
+                                                              "type": "string"
+                                                            },
+                                                            "parent": {
+                                                              "type": "object",
+                                                              "properties": {
+                                                                "id": {
+                                                                  "type": "string"
+                                                                },
+                                                                "tag": {
+                                                                  "type": "string"
+                                                                }
+                                                              },
+                                                              "required": [],
+                                                              "additionalProperties": false
+                                                            }
+                                                          },
+                                                          "required": [],
+                                                          "additionalProperties": false
+                                                        },
+                                                        "expect_matches": {
+                                                          "type": "integer",
+                                                          "minimum": 0
+                                                        },
+                                                        "fragment": {
+                                                          "oneOf": [
+                                                            {
+                                                              "type": "string"
+                                                            },
+                                                            {
+                                                              "type": "object",
+                                                              "properties": {
+                                                                "input": {
+                                                                  "type": "string"
+                                                                },
+                                                                "sha256": {
+                                                                  "type": "string",
+                                                                  "pattern": "^sha256:[0-9a-f]{64}$"
+                                                                }
+                                                              },
+                                                              "required": [
+                                                                "input",
+                                                                "sha256"
+                                                              ],
+                                                              "additionalProperties": false
+                                                            }
+                                                          ]
+                                                        },
+                                                        "source": {
+                                                          "oneOf": [
+                                                            {
+                                                              "type": "string"
+                                                            },
+                                                            {
+                                                              "type": "object",
+                                                              "properties": {
+                                                                "input": {
+                                                                  "type": "string"
+                                                                },
+                                                                "sha256": {
+                                                                  "type": "string",
+                                                                  "pattern": "^sha256:[0-9a-f]{64}$"
+                                                                }
+                                                              },
+                                                              "required": [
+                                                                "input",
+                                                                "sha256"
+                                                              ],
+                                                              "additionalProperties": false
+                                                            }
+                                                          ]
+                                                        },
+                                                        "text": {
+                                                          "type": "string"
+                                                        },
+                                                        "attribute": {
+                                                          "type": "string"
+                                                        },
+                                                        "old": {
+                                                          "type": "string"
+                                                        },
+                                                        "sha256": {
+                                                          "type": "string",
+                                                          "pattern": "^sha256:[0-9a-f]{64}$"
+                                                        },
+                                                        "entity": {
+                                                          "type": "string"
+                                                        },
+                                                        "include_file": {
+                                                          "type": "string"
+                                                        },
+                                                        "language": {
+                                                          "type": "string"
+                                                        },
+                                                        "translate": {
+                                                          "type": "boolean"
+                                                        }
+                                                      },
+                                                      "required": [
+                                                        "id",
+                                                        "action",
+                                                        "file",
+                                                        "expect_matches"
+                                                      ],
+                                                      "additionalProperties": false,
+                                                      "allOf": [
+                                                        {
+                                                          "if": {
+                                                            "properties": {
+                                                              "action": {
+                                                                "enum": [
+                                                                  "copy-file",
+                                                                  "copy-tree",
+                                                                  "replace-file"
+                                                                ]
+                                                              }
+                                                            }
+                                                          },
+                                                          "then": {
+                                                            "required": [
+                                                              "source"
+                                                            ]
+                                                          }
+                                                        },
+                                                        {
+                                                          "if": {
+                                                            "properties": {
+                                                              "action": {
+                                                                "enum": [
+                                                                  "add-page",
+                                                                  "release-notes"
+                                                                ]
+                                                              }
+                                                            }
+                                                          },
+                                                          "then": {
+                                                            "required": [
+                                                              "fragment",
+                                                              "entity",
+                                                              "include_file",
+                                                              "selector"
+                                                            ]
+                                                          }
+                                                        },
+                                                        {
+                                                          "if": {
+                                                            "properties": {
+                                                              "action": {
+                                                                "enum": [
+                                                                  "insert-before",
+                                                                  "insert-after",
+                                                                  "append",
+                                                                  "prepend",
+                                                                  "replace"
+                                                                ]
+                                                              }
+                                                            }
+                                                          },
+                                                          "then": {
+                                                            "required": [
+                                                              "selector",
+                                                              "fragment"
+                                                            ]
+                                                          }
+                                                        },
+                                                        {
+                                                          "if": {
+                                                            "properties": {
+                                                              "action": {
+                                                                "enum": [
+                                                                  "remove"
+                                                                ]
+                                                              }
+                                                            }
+                                                          },
+                                                          "then": {
+                                                            "required": [
+                                                              "selector"
+                                                            ]
+                                                          }
+                                                        },
+                                                        {
+                                                          "if": {
+                                                            "properties": {
+                                                              "action": {
+                                                                "enum": [
+                                                                  "set-text"
+                                                                ]
+                                                              }
+                                                            }
+                                                          },
+                                                          "then": {
+                                                            "required": [
+                                                              "selector",
+                                                              "text"
+                                                            ]
+                                                          }
+                                                        },
+                                                        {
+                                                          "if": {
+                                                            "properties": {
+                                                              "action": {
+                                                                "enum": [
+                                                                  "set-attribute"
+                                                                ]
+                                                              }
+                                                            }
+                                                          },
+                                                          "then": {
+                                                            "required": [
+                                                              "selector",
+                                                              "attribute",
+                                                              "text"
+                                                            ]
+                                                          }
+                                                        },
+                                                        {
+                                                          "if": {
+                                                            "properties": {
+                                                              "action": {
+                                                                "enum": [
+                                                                  "exact-text"
+                                                                ]
+                                                              }
+                                                            }
+                                                          },
+                                                          "then": {
+                                                            "required": [
+                                                              "sha256",
+                                                              "old",
+                                                              "text"
+                                                            ]
+                                                          }
+                                                        }
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                "required": [
+                                                  "rules"
+                                                ],
+                                                "additionalProperties": false
+                                              }
+                                            },
+                                            "required": [
+                                              "api_version",
+                                              "kind",
+                                              "metadata",
+                                              "spec"
+                                            ],
+                                            "additionalProperties": false
+                                          }
+                                        ]
+                                      }
+                                    }
+                                  },
+                                  "required": [
+                                    "rules"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "required": [
+                                "type",
+                                "compatible_postgresql",
+                                "requires",
+                                "conflicts",
+                                "build_dependencies",
+                                "runtime_dependencies",
+                                "make_targets",
+                                "test_targets",
+                                "install_targets",
+                                "required_tests",
+                                "runtime_files"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "required": [
+                            "api_version",
+                            "kind",
+                            "metadata",
+                            "spec"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "build_options": {
+                        "type": "object",
+                        "properties": {
+                          "configure_args": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "defines": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": [
+                                "string",
+                                "integer",
+                                "null"
+                              ]
+                            }
+                          },
+                          "cppflags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "cflags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "cxxflags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "ldflags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "options": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        "required": [],
+                        "additionalProperties": false
+                      },
+                      "documentation": {
+                        "type": "object",
+                        "properties": {
+                          "rules": {
+                            "type": "array",
+                            "items": {
+                              "oneOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "api_version": {
+                                      "const": "pg_maker/doc-rules/v1"
+                                    },
+                                    "kind": {
+                                      "const": "DocumentationRules"
+                                    },
+                                    "metadata": {
+                                      "type": "object",
+                                      "properties": {
+                                        "id": {
+                                          "type": "string",
+                                          "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                                        },
+                                        "revision": {
+                                          "type": "integer",
+                                          "minimum": 1
+                                        }
+                                      },
+                                      "required": [
+                                        "id",
+                                        "revision"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    "spec": {
+                                      "type": "object",
+                                      "properties": {
+                                        "rules": {
+                                          "type": "array",
+                                          "items": {
+                                            "type": "object",
+                                            "properties": {
+                                              "id": {
+                                                "type": "string"
+                                              },
+                                              "features": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "string"
+                                                }
+                                              },
+                                              "action": {
+                                                "enum": [
+                                                  "insert-before",
+                                                  "insert-after",
+                                                  "append",
+                                                  "prepend",
+                                                  "replace",
+                                                  "remove",
+                                                  "set-text",
+                                                  "set-attribute",
+                                                  "exact-text",
+                                                  "copy-file",
+                                                  "copy-tree",
+                                                  "replace-file",
+                                                  "add-page",
+                                                  "release-notes"
+                                                ]
+                                              },
+                                              "file": {
+                                                "type": "string"
+                                              },
+                                              "selector": {
+                                                "type": "object",
+                                                "properties": {
+                                                  "id": {
+                                                    "type": "string"
+                                                  },
+                                                  "tag": {
+                                                    "type": "string"
+                                                  },
+                                                  "parent": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "id": {
+                                                        "type": "string"
+                                                      },
+                                                      "tag": {
+                                                        "type": "string"
+                                                      }
+                                                    },
+                                                    "required": [],
+                                                    "additionalProperties": false
+                                                  }
+                                                },
+                                                "required": [],
+                                                "additionalProperties": false
+                                              },
+                                              "expect_matches": {
+                                                "type": "integer",
+                                                "minimum": 0
+                                              },
+                                              "fragment": {
+                                                "oneOf": [
+                                                  {
+                                                    "type": "string"
+                                                  },
+                                                  {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "input": {
+                                                        "type": "string"
+                                                      },
+                                                      "sha256": {
+                                                        "type": "string",
+                                                        "pattern": "^sha256:[0-9a-f]{64}$"
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "input",
+                                                      "sha256"
+                                                    ],
+                                                    "additionalProperties": false
+                                                  }
+                                                ]
+                                              },
+                                              "source": {
+                                                "oneOf": [
+                                                  {
+                                                    "type": "string"
+                                                  },
+                                                  {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "input": {
+                                                        "type": "string"
+                                                      },
+                                                      "sha256": {
+                                                        "type": "string",
+                                                        "pattern": "^sha256:[0-9a-f]{64}$"
+                                                      }
+                                                    },
+                                                    "required": [
+                                                      "input",
+                                                      "sha256"
+                                                    ],
+                                                    "additionalProperties": false
+                                                  }
+                                                ]
+                                              },
+                                              "text": {
+                                                "type": "string"
+                                              },
+                                              "attribute": {
+                                                "type": "string"
+                                              },
+                                              "old": {
+                                                "type": "string"
+                                              },
+                                              "sha256": {
+                                                "type": "string",
+                                                "pattern": "^sha256:[0-9a-f]{64}$"
+                                              },
+                                              "entity": {
+                                                "type": "string"
+                                              },
+                                              "include_file": {
+                                                "type": "string"
+                                              },
+                                              "language": {
+                                                "type": "string"
+                                              },
+                                              "translate": {
+                                                "type": "boolean"
+                                              }
+                                            },
+                                            "required": [
+                                              "id",
+                                              "action",
+                                              "file",
+                                              "expect_matches"
+                                            ],
+                                            "additionalProperties": false,
+                                            "allOf": [
+                                              {
+                                                "if": {
+                                                  "properties": {
+                                                    "action": {
+                                                      "enum": [
+                                                        "copy-file",
+                                                        "copy-tree",
+                                                        "replace-file"
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                "then": {
+                                                  "required": [
+                                                    "source"
+                                                  ]
+                                                }
+                                              },
+                                              {
+                                                "if": {
+                                                  "properties": {
+                                                    "action": {
+                                                      "enum": [
+                                                        "add-page",
+                                                        "release-notes"
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                "then": {
+                                                  "required": [
+                                                    "fragment",
+                                                    "entity",
+                                                    "include_file",
+                                                    "selector"
+                                                  ]
+                                                }
+                                              },
+                                              {
+                                                "if": {
+                                                  "properties": {
+                                                    "action": {
+                                                      "enum": [
+                                                        "insert-before",
+                                                        "insert-after",
+                                                        "append",
+                                                        "prepend",
+                                                        "replace"
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                "then": {
+                                                  "required": [
+                                                    "selector",
+                                                    "fragment"
+                                                  ]
+                                                }
+                                              },
+                                              {
+                                                "if": {
+                                                  "properties": {
+                                                    "action": {
+                                                      "enum": [
+                                                        "remove"
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                "then": {
+                                                  "required": [
+                                                    "selector"
+                                                  ]
+                                                }
+                                              },
+                                              {
+                                                "if": {
+                                                  "properties": {
+                                                    "action": {
+                                                      "enum": [
+                                                        "set-text"
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                "then": {
+                                                  "required": [
+                                                    "selector",
+                                                    "text"
+                                                  ]
+                                                }
+                                              },
+                                              {
+                                                "if": {
+                                                  "properties": {
+                                                    "action": {
+                                                      "enum": [
+                                                        "set-attribute"
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                "then": {
+                                                  "required": [
+                                                    "selector",
+                                                    "attribute",
+                                                    "text"
+                                                  ]
+                                                }
+                                              },
+                                              {
+                                                "if": {
+                                                  "properties": {
+                                                    "action": {
+                                                      "enum": [
+                                                        "exact-text"
+                                                      ]
+                                                    }
+                                                  }
+                                                },
+                                                "then": {
+                                                  "required": [
+                                                    "sha256",
+                                                    "old",
+                                                    "text"
+                                                  ]
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      "required": [
+                                        "rules"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  },
+                                  "required": [
+                                    "api_version",
+                                    "kind",
+                                    "metadata",
+                                    "spec"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "rules"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "required_tests": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "compatible_postgresql": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "description",
+                      "numeric_id",
+                      "changes",
+                      "components",
+                      "build_options",
+                      "documentation",
+                      "required_tests"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "api_version",
+                  "kind",
+                  "metadata",
+                  "spec"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "targets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                  },
+                  "platform": {
+                    "type": "object",
+                    "properties": {
+                      "api_version": {
+                        "const": "pg_maker/platform/v1"
+                      },
+                      "kind": {
+                        "const": "PlatformRecipe"
+                      },
+                      "metadata": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                          },
+                          "revision": {
+                            "type": "integer",
+                            "minimum": 1
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "revision"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "spec": {
+                        "type": "object",
+                        "properties": {
+                          "replace_builtin": {
+                            "type": "boolean"
+                          },
+                          "os": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "version": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "version"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "architectures": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "cpu_targets": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          },
+                          "architecture_names": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "string"
+                            }
+                          },
+                          "package_format": {
+                            "enum": [
+                              "deb",
+                              "rpm"
+                            ]
+                          },
+                          "package_manager": {
+                            "type": "string"
+                          },
+                          "package_suffix": {
+                            "type": "string"
+                          },
+                          "package_filename": {
+                            "type": "string"
+                          },
+                          "artifacts": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "roles": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "abi_suffix": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "abi_suffix"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "backends": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "compatible_postgresql": {
+                            "type": "string"
+                          },
+                          "options": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "array",
+                              "items": {
+                                "type": "boolean"
+                              }
+                            }
+                          },
+                          "option_configure": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "enabled": {
+                                  "type": "string"
+                                },
+                                "disabled": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "enabled",
+                                "disabled"
+                              ],
+                              "additionalProperties": false
+                            }
+                          },
+                          "option_dependencies": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "option_runtime_dependencies": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "runtime_dependencies": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "service_dependencies": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "documentation": {
+                            "type": "object",
+                            "properties": {
+                              "languages": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "packages": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "tools": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "format_packages": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                }
+                              },
+                              "backend_packages": {
+                                "type": "object",
+                                "additionalProperties": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            },
+                            "required": [
+                              "languages",
+                              "packages",
+                              "tools",
+                              "format_packages",
+                              "backend_packages"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "environments": {
+                            "type": "object",
+                            "properties": {
+                              "build": {
+                                "type": "object",
+                                "properties": {
+                                  "image": {
+                                    "type": "string"
+                                  },
+                                  "packages": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "tools": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "image",
+                                  "packages",
+                                  "tools"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "test": {
+                                "type": "object",
+                                "properties": {
+                                  "image": {
+                                    "type": "string"
+                                  },
+                                  "packages": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  },
+                                  "tools": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                      "type": "array",
+                                      "items": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "image",
+                                  "packages",
+                                  "tools"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
+                            "required": [
+                              "build",
+                              "test"
+                            ],
+                            "additionalProperties": false
+                          },
+                          "test_profiles": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "os",
+                          "architectures",
+                          "cpu_targets",
+                          "architecture_names",
+                          "package_format",
+                          "package_manager",
+                          "package_suffix",
+                          "package_filename",
+                          "artifacts",
+                          "roles",
+                          "backends",
+                          "compatible_postgresql",
+                          "options",
+                          "option_configure",
+                          "option_dependencies",
+                          "runtime_dependencies",
+                          "environments",
+                          "test_profiles"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "required": [
+                      "api_version",
+                      "kind",
+                      "metadata",
+                      "spec"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "architecture": {
+                    "enum": [
+                      "x86_64",
+                      "aarch64",
+                      "amd64",
+                      "arm64"
+                    ]
+                  },
+                  "cpu_target": {
+                    "type": "string"
+                  },
+                  "artifacts": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "deb",
+                        "rpm",
+                        "tar",
+                        "oci",
+                        "deb-source"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "platform",
+                  "architecture",
+                  "cpu_target",
+                  "artifacts"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "variants": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "feature": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                  },
+                  "target": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                  },
+                  "build": {
+                    "type": "object",
+                    "properties": {
+                      "backend": {
+                        "enum": [
+                          "autotools",
+                          "meson"
+                        ]
+                      },
+                      "mode": {
+                        "enum": [
+                          "release",
+                          "debug"
+                        ]
+                      },
+                      "options": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "boolean"
+                        }
+                      },
+                      "nls_languages": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "message_locale": {
+                        "type": "string"
+                      },
+                      "jobs": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "flags": {
+                        "type": "object",
+                        "properties": {
+                          "cppflags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "ldflags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "lto": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "cppflags",
+                          "ldflags",
+                          "lto"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "resolved_flags": {
+                        "type": "object",
+                        "properties": {
+                          "cflags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "cppflags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "cxxflags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "ldflags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "required": [
+                          "cflags",
+                          "cppflags",
+                          "cxxflags",
+                          "ldflags"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "configure_args": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "backend",
+                      "mode",
+                      "options",
+                      "nls_languages",
+                      "message_locale",
+                      "jobs",
+                      "flags",
+                      "resolved_flags",
+                      "configure_args"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "identity": {
+                    "type": "object",
+                    "properties": {
+                      "policy_version": {
+                        "enum": [
+                          "pg_maker/naming/v1",
+                          "pg_maker/naming/v2"
+                        ]
+                      },
+                      "product_version": {
+                        "type": "string"
+                      },
+                      "service": {
+                        "type": "string"
+                      },
+                      "paths": {
+                        "type": "object",
+                        "properties": {
+                          "runtime_prefix": {
+                            "type": "string"
+                          },
+                          "data_directory": {
+                            "type": "string"
+                          },
+                          "documentation_directory": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "runtime_prefix",
+                          "data_directory",
+                          "documentation_directory"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "packages": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "role": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "filename": {
+                              "type": "string"
+                            },
+                            "native_arch": {
+                              "type": "string"
+                            },
+                            "deb_version": {
+                              "type": "string"
+                            },
+                            "rpm_version": {
+                              "type": "string"
+                            },
+                            "rpm_release": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "role",
+                            "name",
+                            "filename",
+                            "native_arch",
+                            "deb_version",
+                            "rpm_version",
+                            "rpm_release"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "oci_tag": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "policy_version",
+                      "product_version",
+                      "service",
+                      "paths",
+                      "packages",
+                      "oci_tag"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "socket_directory": {
+                    "type": "string"
+                  },
+                  "baseline": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "id",
+                  "feature",
+                  "target",
+                  "build",
+                  "identity",
+                  "socket_directory",
+                  "baseline"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "previous_releases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "variant": {
+                    "type": "string"
+                  },
+                  "postgresql_version": {
+                    "type": "string"
+                  },
+                  "packages": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "role": {
+                          "enum": [
+                            "server",
+                            "client",
+                            "libpq"
+                          ]
+                        },
+                        "input": {
+                          "type": "string"
+                        },
+                        "sha256": {
+                          "type": "string",
+                          "pattern": "^sha256:[0-9a-f]{64}$"
+                        }
+                      },
+                      "required": [
+                        "role",
+                        "input",
+                        "sha256"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "variant",
+                  "postgresql_version",
+                  "packages"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "name",
+            "source",
+            "postgresql",
+            "postgresql_recipe",
+            "product",
+            "vendor",
+            "defaults",
+            "documentation",
+            "features",
+            "targets",
+            "variants"
+          ],
+          "additionalProperties": false
+        },
+        "environments": {
+          "type": "object",
+          "properties": {
+            "environment_hash": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "spec": {
+              "type": "object",
+              "properties": {
+                "requirements_hash": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                "images": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "target": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                      },
+                      "role": {
+                        "enum": [
+                          "build",
+                          "test"
+                        ]
+                      },
+                      "image_id": {
+                        "type": "string",
+                        "pattern": "^sha256:[0-9a-f]{64}$"
+                      },
+                      "base_image_id": {
+                        "type": "string",
+                        "pattern": "^sha256:[0-9a-f]{64}$"
+                      },
+                      "base_registry_digests": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "registry_manifest_digest": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^sha256:[0-9a-f]{64}$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "image_archive_sha256": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^sha256:[0-9a-f]{64}$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "os": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "version": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "version"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "architecture": {
+                        "type": "string"
+                      },
+                      "packages": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "version": {
+                              "type": "string"
+                            },
+                            "architecture": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "version",
+                            "architecture"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "tools": {
+                        "type": "object",
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      },
+                      "method": {
+                        "const": "apt-commit"
+                      },
+                      "reproducibility": {
+                        "type": "string"
+                      },
+                      "runtime_repository": {
+                        "anyOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "path": {
+                                "type": "string"
+                              },
+                              "files": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "path": {
+                                      "type": "string"
+                                    },
+                                    "sha256": {
+                                      "type": "string",
+                                      "pattern": "^sha256:[0-9a-f]{64}$"
+                                    },
+                                    "size_bytes": {
+                                      "type": "integer",
+                                      "minimum": 0
+                                    }
+                                  },
+                                  "required": [
+                                    "path",
+                                    "sha256",
+                                    "size_bytes"
+                                  ],
+                                  "additionalProperties": false
+                                }
+                              },
+                              "repository_hash": {
+                                "type": "string",
+                                "pattern": "^sha256:[0-9a-f]{64}$"
+                              }
+                            },
+                            "required": [
+                              "path",
+                              "files",
+                              "repository_hash"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "target",
+                      "role",
+                      "image_id",
+                      "base_image_id",
+                      "base_registry_digests",
+                      "registry_manifest_digest",
+                      "image_archive_sha256",
+                      "os",
+                      "architecture",
+                      "packages",
+                      "tools",
+                      "method",
+                      "reproducibility"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "minItems": 1
+                }
+              },
+              "required": [
+                "requirements_hash",
+                "images"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "environment_hash",
+            "spec"
+          ],
+          "additionalProperties": false
+        },
+        "blobs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          }
+        },
+        "implementation": {
+          "type": "object",
+          "properties": {
+            "version": {
+              "type": "string"
+            },
+            "code_hash": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "version",
+            "code_hash"
+          ],
+          "additionalProperties": false
+        },
+        "development": {
+          "type": "object",
+          "properties": {
+            "session_id": {
+              "type": "string"
+            },
+            "base_lock": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "parent_lock": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "trees": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "head": {
+                    "type": "string"
+                  },
+                  "source_hash": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  },
+                  "dirty": {
+                    "type": "boolean"
+                  },
+                  "base": {
+                    "type": "string"
+                  },
+                  "series": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "commit": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "commit"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "head",
+                  "source_hash",
+                  "dirty",
+                  "base",
+                  "series"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "session_id",
+            "base_lock",
+            "parent_lock",
+            "trees"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "config",
+        "environments",
+        "blobs",
+        "implementation"
+      ],
+      "additionalProperties": false
+    },
+    "lock_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "transport": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "created_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "api_version",
+    "kind",
+    "spec",
+    "lock_hash",
+    "transport",
+    "created_at"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,4 @@
+comment = 'pg_maker integration fixture'
+default_version = '1.0'
+module_pathname = '$libdir/pg_maker_probe'
+relocatable = true

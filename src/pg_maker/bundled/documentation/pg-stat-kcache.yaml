@@ -1,0 +1,15 @@
+api_version: pg_maker/doc-rules/v1
+kind: DocumentationRules
+metadata:
+  id: pg-stat-kcache-manual
+  revision: 1
+spec:
+  rules:
+  - id: pg-stat-kcache-page
+    action: add-page
+    file: pg-maker-pg-stat-kcache.sgml
+    fragment: pg-stat-kcache.sgml
+    entity: pg-maker-pg-stat-kcache
+    include_file: contrib.sgml
+    selector: {id: contrib}
+    expect_matches: 0

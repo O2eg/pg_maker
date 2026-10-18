@@ -1,0 +1,12 @@
+<!-- Small corpus around an unchanged upstream node. -->
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+ "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % version SYSTEM "version.sgml">%version;
+<!ENTITY % filelist SYSTEM "filelist.sgml">%filelist;
+]>
+<book id="postgres" lang="en">
+<title>PostgreSQL &version; Documentation</title>
+<bookinfo><corpauthor>The PostgreSQL Global Development Group</corpauthor><productname>PostgreSQL</productname><productnumber>&version;</productnumber></bookinfo>
+&settings;
+&reference;
+</book>

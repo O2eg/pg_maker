@@ -1,0 +1,33 @@
+<chapter id="settings"><title>Настройки сервера Test</title>
+<variablelist>
+<varlistentry id="guc-log-min-messages" xreflabel="log_min_messages">
+      <term><varname>log_min_messages</varname> (<type>enum</type>)
+      <indexterm>
+       <primary><varname>log_min_messages</varname> configuration parameter</primary>
+      </indexterm>
+      </term>
+      <listitem>
+       <para>
+        Controls which <link linkend="runtime-config-severity-levels">message
+        levels</link> are written to the server log.
+        Valid values are <literal>DEBUG5</literal>, <literal>DEBUG4</literal>,
+        <literal>DEBUG3</literal>, <literal>DEBUG2</literal>, <literal>DEBUG1</literal>,
+        <literal>INFO</literal>, <literal>NOTICE</literal>, <literal>WARNING</literal>,
+        <literal>ERROR</literal>, <literal>LOG</literal>, <literal>FATAL</literal>, and
+        <literal>PANIC</literal>.  Each level includes all the levels that
+        follow it.  The later the level, the fewer messages are sent
+        to the log.  The default is <literal>WARNING</literal>.  Note that
+        <literal>LOG</literal> has a different rank here than in
+        <xref linkend="guc-client-min-messages"/>.
+        Only superusers and users with the appropriate <literal>SET</literal>
+        privilege can change this setting.
+       </para>
+      </listitem>
+     </varlistentry>
+</variablelist>
+<para id="runtime-config-severity-levels">Message levels.</para>
+<para id="guc-client-min-messages">Client message settings.</para>
+<programlisting>SELECT 1; -- keep whitespace
+  SELECT 2;</programlisting>
+<informaltable><tgroup cols="1"><tbody><row><entry>Table text</entry></row></tbody></tgroup></informaltable>
+</chapter>

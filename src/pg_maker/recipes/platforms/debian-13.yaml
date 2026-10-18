@@ -1,0 +1,125 @@
+api_version: pg_maker/platform/v1
+kind: PlatformRecipe
+metadata:
+  id: debian-13
+  revision: 5
+spec:
+  os: {id: debian, version: '13'}
+  architectures: [x86_64]
+  cpu_targets:
+    x86_64:
+      x86-64: [-march=x86-64, -mtune=generic]
+  architecture_names: {x86_64: amd64}
+  package_format: deb
+  package_manager: apt
+  package_suffix: deb13
+  package_filename: '{name}_{deb_version}_{native_arch}.deb'
+  artifacts: [deb]
+  roles:
+    server: {abi_suffix: ''}
+    client: {abi_suffix: ''}
+    libpq: {abi_suffix: '5'}
+    docs: {abi_suffix: ''}
+  backends: [autotools]
+  compatible_postgresql: '>=14,<20'
+  options:
+    llvm: [true, false]
+    openssl: [true, false]
+    icu: [true, false]
+    lz4: [true, false]
+    zstd: [true, false]
+    libxml: [true, false]
+    libxslt: [true, false]
+    pam: [true, false]
+    systemd: [true, false]
+    uuid: [true, false]
+    perl: [true, false]
+    python: [true, false]
+    tcl: [true, false]
+    ldap: [true, false]
+    gssapi: [true, false]
+  option_configure:
+    llvm: {enabled: --with-llvm, disabled: --without-llvm}
+    openssl: {enabled: --with-ssl=openssl, disabled: --without-ssl}
+    icu: {enabled: --with-icu, disabled: --without-icu}
+    lz4: {enabled: --with-lz4, disabled: --without-lz4}
+    zstd: {enabled: --with-zstd, disabled: --without-zstd}
+    libxml: {enabled: --with-libxml, disabled: --without-libxml}
+    libxslt: {enabled: --with-libxslt, disabled: --without-libxslt}
+    pam: {enabled: --with-pam, disabled: --without-pam}
+    systemd: {enabled: --with-systemd, disabled: --without-systemd}
+    uuid: {enabled: --with-uuid=e2fs, disabled: --without-uuid}
+    perl: {enabled: --with-perl, disabled: --without-perl}
+    python: {enabled: --with-python, disabled: --without-python}
+    tcl: {enabled: --with-tcl, disabled: --without-tcl}
+    ldap: {enabled: --with-ldap, disabled: --without-ldap}
+    gssapi: {enabled: --with-gssapi, disabled: --without-gssapi}
+  option_dependencies:
+    llvm: [clang, llvm-dev]
+    openssl: [libssl-dev]
+    icu: [libicu-dev]
+    lz4: [liblz4-dev]
+    zstd: [libzstd-dev]
+    libxml: [libxml2-dev]
+    libxslt: [libxslt1-dev]
+    pam: [libpam0g-dev]
+    systemd: [libsystemd-dev]
+    uuid: [uuid-dev]
+    perl: [libperl-dev]
+    python: [python3-dev]
+    tcl: [tcl-dev]
+    ldap: [libldap2-dev]
+    gssapi: [libkrb5-dev]
+  option_runtime_dependencies:
+    llvm: [libllvm19]
+    openssl: [libssl3t64]
+    icu: [libicu76]
+    lz4: [liblz4-1]
+    zstd: [libzstd1]
+    libxml: [libxml2]
+    libxslt: [libxslt1.1]
+    pam: [libpam0g]
+    systemd: [libsystemd0]
+    uuid: [libuuid1]
+    perl: [libperl5.40]
+    python: [libpython3.13]
+    tcl: [libtcl8.6]
+    ldap: [libldap2]
+    gssapi: [libgssapi-krb5-2]
+  runtime_dependencies:
+    server: [libc6, libgcc-s1, libstdc++6, zlib1g]
+    client: [libc6, libreadline8t64, zlib1g]
+    libpq: [libc6]
+  service_dependencies:
+    server: [passwd, coreutils, util-linux]
+  documentation:
+    languages:
+      en: [fonts-dejavu-core]
+      ru: [fonts-dejavu-core]
+    packages: [python3-lxml, python3-jsonschema, python3-yaml, python3-packaging, docbook-xml, docbook-xsl, libxml2-utils, xsltproc]
+    tools:
+      xmllint: [xmllint, --version]
+      xsltproc: [xsltproc, --version]
+      lxml: [python3, -c, 'import lxml.etree; print(lxml.etree.LXML_VERSION)']
+    format_packages:
+      pdf: [fop, poppler-utils, fonts-dejavu-extra, libharfbuzz0b]
+      man: [groff-base]
+    backend_packages:
+      sphinx: [python3-sphinx, python3-sphinx-book-theme]
+  environments:
+    build:
+      image: debian:13-slim
+      packages: [build-essential, dpkg-dev, python3, bison, flex, pkg-config, perl, libipc-run-perl, libreadline-dev, zlib1g-dev, liblz4-dev, libzstd-dev, locales, ca-certificates, patch, file, binutils, gettext]
+      tools:
+        cc: [cc, --version]
+        make: [make, --version]
+        bison: [bison, --version]
+        flex: [flex, --version]
+        perl: [perl, -V:version]
+    test:
+      image: debian:13-slim
+      packages: [python3, locales, ca-certificates, procps, passwd, util-linux, systemd, file, binutils]
+      tools:
+        dpkg: [dpkg, --version]
+        perl: [perl, -V:version]
+  test_profiles: [smoke, full, release]

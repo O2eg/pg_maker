@@ -1,0 +1,90 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pg-maker"
+version = "0.1.0"
+description = "Build PostgreSQL distributions, documentation and patches in isolated environments"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "O2eg", email = "oleg.ispu@gmail.com"}]
+keywords = ["postgresql", "build", "packaging", "documentation", "docker"]
+dependencies = ["jsonschema>=4.23,<5", "PyYAML>=6,<7", "packaging>=24,<27", "lxml>=5.3,<7"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: System Administrators",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Database",
+  "Topic :: Software Development :: Build Tools",
+]
+
+[project.optional-dependencies]
+dev = [
+  "build>=1.2,<2", "pytest>=8.3,<9", "ruff>=0.12,<1", "twine>=6,<7",
+  "tomli>=2,<3; python_version < '3.11'",
+]
+
+[project.urls]
+Homepage = "https://o2eg.com/"
+Repository = "https://github.com/O2eg/pg_maker"
+Issues = "https://github.com/O2eg/pg_maker/issues"
+Documentation = "https://github.com/O2eg/pg_maker/blob/main/README.md"
+
+[project.scripts]
+pg-maker = "pg_maker.cli:main"
+sgml-writer = "pg_maker.documentation.cli:writer_main"
+sgml-translate = "pg_maker.documentation.cli:translation_main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = false
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["pg_maker*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+pg_maker = [
+  "py.typed", "schemas/*.json", "bundled/*.md", "recipes/*.md", "recipes/*.yaml",
+  "bundled/*.yaml", "bundled/config/*.yaml", "bundled/config/features/*.yaml",
+  "bundled/patches/*.patch", "recipes/platforms/*.yaml",
+  "bundled/components/*.yaml", "bundled/documentation/*.yaml",
+  "bundled/documentation/*.sgml", "bundled/documentation/*.md",
+  "packaging/templates/*.in",
+  "documentation/theme/_templates/*.html", "documentation/theme/_static/*.css",
+  "documentation/theme/_static/*.js",
+]
+
+[tool.setuptools.exclude-package-data]
+pg_maker = ["**/__pycache__/*", "**/*.pyc"]
+
+[tool.setuptools.data-files]
+"share/doc/pg-maker" = ["*.md", "LICENSE"]
+"share/doc/pg-maker/docs" = ["docs/*.md"]
+"share/doc/pg-maker/docs/interfaces" = ["docs/interfaces/*.md"]
+"share/doc/pg-maker/docs/validation" = ["docs/validation/*.md"]
+"share/doc/pg-maker/tests/fixtures/guc" = ["tests/fixtures/guc/*.md"]
+"share/doc/pg-maker/tests/fixtures/stage4" = ["tests/fixtures/stage4/*.md"]
+"share/doc/pg-maker/tests/fixtures/stage7" = ["tests/fixtures/stage7/*.md"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+markers = ["docker: opt-in tests against a real local Docker daemon"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

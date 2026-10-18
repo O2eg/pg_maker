@@ -1,0 +1,18 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata: {id: pg-maker-probe, revision: 1}
+spec:
+  type: pgxs
+  source: {kind: snapshot, path: ./probe, include: ['**'], exclude: []}
+  compatible_postgresql: '==18.1'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets: [all]
+  install_targets: [install]
+  test_targets: [installcheck]
+  required_tests: []
+  runtime_files: [lib/postgresql/pg_maker_probe.so, share/postgresql/extension/pg_maker_probe.control, share/postgresql/extension/pg_maker_probe--1.0.sql]
+  sql_extension: pg_maker_probe
+  shared_library: pg_maker_probe

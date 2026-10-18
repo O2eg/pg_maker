@@ -1,0 +1,80 @@
+api_version: pg_maker/defaults/v1
+kind: MakerDefaults
+metadata:
+  id: default
+spec:
+  paths:
+    runtime_prefix: /opt/{vendor.slug}/{feature.id}/{postgresql.major}{build.mode_suffix}
+    data_directory: /var/lib/{vendor.slug}/{feature.id}/{postgresql.major}{build.mode_suffix}/data
+    documentation_directory: /opt/{vendor.slug}/{feature.id}/{postgresql.major}{build.mode_suffix}/share/doc/{product.version}
+  service:
+    user: postgres
+    group: postgres
+    home: /var/lib/postgresql
+    port: 5432
+  naming:
+    package: '{vendor.slug}-{feature.id}-{role}{role.abi_suffix}-{postgresql.major}{build.mode_suffix}'
+    service: '{vendor.slug}-{feature.id}-server-{postgresql.major}{build.mode_suffix}'
+    deb_version: '{product.version}-{package_revision}.{platform.package_suffix}'
+    rpm_version: '{product.version}'
+    rpm_release: '{package_revision}.{platform.package_suffix}'
+  common_changes:
+  - builtin: unix-socket-directory
+  build:
+    backend: autotools
+    mode: release
+    options:
+      llvm: true
+      openssl: true
+      icu: true
+    nls_languages:
+    - en
+    - ru
+    message_locale: C.UTF-8
+    jobs: 4
+    flags:
+      cppflags:
+      - -Wno-missing-braces
+      - -Wformat
+      - -Werror=format-security
+      - -fstack-protector-strong
+      ldflags:
+      - -Wl,-z,relro
+      - -Wl,-z,now
+      lto: false
+  build_modes:
+    release:
+      naming_suffix: ''
+      configure_options: []
+      cflags:
+      - -pipe
+      - -O2
+      cppflags:
+      - -D_FORTIFY_SOURCE=2
+    debug:
+      naming_suffix: -debug
+      configure_options:
+      - --enable-debug
+      - --enable-cassert
+      cflags:
+      - -pipe
+      - -O0
+      - -ggdb3
+      cppflags: []
+  validation:
+    profile: full
+    # Temporary development default; enable explicitly for source verification.
+    run_db_tests: false
+    baseline: auto
+    database_locales:
+    - en_US.UTF-8
+    - ru_RU.UTF-8
+  execution:
+    runner: docker
+    max_parallel_targets: 1
+    build_user: 1000:1000
+    limits:
+      memory_bytes: 8589934592
+      min_free_disk_bytes: 21474836480
+      stage_timeout_seconds: 7200
+    keep_failed_environment: false

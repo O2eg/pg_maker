@@ -1,0 +1,26 @@
+/* Native DocBook content uses the same palette and typography as the Sphinx shell. */
+html { scroll-behavior: smooth; }
+.bd-main .bd-content .bd-article-container { max-width: 62rem; }
+.docbook-section { overflow-wrap: anywhere; }
+.docbook-section pre { overflow: auto; padding: 1rem; border-radius: .4rem; }
+.docbook-section table { border-collapse: collapse; width: 100%; }
+.docbook-section td, .docbook-section th { padding: .5rem .75rem; vertical-align: top; }
+.docbook-section th { background: var(--pst-color-surface); }
+.docbook-section td { border-bottom: 1px solid var(--pst-color-border); }
+.docbook-section .table-contents, .docbook-section .informaltable { overflow-x: auto; }
+.docbook-section .variablelist dt { margin-top: .8rem; }
+.docbook-section .toc dt { margin-top: .3rem; }
+.docbook-section .mediaobject img { max-width: 100%; height: auto; }
+.docbook-section .note, .docbook-section .tip, .docbook-section .warning,
+.docbook-section .caution, .docbook-section .important {
+  padding: 1rem 1.2rem; margin: 1.5rem 0; border-radius: .3rem;
+  border-left: .25rem solid var(--pst-color-primary); background: var(--pst-color-surface);
+}
+.docbook-section .warning, .docbook-section .caution { border-left-color: var(--pst-color-warning); }
+.docbook-section .note > .title, .docbook-section .tip > .title,
+.docbook-section .warning > .title, .docbook-section .caution > .title,
+.docbook-section .important > .title { font-size: 1.05rem; margin-top: 0; }
+.pg-maker-footer { padding-block: 1rem; font-size: .85rem; }
+.pg-maker-footer-details, .pg-maker-footer-links { display: flex; gap: .5rem 1.25rem; flex-wrap: wrap; margin-top: .5rem; }
+.pg-maker-footer-details { color: var(--pst-color-text-muted); }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }

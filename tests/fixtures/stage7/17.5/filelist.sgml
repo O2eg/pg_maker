@@ -1,0 +1,1 @@
+<!ENTITY % sections SYSTEM "sections.sgml">%sections;

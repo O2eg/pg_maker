@@ -1,0 +1,15 @@
+api_version: pg_maker/doc-rules/v1
+kind: DocumentationRules
+metadata:
+  id: pg-wait-sampling-manual
+  revision: 1
+spec:
+  rules:
+  - id: pg-wait-sampling-page
+    action: add-page
+    file: pg-maker-pg-wait-sampling.sgml
+    fragment: pg-wait-sampling.sgml
+    entity: pg-maker-pg-wait-sampling
+    include_file: contrib.sgml
+    selector: {id: contrib}
+    expect_matches: 0
