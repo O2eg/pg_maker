@@ -1,0 +1,29 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc-pg-tm-aux
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: git
+    repository: https://github.com/x4m/pg_tm_aux.git
+    ref: 857b9173069068741a52e8343bc532bd094fa2b9
+  compatible_postgresql: '>=16,<17'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: pg_tm_aux
+  runtime_files:
+  - lib/postgresql/pg_tm_aux.so
+  - share/postgresql/extension/pg_tm_aux.control
+  - share/postgresql/extension/pg_tm_aux--*.sql
+  sql_extension_versions:
+    pg_tm_aux: 1.1.1

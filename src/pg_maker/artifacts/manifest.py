@@ -270,6 +270,12 @@ def export_operation(directory: Path, destination: Path, *, include_inputs=False
                 for c in f["spec"]["components"]
                 if "source" in c["spec"]
             )
+            trees.update(
+                source["source_hash"]
+                for f in config["features"]
+                for c in f["spec"]["components"]
+                for source in c["spec"].get("extra_sources", {}).values()
+            )
             destination_store = InputStore(staging / "inputs")
             for digest in trees:
                 destination_store.put_tree(store.tree(digest))

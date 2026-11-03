@@ -1,0 +1,29 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc-pg-stat-query-plans
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: git
+    repository: https://github.com/postgredients/pg_stat_query_plans.git
+    ref: f296839e3fd772a21b01c487e66d31e1e7b45ae0
+  compatible_postgresql: '>=16,<17'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: pg_stat_query_plans
+  runtime_files:
+  - lib/postgresql/pg_stat_query_plans.so
+  - share/postgresql/extension/pg_stat_query_plans.control
+  - share/postgresql/extension/pg_stat_query_plans--*.sql
+  sql_extension_versions:
+    pg_stat_query_plans: '1.0'

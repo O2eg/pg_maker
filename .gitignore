@@ -24,6 +24,8 @@ operations/
 /development/
 /work/
 /delivery/
+# Local project generated for the managed PostgreSQL / ICU build.
+/yc16/
 *.log
 .DS_Store
 Thumbs.db

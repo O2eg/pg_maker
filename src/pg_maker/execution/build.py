@@ -219,6 +219,29 @@ class BuildBranch:
                 self.variant["build"], self.config["postgresql_recipe"]
             )
             write_json(self.output / "expected-tests.json", self.inventory)
+        elif kind == "build_libraries":
+            self.prepare()
+            components.build_components(self, step["parameters"]["components"], run_tests=False)
+            versions = {}
+            for library in step["parameters"]["components"]:
+                for module, expected in library["spec"]["pkg_config_versions"].items():
+                    result = self.command(["pkg-config", "--modversion", module])
+                    actual = Path(result.stdout_log).read_text().strip()
+                    directory = self.command(["pkg-config", "--variable=libdir", module])
+                    libdir = Path(directory.stdout_log).read_text().strip()
+                    if actual != expected or libdir != self.prefix + "/lib":
+                        raise PreconditionError(
+                            "library version or prefix differs from recipe",
+                            details={
+                                "module": module,
+                                "expected": expected,
+                                "actual": actual,
+                                "libdir": libdir,
+                            },
+                        )
+                    versions[module] = {"version": actual, "libdir": libdir}
+            self.report["library_versions"] = versions
+            write_json(self.output / "library-files.json", inventory(self.root / "prefix"))
         elif kind in {"build_and_test_tools", "build_tools"}:
             from pg_maker.execution.component_cache import execute_component
 
@@ -313,7 +336,21 @@ class BuildBranch:
             else:
                 result = self.command(argv, env=env)
                 if kind == "install_build_prefix":
-                    write_json(self.output / "core-files.json", inventory(self.root / "prefix"))
+                    core = inventory(self.root / "prefix")
+                    library_inventory = self.output / "library-files.json"
+                    if library_inventory.exists():
+                        original = read_json(library_inventory)["entries"]
+                        installed = {e["path"]: e for e in core["entries"]}
+                        if any(
+                            e["type"] != "directory" and installed.get(e["path"]) != e
+                            for e in original
+                        ):
+                            raise PreconditionError("PostgreSQL install modified a library file")
+                        library_paths = {e["path"] for e in original}
+                        core["entries"] = [
+                            e for e in core["entries"] if e["path"] not in library_paths
+                        ]
+                    write_json(self.output / "core-files.json", core)
                 warnings = []
                 for path in (result.stdout_log, result.stderr_log):
                     for line in Path(path).read_text(errors="replace").splitlines():

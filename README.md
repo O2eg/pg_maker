@@ -39,6 +39,11 @@ A built wheel can be installed with `python -m pip install /path/to/pg_maker-VER
 
 ## Build a distribution
 
+For PostgreSQL 16.15 with private ICU 70.1 and the managed extension catalog, use
+`pg-maker init example --profile yc-16.15-icu70`.
+See the [profile and version policy](docs/managed-16-icu70.md) for included recipes,
+explicit exclusions and qualification limits. The default init profile is unchanged.
+
 ```bash
 pg-maker init example
 pg-maker validate example/build.yaml

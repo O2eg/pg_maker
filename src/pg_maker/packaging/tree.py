@@ -200,6 +200,25 @@ def collect(branch) -> dict:
                     shutil.copyfile(source_license, target)
                     target.chmod(0o644)
                     roles[path] = "server"
+            for name, extra in spec.get("extra_sources", {}).items():
+                extra_root = branch.inputs.tree(extra["source_hash"])
+                for license_name in (
+                    "LICENSE",
+                    "COPYRIGHT",
+                    "COPYING",
+                    "LICENSE.md",
+                    "LICENSE.txt",
+                ):
+                    source_license = extra_root / license_name
+                    if source_license.is_file() and not source_license.is_symlink():
+                        path = (
+                            f"usr/share/doc/{server}/components/{identifier}/{name}/{license_name}"
+                        )
+                        target = staging / path
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copyfile(source_license, target)
+                        target.chmod(0o644)
+                        roles[path] = "server"
         # Every symlink must resolve to a delivered path, not a discarded development file.
         for item in inventory(staging)["entries"]:
             if item["type"] == "directory":

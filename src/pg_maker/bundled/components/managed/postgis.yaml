@@ -1,0 +1,64 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc-postgis
+  revision: 1
+spec:
+  type: library
+  source:
+    kind: archive
+    location: https://download.osgeo.org/postgis/source/postgis-3.4.0.tar.gz
+    sha256: sha256:aee9b60a6c884d354164b3096c4657f324454186607f859d1ce05d899798af9d
+    strip_components: 1
+  compatible_postgresql: '>=16,<17'
+  requires: []
+  conflicts: []
+  build_dependencies:
+  - libgeos-dev
+  - libproj-dev
+  - libgdal-dev
+  - libsfcgal-dev
+  - libjson-c-dev
+  - libprotobuf-c-dev
+  - protobuf-c-compiler
+  - libpcre2-dev
+  - libxml2-dev
+  - xsltproc
+  - docbook-xsl
+  runtime_dependencies:
+  - libgeos-c1t64
+  - libproj25
+  - libgdal36
+  - libsfcgal2
+  - libjson-c5
+  - libprotobuf-c1
+  - libpcre2-8-0
+  - libxml2
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: postgis
+  runtime_files:
+  - lib/postgresql/postgis*.so
+  - lib/postgresql/rtpostgis*.so
+  - lib/postgresql/address_standardizer*.so
+  - share/postgresql/extension/postgis*.control
+  - share/postgresql/extension/postgis*--*.sql
+  - share/postgresql/extension/address_standardizer*.control
+  - share/postgresql/extension/address_standardizer*--*.sql
+  sql_extension_versions:
+    postgis: 3.4.0
+    postgis_raster: 3.4.0
+    postgis_sfcgal: 3.4.0
+    postgis_tiger_geocoder: 3.4.0
+    postgis_topology: 3.4.0
+    address_standardizer: 3.4.0
+    address_standardizer_data_us: 3.4.0
+  configure_args:
+  - --with-pgconfig={prefix}/bin/pg_config
+  - --with-raster
+  - --with-sfcgal
+  - --with-address-standardizer

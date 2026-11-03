@@ -1,0 +1,40 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: icu70
+  revision: 1
+spec:
+  type: library
+  build_phase: before-postgresql
+  source:
+    kind: archive
+    location: https://github.com/unicode-org/icu/releases/download/release-70-1/icu4c-70_1-src.tgz
+    sha256: sha256:8d205428c17bf13bb535300669ed28b338a157b1c01ae66d31d0d3e2d47c3fd5
+    strip_components: 1
+  source_directory: source
+  compatible_postgresql: '>=14,<20'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  configure_args:
+  - --libdir={prefix}/lib
+  - --enable-shared
+  - --disable-static
+  - --with-data-packaging=library
+  make_targets:
+  - all
+  test_targets:
+  - check
+  install_targets:
+  - install
+  required_tests: []
+  runtime_files:
+  - lib/libicudata.so.70*
+  - lib/libicui18n.so.70*
+  - lib/libicuuc.so.70*
+  pkg_config_versions:
+    icu-i18n: '70.1'
+    icu-uc: '70.1'
+  provides_options:
+  - icu

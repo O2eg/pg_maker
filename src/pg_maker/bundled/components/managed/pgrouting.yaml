@@ -1,0 +1,38 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc-pgrouting
+  revision: 1
+spec:
+  type: library
+  source:
+    kind: git
+    repository: https://github.com/pgRouting/pgrouting.git
+    ref: 55c68b0a2417d2ca5d6145fca5389763c67b0760
+  compatible_postgresql: '>=16,<17'
+  requires:
+  - yc-postgis
+  conflicts: []
+  build_dependencies:
+  - cmake
+  - libboost-graph-dev
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: pgrouting
+  runtime_files:
+  - lib/postgresql/libpgrouting-3.5.so
+  - share/postgresql/extension/pgrouting.control
+  - share/postgresql/extension/pgrouting--*.sql
+  sql_extension_versions:
+    pgrouting: 3.5.0
+  build_system: cmake
+  configure_args:
+  - -DPOSTGRESQL_PG_CONFIG={prefix}/bin/pg_config
+  - -DPOSTGRESQL_BIN={prefix}/bin
+  - -DWITH_DOC=OFF
+  - -DBUILD_TESTING=OFF

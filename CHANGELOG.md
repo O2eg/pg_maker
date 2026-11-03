@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.0 — 2026-11-03
+
+- Select the requested architecture from Docker multi-platform image stores during
+  environment preparation, including amd64 builds under ARM emulation.
+- Configurable two-part PostgreSQL or three-part product versions; package revisions
+  remain independent.
+- Source-pinned libraries before PostgreSQL configure, exact private pkg-config checks,
+  runtime delivery and core/cache invalidation on library changes.
+- CMake components, locked auxiliary sources and installed extension-version checks.
+- Debian 13 PostgreSQL 16.15 / ICU 70.1 init profile with a complete 38-name managed
+  extension catalog, 34 selected SQL extensions from 26 recipes and four explicit
+  exclusions.
+- Upstream PostgreSQL 16 build fixes for jsquery and pg_cron without changing their
+  SQL versions, and the docutils build dependency required by spqrhash installation.
+- Public GitHub SSH submodules resolve over HTTPS within public HTTPS checkouts.
+- Installed-wheel coverage for the complete named profile, including source pins
+  and managed SQL versions. Local build inputs and outputs are excluded from Git.
+
+The amd64 server built under QEMU reports ICU collation version 153.112. The full
+extension set and final DEB installation are still being qualified; selected catalog
+entries retain their unverified status.
+
 ## 0.1.0 — 2026-10-18
 
 Initial alpha of the PostgreSQL distribution controller:

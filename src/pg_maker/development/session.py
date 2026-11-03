@@ -322,6 +322,11 @@ class DevelopmentSession:
                             for c in feature["spec"]["components"]
                             if "source" in c["spec"]
                         ]
+                        digests += [
+                            s["source_hash"]
+                            for c in feature["spec"]["components"]
+                            for s in c["spec"].get("extra_sources", {}).values()
+                        ]
                     for digest in digests:
                         store.put_tree(other_store.tree(digest))
                     for digest in locked["spec"]["blobs"].values():

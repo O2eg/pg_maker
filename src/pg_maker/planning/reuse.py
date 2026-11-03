@@ -23,6 +23,11 @@ def compilation_inputs(lock, feature, variant, branch="candidate"):
             for c in feature["spec"]["components"]
             if c["spec"]["type"] == "source-tree"
         ],
+        "libraries": [
+            compilation_recipe(c)
+            for c in feature["spec"]["components"]
+            if c["spec"].get("build_phase") == "before-postgresql"
+        ],
         "build": variant["build"],
         "image": image["image_id"],
         "target": variant["target"],
@@ -52,11 +57,21 @@ def compilation_recipe(component):
         "make_targets",
         "install_targets",
         "build_dependencies",
+        "build_phase",
+        "pkg_config_versions",
+        "provides_options",
+        "build_system",
+        "sql_extension_versions",
+        "extra_sources",
     )
     spec = component["spec"]
     result = {key: spec[key] for key in fields if key in spec}
     if "source" in result:
         result["source"] = result["source"]["source_hash"]
+    if "extra_sources" in result:
+        result["extra_sources"] = {
+            key: value["source_hash"] for key, value in result["extra_sources"].items()
+        }
     return {"id": component["metadata"]["id"], **result}
 
 

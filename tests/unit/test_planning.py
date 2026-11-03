@@ -573,7 +573,8 @@ def test_change_cycles_socket_conflicts_and_baseline_requirement(project):
         load_config(project / "build.yaml")
 
 
-def test_git_submodules_are_frozen_recursively(tmp_path):
+@pytest.mark.parametrize("github_https", [False, True])
+def test_git_submodules_are_frozen_recursively(tmp_path, monkeypatch, github_https):
     child = tmp_path / "child"
     parent = tmp_path / "parent"
     for repo in (child, parent):
@@ -585,11 +586,30 @@ def test_git_submodules_are_frozen_recursively(tmp_path):
         git(repo, "add", "file")
         git(repo, "commit", "-m", "fixture")
     git(parent, "-c", "protocol.file.allow=always", "submodule", "add", str(child), "modules/child")
+    if github_https:
+        git(
+            parent,
+            "config",
+            "-f",
+            ".gitmodules",
+            "submodule.modules/child.url",
+            "git@github.com:test/child.git",
+        )
     git(parent, "commit", "-am", "submodule")
     store = InputStore(tmp_path / "store")
-    result = SourceResolver(store, tmp_path / "worker").resolve(
-        {"kind": "git", "repository": str(parent), "ref": "HEAD"}, tmp_path
-    )
+    resolver = SourceResolver(store, tmp_path / "worker")
+    repository = str(parent)
+    if github_https:
+        repository = "https://github.com/test/parent.git"
+        original_git = resolver._git
+        aliases = {repository: str(parent), "https://github.com/test/child.git": str(child)}
+
+        def local_git(*args, **kwargs):
+            assert not any(arg.startswith("git@github.com:") for arg in args)
+            return original_git(*(aliases.get(arg, arg) for arg in args), **kwargs)
+
+        monkeypatch.setattr(resolver, "_git", local_git)
+    result = resolver.resolve({"kind": "git", "repository": repository, "ref": "HEAD"}, tmp_path)
     assert result["submodules"][0]["commit"] == git(child, "rev-parse", "HEAD")
     assert (store.tree(result["source_hash"]) / "modules/child/file").read_text() == "child"
 

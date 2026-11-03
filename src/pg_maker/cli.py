@@ -34,6 +34,7 @@ def parser() -> Parser:
     add_commands(sub)
     init = sub.add_parser("init", help="create editable YAML configuration and document schemas")
     init.add_argument("directory", type=Path)
+    init.add_argument("--profile", choices=["yc-16.15-icu70"])
     init_docs = init.add_mutually_exclusive_group()
     init_docs.add_argument("--with-doc", dest="with_doc", action="store_true", default=None)
     init_docs.add_argument("--without-doc", dest="with_doc", action="store_false")
@@ -286,6 +287,7 @@ def main(argv: list[str] | None = None) -> int:
                 doc_languages=args.doc_languages,
                 features=args.features,
                 build_mode=args.build_mode,
+                profile=args.profile,
             )
         else:
             out = (

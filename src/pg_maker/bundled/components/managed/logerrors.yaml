@@ -1,0 +1,29 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc-logerrors
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: git
+    repository: https://github.com/munakoiso/logerrors.git
+    ref: 9ea8b0134ecf4217cc7e7e7abff736db779a9713
+  compatible_postgresql: '>=16,<17'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: logerrors
+  runtime_files:
+  - lib/postgresql/logerrors.so
+  - share/postgresql/extension/logerrors.control
+  - share/postgresql/extension/logerrors--*.sql
+  sql_extension_versions:
+    logerrors: '2.1'

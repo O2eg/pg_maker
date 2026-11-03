@@ -665,6 +665,12 @@
                 },
                 "version": {
                   "type": "string"
+                },
+                "version_format": {
+                  "enum": [
+                    "three-part",
+                    "postgresql"
+                  ]
                 }
               },
               "required": [
@@ -1929,6 +1935,25 @@
                                     "library"
                                   ]
                                 },
+                                "build_phase": {
+                                  "enum": [
+                                    "before-postgresql",
+                                    "after-postgresql"
+                                  ]
+                                },
+                                "pkg_config_versions": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                "provides_options": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string",
+                                    "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                                  }
+                                },
                                 "source": {
                                   "oneOf": [
                                     {
@@ -2067,6 +2092,125 @@
                                   "type": "array",
                                   "items": {
                                     "type": "string"
+                                  }
+                                },
+                                "build_system": {
+                                  "enum": [
+                                    "make",
+                                    "cmake"
+                                  ]
+                                },
+                                "sql_extension_versions": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "type": "string"
+                                  }
+                                },
+                                "extra_sources": {
+                                  "type": "object",
+                                  "additionalProperties": {
+                                    "oneOf": [
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "const": "git"
+                                          },
+                                          "commit": {
+                                            "type": "string",
+                                            "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"
+                                          },
+                                          "submodules": {
+                                            "type": "array",
+                                            "items": {
+                                              "$ref": "urn:pg_maker:schema:planning-common:v1#/$defs/Submodule"
+                                            }
+                                          },
+                                          "source_hash": {
+                                            "type": "string",
+                                            "pattern": "^sha256:[0-9a-f]{64}$"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "commit",
+                                          "submodules",
+                                          "source_hash"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "const": "snapshot"
+                                          },
+                                          "selection": {
+                                            "type": "object",
+                                            "properties": {
+                                              "algorithm": {
+                                                "const": "fnmatchcase-posix/v1"
+                                              },
+                                              "include": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "string"
+                                                }
+                                              },
+                                              "exclude": {
+                                                "type": "array",
+                                                "items": {
+                                                  "type": "string"
+                                                }
+                                              }
+                                            },
+                                            "required": [
+                                              "algorithm",
+                                              "include",
+                                              "exclude"
+                                            ],
+                                            "additionalProperties": false
+                                          },
+                                          "source_hash": {
+                                            "type": "string",
+                                            "pattern": "^sha256:[0-9a-f]{64}$"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "selection",
+                                          "source_hash"
+                                        ],
+                                        "additionalProperties": false
+                                      },
+                                      {
+                                        "type": "object",
+                                        "properties": {
+                                          "kind": {
+                                            "const": "archive"
+                                          },
+                                          "archive_sha256": {
+                                            "type": "string",
+                                            "pattern": "^sha256:[0-9a-f]{64}$"
+                                          },
+                                          "strip_components": {
+                                            "type": "integer",
+                                            "minimum": 0
+                                          },
+                                          "source_hash": {
+                                            "type": "string",
+                                            "pattern": "^sha256:[0-9a-f]{64}$"
+                                          }
+                                        },
+                                        "required": [
+                                          "kind",
+                                          "archive_sha256",
+                                          "strip_components",
+                                          "source_hash"
+                                        ],
+                                        "additionalProperties": false
+                                      }
+                                    ]
                                   }
                                 },
                                 "make_targets": {
@@ -3461,7 +3605,8 @@
                       "policy_version": {
                         "enum": [
                           "pg_maker/naming/v1",
-                          "pg_maker/naming/v2"
+                          "pg_maker/naming/v2",
+                          "pg_maker/naming/v3"
                         ]
                       },
                       "product_version": {

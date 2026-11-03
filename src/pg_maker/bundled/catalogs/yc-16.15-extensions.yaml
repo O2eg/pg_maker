@@ -1,0 +1,541 @@
+source_host: rc1d-kp80p78vpf7pi1pd.mdb.yandexcloud.net
+database: ad_analytics
+observed_at: '2026-11-02'
+coverage: available extensions, not installed extensions; upstream builds are not
+  vendor binary equivalence
+extensions:
+- name: address_standardizer
+  managed_default_version: 3.4.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.4.0
+  - ANY
+  recipe: ../components/managed/postgis.yaml
+  component_id: yc-postgis
+  source_ref: 0874ea342af5392e3cd9f4e6157ef08648c9d2d8
+  source_url: https://github.com/postgis/postgis.git
+  source_release: 3.4.0
+  status: selected-unverified
+- name: address_standardizer_data_us
+  managed_default_version: 3.4.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.4.0
+  - 3.4.0next
+  - ANY
+  recipe: ../components/managed/postgis.yaml
+  component_id: yc-postgis
+  source_ref: 0874ea342af5392e3cd9f4e6157ef08648c9d2d8
+  source_url: https://github.com/postgis/postgis.git
+  source_release: 3.4.0
+  status: selected-unverified
+- name: age
+  managed_default_version: 1.5.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.5.0
+  recipe: ../components/managed/age.yaml
+  component_id: yc-age
+  source_ref: 0048900f372d4dfd5c236f78b8a8453bcdbb458e
+  source_url: https://github.com/apache/age.git
+  source_release: PG16/v1.5.0-rc0
+  status: selected-unverified
+- name: anon
+  managed_default_version: 1.3.2.1
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.3.2.1
+  status: blocked
+  reason: Managed SQL version 1.3.2.1 has no confirmed matching upstream source; supply
+    the vendor recipe.
+- name: h3
+  managed_default_version: 4.1.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 0.1.0
+  - 0.2.0
+  - 0.3.0
+  - 0.3.1
+  - 0.3.2
+  - 0.4.0
+  - 1.0.0
+  - 1.0.1
+  - 1.0.2
+  - 1.0.3
+  - 1.0.4
+  - 1.0.5
+  - 1.0.6
+  - 3.4.0
+  - 3.4.1
+  - 3.5.0
+  - 3.6.0
+  - 3.6.1
+  - 3.6.2
+  - 3.6.3
+  - 3.6.4
+  - 3.6.5
+  - 3.7.0
+  - 3.7.1
+  - 3.7.2
+  - 4.0.0
+  - 4.0.1
+  - 4.0.2
+  - 4.0.3
+  - 4.1.0
+  - 4.1.1
+  - 4.1.2
+  - 4.1.3
+  recipe: ../components/managed/h3.yaml
+  component_id: yc-h3
+  source_ref: a6d98a41ebf9cb3b0c91dedfa6e248e72b27aed3
+  source_url: https://github.com/postgis/h3-pg.git
+  source_release: v4.1.3
+  status: selected-unverified
+- name: h3_postgis
+  managed_default_version: 4.1.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 4.0.0
+  - 4.0.1
+  - 4.0.2
+  - 4.0.3
+  - 4.1.0
+  - 4.1.1
+  - 4.1.2
+  - 4.1.3
+  recipe: ../components/managed/h3.yaml
+  component_id: yc-h3
+  source_ref: a6d98a41ebf9cb3b0c91dedfa6e248e72b27aed3
+  source_url: https://github.com/postgis/h3-pg.git
+  source_release: v4.1.3
+  status: selected-unverified
+- name: hypopg
+  managed_default_version: 1.4.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.3.1
+  - 1.4.0
+  recipe: ../components/managed/hypopg.yaml
+  component_id: yc-hypopg
+  source_ref: d90375b6696fe052a18faa1702711b346819fbef
+  source_url: https://github.com/HypoPG/hypopg.git
+  source_release: 1.4.0
+  status: selected-unverified
+- name: jsquery
+  managed_default_version: '1.1'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.1'
+  recipe: ../components/managed/jsquery.yaml
+  component_id: yc-jsquery
+  source_ref: 40b1db58b3f3f4b315a6f606ba88752c0f8b6aaf
+  source_url: https://github.com/postgrespro/jsquery.git
+  source_release: PG16 compatibility commit 40b1db5 (SQL version 1.1)
+  status: selected-unverified
+- name: logerrors
+  managed_default_version: '2.1'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '1.1'
+  - '2.0'
+  - '2.1'
+  recipe: ../components/managed/logerrors.yaml
+  component_id: yc-logerrors
+  source_ref: 9ea8b0134ecf4217cc7e7e7abff736db779a9713
+  source_url: https://github.com/munakoiso/logerrors.git
+  source_release: v2.1
+  status: selected-unverified
+- name: lwaldump
+  managed_default_version: '1.0'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  status: blocked
+  reason: Matching public source for the managed module has not been located; supply
+    the vendor source.
+- name: oracle_fdw
+  managed_default_version: '1.2'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.2'
+  status: blocked
+  reason: Requires an explicitly provisioned Oracle Instant Client SDK/runtime; upstream
+    release 2.6.0 has SQL version 1.2.
+  recipe: ../components/managed/oracle_fdw.yaml
+  source_ref: 33ea6a2b4ad9dcee21fc7c98f3e202d666b5cf25
+  source_url: https://github.com/laurenz/oracle_fdw.git
+- name: orafce
+  managed_default_version: '4.6'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '4.6'
+  recipe: ../components/managed/orafce.yaml
+  component_id: yc-orafce
+  source_ref: 6020b1e1f8c519b748b6784a76537b22a6938389
+  source_url: https://github.com/orafce/orafce.git
+  source_release: VERSION_4_6_0
+  status: selected-unverified
+- name: pg_cron
+  managed_default_version: '1.5'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '1.1'
+  - '1.2'
+  - '1.3'
+  - '1.4'
+  - 1.4-1
+  - '1.5'
+  recipe: ../components/managed/pg_cron.yaml
+  component_id: yc-pg-cron
+  source_ref: 0cb8118e8dfda30af58a65e14e2b7fe73ec6c931
+  source_url: https://github.com/citusdata/pg_cron.git
+  source_release: v1.5.2 + upstream compiler fix 0cb8118 (SQL version 1.5)
+  status: selected-unverified
+- name: pg_hint_plan
+  managed_default_version: 1.6.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.3.0
+  - 1.3.1
+  - 1.3.2
+  - 1.3.3
+  - 1.3.4
+  - 1.3.5
+  - 1.3.6
+  - 1.3.7
+  - 1.3.8
+  - 1.3.9
+  - '1.4'
+  - 1.4.1
+  - 1.4.2
+  - '1.5'
+  - 1.5.1
+  - 1.6.0
+  recipe: ../components/managed/pg_hint_plan.yaml
+  component_id: yc-pg-hint-plan
+  source_ref: fa0a461af929c06f7c96956369458456c26e7ad9
+  source_url: https://github.com/ossc-db/pg_hint_plan.git
+  source_release: REL16_1_6_0
+  status: selected-unverified
+- name: pg_partman
+  managed_default_version: 4.7.4
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 4.7.4
+  recipe: ../components/managed/pg_partman.yaml
+  component_id: yc-pg-partman
+  source_ref: 2330063ad29a65d169b1947ac35705a237774fb6
+  source_url: https://github.com/pgpartman/pg_partman.git
+  source_release: v4.7.4
+  status: selected-unverified
+- name: pg_qualstats
+  managed_default_version: 2.1.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 2.0.4
+  - 2.1.0
+  recipe: ../components/managed/pg_qualstats.yaml
+  component_id: yc-pg-qualstats
+  source_ref: 90b06b50fe753e34512b0fd16a1dcfbb452cec0b
+  source_url: https://github.com/powa-team/pg_qualstats.git
+  source_release: 2.1.0
+  status: selected-unverified
+- name: pg_repack
+  managed_default_version: 1.5.3
+  managed_installed_version: 1.5.3
+  managed_catalog_versions:
+  - 1.5.3
+  recipe: ../components/managed/pg_repack.yaml
+  component_id: yc-pg-repack
+  source_ref: 6902ab313aeb49227867087dca99cf107f7be23b
+  source_url: https://github.com/reorg/pg_repack.git
+  source_release: ver_1.5.3
+  status: selected-unverified
+- name: pg_stat_kcache
+  managed_default_version: 2.3.1
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 2.1.0
+  - 2.1.1
+  - 2.1.2
+  - 2.1.3
+  - 2.2.0
+  - 2.2.1
+  - 2.2.2
+  - 2.2.3
+  - 2.3.0
+  - 2.3.1
+  recipe: ../components/managed/pg_stat_kcache.yaml
+  component_id: yc-pg-stat-kcache
+  source_ref: 2f1a1f53f1bf50452afae8450f99839e01eb6617
+  source_url: https://github.com/powa-team/pg_stat_kcache.git
+  source_release: REL2_3_1
+  status: selected-unverified
+- name: pg_stat_query_plans
+  managed_default_version: '1.0'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  recipe: ../components/managed/pg_stat_query_plans.yaml
+  component_id: yc-pg-stat-query-plans
+  source_ref: f296839e3fd772a21b01c487e66d31e1e7b45ae0
+  source_url: https://github.com/postgredients/pg_stat_query_plans.git
+  source_release: null
+  status: selected-unverified
+- name: pg_tm_aux
+  managed_default_version: 1.1.1
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '1.1'
+  - 1.1.1
+  recipe: ../components/managed/pg_tm_aux.yaml
+  component_id: yc-pg-tm-aux
+  source_ref: 857b9173069068741a52e8343bc532bd094fa2b9
+  source_url: https://github.com/x4m/pg_tm_aux.git
+  source_release: null
+  status: selected-unverified
+- name: pg_uuidv7
+  managed_default_version: '1.5'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.5'
+  recipe: ../components/managed/pg_uuidv7.yaml
+  component_id: yc-pg-uuidv7
+  source_ref: 0396caaa8269a899826a9195f72c42a845d656a7
+  source_url: https://github.com/fboulnois/pg_uuidv7.git
+  source_release: v1.5.0
+  status: selected-unverified
+- name: pgaudit
+  managed_default_version: '16.0'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '16.0'
+  recipe: ../components/managed/pgaudit.yaml
+  component_id: yc-pgaudit
+  source_ref: 8b7bf8588d30c1a298638a6a57898ef90c9a63eb
+  source_url: https://github.com/pgaudit/pgaudit.git
+  source_release: '16.0'
+  status: selected-unverified
+- name: pglogical
+  managed_default_version: 2.4.4
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.0.0
+  - 1.0.1
+  - 1.1.0
+  - 1.1.1
+  - 1.1.2
+  - 1.2.0
+  - 1.2.1
+  - 1.2.2
+  - 2.0.0
+  - 2.0.1
+  - 2.1.0
+  - 2.1.1
+  - 2.2.0
+  - 2.2.1
+  - 2.2.2
+  - 2.3.0
+  - 2.3.1
+  - 2.3.2
+  - 2.3.3
+  - 2.3.4
+  - 2.4.0
+  - 2.4.1
+  - 2.4.2
+  - 2.4.3
+  - 2.4.4
+  recipe: ../components/managed/pglogical.yaml
+  component_id: yc-pglogical
+  source_ref: bff71f2c6b0bd9748ecee15dcc93201cd1a145a0
+  source_url: https://github.com/2ndQuadrant/pglogical.git
+  source_release: REL2_4_4
+  status: selected-unverified
+- name: pglogical_origin
+  managed_default_version: 1.0.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.0.0
+  recipe: ../components/managed/pglogical.yaml
+  component_id: yc-pglogical
+  source_ref: bff71f2c6b0bd9748ecee15dcc93201cd1a145a0
+  source_url: https://github.com/2ndQuadrant/pglogical.git
+  source_release: REL2_4_4
+  status: selected-unverified
+- name: pgrouting
+  managed_default_version: 3.5.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.5.0
+  recipe: ../components/managed/pgrouting.yaml
+  component_id: yc-pgrouting
+  source_ref: 55c68b0a2417d2ca5d6145fca5389763c67b0760
+  source_url: https://github.com/pgRouting/pgrouting.git
+  source_release: v3.5.0
+  status: selected-unverified
+- name: pgvector
+  managed_default_version: 0.8.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 0.8.2
+  status: blocked
+  reason: 'Managed alias: upstream 0.8.2 provides vector, not a separate pgvector
+    control/library. Do not fabricate an alias for a physical replica.'
+- name: plv8
+  managed_default_version: 3.2.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.2.3
+  recipe: ../components/managed/plv8.yaml
+  component_id: yc-plv8
+  source_ref: eef5d3a3b9235f947eb729b3d12a2dd148f6eba9
+  source_url: https://github.com/plv8/plv8.git
+  source_release: v3.2.3
+  status: selected-unverified
+- name: postgis
+  managed_default_version: 3.4.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.4.0
+  - ANY
+  - unpackaged
+  recipe: ../components/managed/postgis.yaml
+  component_id: yc-postgis
+  source_ref: 0874ea342af5392e3cd9f4e6157ef08648c9d2d8
+  source_url: https://github.com/postgis/postgis.git
+  source_release: 3.4.0
+  status: selected-unverified
+- name: postgis_raster
+  managed_default_version: 3.4.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.4.0
+  - ANY
+  - unpackaged
+  recipe: ../components/managed/postgis.yaml
+  component_id: yc-postgis
+  source_ref: 0874ea342af5392e3cd9f4e6157ef08648c9d2d8
+  source_url: https://github.com/postgis/postgis.git
+  source_release: 3.4.0
+  status: selected-unverified
+- name: postgis_sfcgal
+  managed_default_version: 3.4.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.4.0
+  - ANY
+  - unpackaged
+  recipe: ../components/managed/postgis.yaml
+  component_id: yc-postgis
+  source_ref: 0874ea342af5392e3cd9f4e6157ef08648c9d2d8
+  source_url: https://github.com/postgis/postgis.git
+  source_release: 3.4.0
+  status: selected-unverified
+- name: postgis_tiger_geocoder
+  managed_default_version: 3.4.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.4.0
+  - ANY
+  recipe: ../components/managed/postgis.yaml
+  component_id: yc-postgis
+  source_ref: 0874ea342af5392e3cd9f4e6157ef08648c9d2d8
+  source_url: https://github.com/postgis/postgis.git
+  source_release: 3.4.0
+  status: selected-unverified
+- name: postgis_topology
+  managed_default_version: 3.4.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.4.0
+  - ANY
+  - unpackaged
+  recipe: ../components/managed/postgis.yaml
+  component_id: yc-postgis
+  source_ref: 0874ea342af5392e3cd9f4e6157ef08648c9d2d8
+  source_url: https://github.com/postgis/postgis.git
+  source_release: 3.4.0
+  status: selected-unverified
+- name: rum
+  managed_default_version: '1.3'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '1.1'
+  - '1.2'
+  - '1.3'
+  recipe: ../components/managed/rum.yaml
+  component_id: yc-rum
+  source_ref: 6a065fd8dfb280680304991aa30d7f72787fdb04
+  source_url: https://github.com/postgrespro/rum.git
+  source_release: 1.3.14
+  status: selected-unverified
+- name: smlar
+  managed_default_version: '1.0'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  recipe: ../components/managed/smlar.yaml
+  component_id: yc-smlar
+  source_ref: 6259352edd179544c6f0e7c81bb68dcb81317f8c
+  source_url: https://github.com/jirutka/smlar.git
+  source_release: null
+  status: selected-unverified
+- name: spqrguard
+  managed_default_version: 2.4.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '2.0'
+  - '2.1'
+  - '2.2'
+  - '2.3'
+  - '2.4'
+  - 2.4.1
+  - 2.4.2
+  recipe: ../components/managed/spqrguard.yaml
+  component_id: yc-spqrguard
+  source_ref: 207d46c91141c0e67bcf09432fbd9c760bd6b57f
+  source_url: https://github.com/pg-sharding/spqrguard.git
+  source_release: null
+  status: selected-unverified
+- name: spqrhash
+  managed_default_version: '1.2'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '1.1'
+  - '1.2'
+  recipe: ../components/managed/spqrhash.yaml
+  component_id: yc-spqrhash
+  source_ref: 3f4d326c88a69a4330c8399b4d3c833f25a6cf36
+  source_url: https://github.com/pg-sharding/spqrhash.git
+  source_release: null
+  status: selected-unverified
+- name: timescaledb
+  managed_default_version: 2.20.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 2.13.0-dev
+  - 2.16.1
+  - 2.20.3
+  recipe: ../components/managed/timescaledb.yaml
+  component_id: yc-timescaledb
+  source_ref: 7b30533d4d9b6ce1353b8bac0ba6215be20f2633
+  source_url: https://github.com/timescale/timescaledb.git
+  source_release: 2.20.3
+  status: selected-unverified
+- name: vector
+  managed_default_version: 0.8.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 0.8.2
+  recipe: ../components/managed/vector.yaml
+  component_id: yc-vector
+  source_ref: cab9da72c04353f143bb06b42ab70a403daac64a
+  source_url: https://github.com/pgvector/pgvector.git
+  source_release: v0.8.2
+  status: selected-unverified

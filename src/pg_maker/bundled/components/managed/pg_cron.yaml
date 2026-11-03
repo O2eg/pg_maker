@@ -1,0 +1,29 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc-pg-cron
+  revision: 2
+spec:
+  type: pgxs
+  source:
+    kind: git
+    repository: https://github.com/citusdata/pg_cron.git
+    ref: 0cb8118e8dfda30af58a65e14e2b7fe73ec6c931
+  compatible_postgresql: '>=16,<17'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: pg_cron
+  runtime_files:
+  - lib/postgresql/pg_cron.so
+  - share/postgresql/extension/pg_cron.control
+  - share/postgresql/extension/pg_cron--*.sql
+  sql_extension_versions:
+    pg_cron: '1.5'

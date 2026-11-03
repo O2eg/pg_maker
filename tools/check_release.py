@@ -30,7 +30,7 @@ IGNORED = {
     ".nox",
     "node_modules",
 }
-LOCAL_DATA = {"operations", "runs", "inputs", "development", "work", "delivery", ".cache"}
+LOCAL_DATA = {"operations", "runs", "inputs", "development", "work", "delivery", "yc16", ".cache"}
 
 
 def project_files(root: Path):

@@ -340,7 +340,12 @@ manifest = obj(
                 "source": source,
                 "postgresql": obj({"version": S}),
                 "product": obj(
-                    {"release": N, "package_revision": P, "version": S},
+                    {
+                        "release": N,
+                        "package_revision": P,
+                        "version": S,
+                        "version_format": {"enum": ["three-part", "postgresql"]},
+                    },
                     ["release", "package_revision"],
                 ),
                 "features": {**arr(S), "minItems": 1, "uniqueItems": True},
@@ -443,6 +448,9 @@ component = document(
     obj(
         {
             "type": {"enum": ["contrib", "pgxs", "source-tree", "utility", "library"]},
+            "build_phase": {"enum": ["before-postgresql", "after-postgresql"]},
+            "pkg_config_versions": mapping(S),
+            "provides_options": arr(ID),
             "source": source,
             "compatible_postgresql": S,
             "requires": arr(),
@@ -451,6 +459,9 @@ component = document(
             "build_dependencies": arr(),
             "runtime_dependencies": arr(),
             "configure_args": arr(),
+            "build_system": {"enum": ["make", "cmake"]},
+            "sql_extension_versions": mapping(S),
+            "extra_sources": mapping(source),
             "make_targets": arr(),
             "test_targets": arr(),
             "install_targets": arr(),
@@ -690,13 +701,16 @@ change_fields["operations"]["items"]["properties"]["file"] = file_input
 change_fields["acceptance"]["items"]["properties"]["script"] = file_input
 resolved_component = copy.deepcopy(component)
 resolved_component["properties"]["spec"]["properties"]["source"] = resolved_source
+resolved_component["properties"]["spec"]["properties"]["extra_sources"] = mapping(resolved_source)
 resolved_feature = copy.deepcopy(feature)
 resolved_feature["properties"]["spec"]["properties"].update(
     {"changes": arr(resolved_changes), "components": arr(resolved_component)}
 )
 identity = obj(
     {
-        "policy_version": {"enum": ["pg_maker/naming/v1", "pg_maker/naming/v2"]},
+        "policy_version": {
+            "enum": ["pg_maker/naming/v1", "pg_maker/naming/v2", "pg_maker/naming/v3"]
+        },
         "product_version": S,
         "service": S,
         "paths": defaults["properties"]["spec"]["properties"]["paths"],

@@ -42,6 +42,28 @@ output/commands.
 
 ## Builders and components
 
+Components with `type: library` and `build_phase: before-postgresql` build before
+core configure. They require exact `pkg_config_versions`; both version and the
+resolved private `libdir` are checked before proceeding. `provides_options: [icu]`
+replaces direct platform build/runtime dependencies for that option in this feature.
+Other system dependencies may still pull their own ICU transitively. The private
+prefix is first in PKG_CONFIG_PATH and LD_LIBRARY_PATH; binaries/libraries receive
+its lib directory in RPATH. Source/recipe changes invalidate core and dependent caches.
+Library files are inventoried before core install and only declared runtime_files
+are packaged. This path supports quick builds; full library qualification is rejected
+explicitly until a test-evidence adapter is available.
+
+External library/utility components may select `build_system: cmake`. Configure uses
+an out-of-source directory, private install prefix and RPATH, then bounded parallel
+build and install. CMake database qualification is not implemented. Recipe
+`configure_args` accept `{prefix}` and `{source:NAME}` for a named `extra_sources`
+input. Extra sources use the same pinned resolver, offline store, locks, cache hashes
+and portable exports as primary sources; they never download during compilation.
+
+`sql_extension_versions: {vector: '0.8.2'}` verifies installed control files even in
+quick mode. It checks package contents, not ABI, index-format or query correctness.
+See [the managed profile](../managed-16-icu70.md).
+
 `builders.autotools` contains validate_build, extra_tests, expected_inventory,
 reconcile and required-test validation. Queries execute Make inside the container.
 A new backend needs a module, explicit dispatch, supported-settings schema and real

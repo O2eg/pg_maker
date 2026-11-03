@@ -1,0 +1,29 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc-vector
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: git
+    repository: https://github.com/pgvector/pgvector.git
+    ref: cab9da72c04353f143bb06b42ab70a403daac64a
+  compatible_postgresql: '>=16,<17'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: vector
+  runtime_files:
+  - lib/postgresql/vector.so
+  - share/postgresql/extension/vector.control
+  - share/postgresql/extension/vector--*.sql
+  sql_extension_versions:
+    vector: 0.8.2

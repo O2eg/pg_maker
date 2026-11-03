@@ -106,8 +106,18 @@ def load_components(references: list[str], base: Path, version: str) -> tuple[li
             raise ValidationError("external component needs a source")
         if spec["type"] == "contrib" and "source" in spec:
             raise ValidationError("contrib must use the PostgreSQL source")
+        if spec.get("extra_sources") and spec["type"] in {"contrib", "source-tree"}:
+            raise ValidationError("extra_sources require an external build directory")
+        for name in spec.get("extra_sources", {}):
+            if not re.fullmatch(r"[a-z][a-z0-9-]*", name):
+                raise ValidationError("invalid extra source name")
         if spec.get("source_directory") and not relative_output(spec["source_directory"]):
             raise ValidationError("component directory must be relative")
+        if spec.get("build_system") == "cmake" and spec["type"] not in {"utility", "library"}:
+            raise ValidationError("CMake components must have type utility or library")
+        for name, expected in spec.get("sql_extension_versions", {}).items():
+            if not re.fullmatch(r"[a-zA-Z0-9_-]+", name) or not expected:
+                raise ValidationError("invalid extension version assertion")
         for key in ("make_targets", "test_targets", "install_targets"):
             if any(
                 not re.fullmatch(r"[a-zA-Z0-9_./-]+", x) or x.startswith("-") for x in spec[key]
@@ -115,8 +125,33 @@ def load_components(references: list[str], base: Path, version: str) -> tuple[li
                 raise ValidationError("invalid component make target")
         bindings["components/" + identifier] = str(path.parent)
         documents.append(document)
-    # Duplicate references are harmless only when their parsed content is identical.
-    return _ordered(documents), bindings
+    # Library dependencies must exist before PostgreSQL's configure, not after its install.
+    ordered = _ordered(documents)
+    early = {
+        c["metadata"]["id"] for c in ordered if c["spec"].get("build_phase") == "before-postgresql"
+    }
+    provided = set()
+    for component in ordered:
+        spec = component["spec"]
+        if component["metadata"]["id"] in early:
+            if spec["type"] != "library" or set(spec["requires"]) - early:
+                raise ValidationError(
+                    "before-postgresql libraries cannot depend on PostgreSQL components"
+                )
+            if not spec.get("pkg_config_versions"):
+                raise ValidationError("before-postgresql libraries need exact pkg_config_versions")
+        elif spec.get("provides_options") or spec.get("pkg_config_versions"):
+            raise ValidationError("library version policy requires before-postgresql phase")
+        options = set(spec.get("provides_options", []))
+        if options & provided:
+            raise ValidationError("multiple libraries provide the same PostgreSQL option")
+        provided.update(options)
+        for module, version in spec.get("pkg_config_versions", {}).items():
+            if not re.fullmatch(r"[A-Za-z0-9_+.-]+", module) or not re.fullmatch(
+                r"[0-9][A-Za-z0-9_.+-]*", version
+            ):
+                raise ValidationError("invalid pkg-config module or exact version")
+    return ordered, bindings
 
 
 def required_tests(feature: dict, branch: str = "candidate") -> list[str]:

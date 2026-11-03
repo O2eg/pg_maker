@@ -1,0 +1,34 @@
+api_version: pg_maker/v1
+kind: PostgreSQLBuild
+metadata:
+  name: yc-16-15-icu70
+spec:
+  config_dir: ./config
+  source:
+    kind: archive
+    location: https://ftp.postgresql.org/pub/source/v16.15/postgresql-16.15.tar.bz2
+    sha256: sha256:c1575341fa7bd40f5274ea465b34390f4dc64cdd0770af327005caaeb9f6b7ed
+    strip_components: 1
+  postgresql:
+    version: '16.15'
+  product:
+    release: 0
+    package_revision: 1
+    version_format: postgresql
+  features:
+  - yc16-icu70
+  targets:
+  - id: debian13-x64
+    platform: debian-13
+    architecture: x86_64
+    cpu_target: x86-64
+    artifacts:
+    - deb
+  documentation:
+    profile: ./config/documentation.yaml
+  validation:
+    profile: full
+    baseline: false
+  build:
+    options:
+      llvm: false

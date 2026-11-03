@@ -162,6 +162,12 @@ def validate_build(config: dict, goal: str, *, run_db_tests: bool = True) -> Non
     for feature in config["features"]:
         for component in feature["spec"]["components"]:
             spec = component["spec"]
+            if run_db_tests and spec.get("build_system") == "cmake":
+                raise UnsupportedError("CMake component DB-test evidence is not implemented")
+            if run_db_tests and spec.get("build_phase") == "before-postgresql":
+                raise UnsupportedError(
+                    "pre-PostgreSQL library test qualification is not implemented"
+                )
             if (
                 run_db_tests
                 and spec["type"] in {"pgxs", "utility", "library"}

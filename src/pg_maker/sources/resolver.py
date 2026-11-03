@@ -127,6 +127,12 @@ class SourceResolver:
                     if path not in mapping:
                         raise ValidationError("missing submodule URL")
                     url = mapping[path]
+                    # Public HTTPS checkouts must not require a developer's SSH
+                    # key just because upstream committed a GitHub SSH gitlink URL.
+                    if repository.startswith("https://github.com/") and url.startswith(
+                        "git@github.com:"
+                    ):
+                        url = "https://github.com/" + url.removeprefix("git@github.com:")
                     if url.startswith(("./", "../")):
                         if "://" in repository:
                             url = urllib.parse.urljoin(repository.rstrip("/") + "/", url)

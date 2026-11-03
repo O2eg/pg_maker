@@ -1,0 +1,29 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc-age
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: git
+    repository: https://github.com/apache/age.git
+    ref: 0048900f372d4dfd5c236f78b8a8453bcdbb458e
+  compatible_postgresql: '>=16,<17'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: age
+  runtime_files:
+  - lib/postgresql/age.so
+  - share/postgresql/extension/age.control
+  - share/postgresql/extension/age--*.sql
+  sql_extension_versions:
+    age: 1.5.0

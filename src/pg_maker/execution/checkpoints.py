@@ -11,6 +11,7 @@ from pg_maker.execution.resources import check_resources
 from pg_maker.storage import content_hash, ensure_directory, read_json, write_json
 
 BOUNDARIES = {
+    "build_libraries",
     "integrate_source_components",
     "configure",
     "compile_core",

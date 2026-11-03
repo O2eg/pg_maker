@@ -1,0 +1,29 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc-smlar
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: git
+    repository: https://github.com/jirutka/smlar.git
+    ref: 6259352edd179544c6f0e7c81bb68dcb81317f8c
+  compatible_postgresql: '>=16,<17'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: smlar
+  runtime_files:
+  - lib/postgresql/smlar.so
+  - share/postgresql/extension/smlar.control
+  - share/postgresql/extension/smlar--*.sql
+  sql_extension_versions:
+    smlar: '1.0'

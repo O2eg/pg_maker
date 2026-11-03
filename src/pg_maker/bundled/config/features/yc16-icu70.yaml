@@ -1,0 +1,43 @@
+api_version: pg_maker/feature/v1
+kind: FeatureProfile
+metadata:
+  id: yc16-icu70
+  revision: 1
+spec:
+  description: PostgreSQL 16.15 with private ICU 70.1 and a managed extension inventory
+  numeric_id: null
+  changes: []
+  components:
+  - ../../components/libraries/icu70.yaml
+  - ../../components/pg-stat-statements.yaml
+  - ../../components/managed/age.yaml
+  - ../../components/managed/hypopg.yaml
+  - ../../components/managed/jsquery.yaml
+  - ../../components/managed/logerrors.yaml
+  - ../../components/managed/orafce.yaml
+  - ../../components/managed/pg_cron.yaml
+  - ../../components/managed/pg_hint_plan.yaml
+  - ../../components/managed/pg_qualstats.yaml
+  - ../../components/managed/pg_stat_query_plans.yaml
+  - ../../components/managed/pg_tm_aux.yaml
+  - ../../components/managed/pg_uuidv7.yaml
+  - ../../components/managed/pgaudit.yaml
+  - ../../components/managed/rum.yaml
+  - ../../components/managed/spqrguard.yaml
+  - ../../components/managed/spqrhash.yaml
+  - ../../components/managed/pg_stat_kcache.yaml
+  - ../../components/managed/pg_partman.yaml
+  - ../../components/managed/pg_repack.yaml
+  - ../../components/managed/pglogical.yaml
+  - ../../components/managed/vector.yaml
+  - ../../components/managed/plv8.yaml
+  - ../../components/managed/smlar.yaml
+  - ../../components/managed/postgis.yaml
+  - ../../components/managed/pgrouting.yaml
+  - ../../components/managed/timescaledb.yaml
+  - ../../components/managed/h3.yaml
+  build_options: {}
+  documentation:
+    rules: []
+  required_tests: []
+  compatible_postgresql: ==16.15

@@ -227,7 +227,14 @@ def dependencies(branch) -> dict:
             if match:
                 found.update(v.strip() for v in match[1].split(",") if v.strip())
         declared = set(recipe["runtime_dependencies"].get(role, []))
+        provided_options = {
+            option
+            for c in branch.feature["spec"]["components"]
+            for option in c["spec"].get("provides_options", [])
+        }
         for option, enabled in branch.variant["build"]["options"].items():
+            if option in provided_options:
+                continue
             if enabled:
                 declared.update(recipe.get("option_runtime_dependencies", {}).get(option, []))
         service = recipe.get("service_dependencies", {}).get(role, [])

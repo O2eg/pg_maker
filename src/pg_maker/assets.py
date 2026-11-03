@@ -8,12 +8,22 @@ from pg_maker.storage import ensure_directory, write_text
 
 
 def initialize_project(
-    directory: Path, *, with_doc=None, doc_languages=None, features=None, build_mode=None
+    directory: Path,
+    *,
+    with_doc=None,
+    doc_languages=None,
+    features=None,
+    build_mode=None,
+    profile=None,
 ) -> dict:
     ensure_directory(directory)
     assets = {"README.md": files("pg_maker").joinpath("bundled", "PROJECT.md").read_text()}
     bundled = files("pg_maker").joinpath("bundled")
     assets["build.yaml"] = bundled.joinpath("build.yaml").read_text()
+    if profile is not None:
+        if profile != "yc-16.15-icu70":
+            raise ValidationError("unknown build profile")
+        assets["build.yaml"] = bundled.joinpath("profiles", profile + ".yaml").read_text()
     for item in bundled.joinpath("config").iterdir():
         if item.name.endswith(".yaml"):
             assets[f"config/{item.name}"] = item.read_text()
@@ -32,7 +42,7 @@ def initialize_project(
             else:
                 assets[name] = item.read_text()
 
-    for directory_name in ("components", "documentation"):
+    for directory_name in ("components", "documentation", "catalogs"):
         collect(bundled.joinpath(directory_name), directory_name)
     for item in files("pg_maker").joinpath("schemas").iterdir():
         if item.name.endswith(".json"):

@@ -49,6 +49,15 @@ custom value. Conflicting postconditions produce `validation_error`. Automatic
 baseline selection enables it for custom changes; explicit false is invalid when
 acceptance includes baseline expectations.
 
+## Product version format
+
+`spec.product.version_format` selects `three-part` (default, `16.15.0`) or
+`postgresql` (`16.15`). The latter requires `release: 0`; use `package_revision`
+for package rebuilds. DEB revisions/suffixes still apply, e.g. `16.15-1.deb13`.
+An explicit `product.version` must match the computed value. Prerelease identities
+retain Debian ordering (`19.0~rc1` with PostgreSQL format). Naming policy v3 is
+recorded in identities; server source/version strings are not rewritten.
+
 ## Previous releases
 
 `spec.previous_releases` optionally supplies packages for same-major upgrade checks.

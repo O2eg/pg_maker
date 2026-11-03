@@ -32,12 +32,51 @@ def main():
         assert response["status"] == "succeeded", response
         run([binaries / "pg-maker", "init", directory / "project", "--with-doc"])
         run([binaries / "pg-maker", "validate", directory / "project/build.yaml"])
+        managed = directory / "yc16"
+        run([binaries / "pg-maker", "init", managed, "--profile", "yc-16.15-icu70"])
+        run([binaries / "pg-maker", "validate", managed / "build.yaml"])
+        profile_check = """
+import sys
+from pathlib import Path
+from pg_maker.config import load_config
+from pg_maker.yamlio import load_yaml
+root = Path(sys.argv[1])
+config = load_config(root / 'build.yaml').data
+assert config['postgresql']['version'] == '16.15'
+variant = config['variants'][0]
+assert variant['identity']['product_version'] == '16.15'
+assert all(p['deb_version'] == '16.15-1.deb13' for p in variant['identity']['packages'])
+target = load_yaml(root / 'build.yaml')['spec']['targets'][0]
+assert (target['platform'], target['architecture']) == ('debian-13', 'x86_64')
+components = {c['metadata']['id']: c['spec'] for c in config['features'][0]['spec']['components']}
+assert components['icu70']['build_phase'] == 'before-postgresql'
+assert components['icu70']['pkg_config_versions'] == {'icu-i18n': '70.1', 'icu-uc': '70.1'}
+declared = {
+    n: v for c in components.values() for n, v in c.get('sql_extension_versions', {}).items()
+}
+entries = load_yaml(root / 'catalogs/yc-16.15-extensions.yaml')['extensions']
+assert len(entries) == 38 and len(declared) == 34
+for entry in entries:
+    if entry['status'] == 'blocked':
+        assert entry['reason'] and entry['name'] not in declared
+    else:
+        assert declared[entry['name']] == entry['managed_default_version']
+        source = components[entry['component_id']]['source']
+        if source['kind'] == 'git':
+            assert entry['source_ref'] == source['ref']
+assert components['yc-jsquery']['source']['ref'] == '40b1db58b3f3f4b315a6f606ba88752c0f8b6aaf'
+assert components['yc-pg-cron']['source']['ref'] == '0cb8118e8dfda30af58a65e14e2b7fe73ec6c931'
+print('OK: installed managed profile: PostgreSQL 16.15, Debian 13 amd64, '
+      'ICU 70.1, 34 selected extensions')
+"""
+        print(run([binaries / "python", "-c", profile_check, managed]).strip())
         run([binaries / "pg-maker", "dev", "--help"])
         run([binaries / "sgml-writer", "--help"])
         run([binaries / "sgml-translate", "--help"])
         manuals = directory / "venv/share/doc/pg-maker"
         assert (manuals / "README.md").is_file()
         assert (manuals / "docs/interfaces/development.md").is_file()
+        assert (manuals / "docs/managed-16-icu70.md").is_file()
     print("OK: isolated wheel install, dependencies, CLI, init/validate and installed manuals")
 
 

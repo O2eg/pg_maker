@@ -1,0 +1,29 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc-oracle-fdw
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: git
+    repository: https://github.com/laurenz/oracle_fdw.git
+    ref: 33ea6a2b4ad9dcee21fc7c98f3e202d666b5cf25
+  compatible_postgresql: '>=16,<17'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: oracle_fdw
+  runtime_files:
+  - lib/postgresql/oracle_fdw.so
+  - share/postgresql/extension/oracle_fdw.control
+  - share/postgresql/extension/oracle_fdw--*.sql
+  sql_extension_versions:
+    oracle_fdw: '1.2'

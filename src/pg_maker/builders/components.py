@@ -96,6 +96,26 @@ def cluster(branch, name, *, database="postgres", preload=()):
                     raise
 
 
+def verify_extension_versions(branch, spec):
+    """Check delivered control files even in quick mode; this is not database qualification."""
+    for name, expected in spec.get("sql_extension_versions", {}).items():
+        control = branch.root / "prefix/share/postgresql/extension" / (name + ".control")
+        if not control.is_file():
+            raise PreconditionError(
+                "extension control file is missing", details={"extension": name}
+            )
+        found = re.search(r"^\s*default_version\s*=\s*'([^']+)'", control.read_text(), re.M)
+        if not found or found[1] != expected:
+            raise PreconditionError(
+                "extension version differs from recipe",
+                details={
+                    "extension": name,
+                    "expected": expected,
+                    "actual": found[1] if found else None,
+                },
+            )
+
+
 def build_components(branch, components, *, run_tests=True):
     reports = []
     for component in components:
@@ -120,11 +140,61 @@ def build_components(branch, components, *, run_tests=True):
                 cwd += "/" + spec["source_directory"]
                 path /= spec["source_directory"]
             component_source, container_source = path, cwd
+            configure_args = [
+                arg.replace("{prefix}", branch.prefix) for arg in spec.get("configure_args", [])
+            ]
+            for name, source in spec.get("extra_sources", {}).items():
+                extra_path = branch.root / "extra-sources" / identifier / name
+                if not extra_path.exists():
+                    shutil.copytree(
+                        branch.inputs.tree(source["source_hash"]), extra_path, symlinks=True
+                    )
+                extra_container = (
+                    branch.container_root + "/extra-sources/" + identifier + "/" + name
+                )
+                configure_args = [
+                    arg.replace("{source:" + name + "}", extra_container) for arg in configure_args
+                ]
+            if spec.get("build_system") == "cmake":
+                build_path = cwd + "/pg-maker-build"
+                branch.command(
+                    [
+                        "cmake",
+                        "-S",
+                        cwd,
+                        "-B",
+                        build_path,
+                        "-DCMAKE_INSTALL_PREFIX=" + branch.prefix,
+                        "-DCMAKE_INSTALL_RPATH=" + branch.prefix + "/lib",
+                        *configure_args,
+                    ],
+                    cwd=cwd,
+                )
+                branch.command(
+                    [
+                        "cmake",
+                        "--build",
+                        build_path,
+                        "--parallel",
+                        str(branch.variant["build"]["jobs"]),
+                    ],
+                    cwd=cwd,
+                )
+                branch.command(["cmake", "--install", build_path], cwd=cwd)
+                verify_extension_versions(branch, spec)
+                reports.append(
+                    {"id": identifier, "built": True, "native_targets": [], "tests": "skipped"}
+                )
+                continue
             if spec.get("configure_args") or (
                 kind in {"utility", "library"} and (path / "configure").is_file()
             ):
                 branch.command(
-                    ["./configure", "--prefix=" + branch.prefix, *spec.get("configure_args", [])],
+                    [
+                        "./configure",
+                        "--prefix=" + branch.prefix,
+                        *configure_args,
+                    ],
                     cwd=cwd,
                 )
         make = ["make", "--output-sync=target", "-j", str(branch.variant["build"]["jobs"])]
@@ -137,6 +207,7 @@ def build_components(branch, components, *, run_tests=True):
         for targets in (spec["make_targets"], spec["install_targets"]):
             if targets:
                 branch.command([*make, *targets], cwd=cwd)
+        verify_extension_versions(branch, spec)
         if not run_tests:
             reports.append(
                 {"id": identifier, "built": True, "native_targets": [], "tests": "skipped"}

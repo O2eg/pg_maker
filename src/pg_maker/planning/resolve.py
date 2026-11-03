@@ -66,6 +66,15 @@ def resolve_inputs(request, context) -> dict:
             if "source" in component["spec"]:
                 key = fid + "/components/" + component["metadata"]["id"]
                 sources.append((component["spec"], "source", Path(request.bindings[key]), key))
+                for name in component["spec"].get("extra_sources", {}):
+                    sources.append(
+                        (
+                            component["spec"]["extra_sources"],
+                            name,
+                            Path(request.bindings[key]),
+                            key + "/" + name,
+                        )
+                    )
         for change in feature["spec"]["changes"]:
             references = [op["file"] for op in change["spec"]["operations"]]
             references += [test["script"] for test in change["spec"]["acceptance"]]

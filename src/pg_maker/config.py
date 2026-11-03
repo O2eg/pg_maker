@@ -325,6 +325,12 @@ def load_config(
     variants, collisions, filenames = [], {}, set()
     for feature in feature_docs:
         fs, fid = feature["spec"], feature["metadata"]["id"]
+        supplied_options = {
+            option for c in fs["components"] for option in c["spec"].get("provides_options", [])
+        }
+        options = {**defaults["build"]["options"], **fs["build_options"].get("options", {})}
+        if any(not options.get(option) for option in supplied_options):
+            raise ValidationError("library provides an unknown or disabled PostgreSQL option")
         sockets = {
             change["spec"].get("postconditions", {}).get("socket_directory")
             for change in fs["changes"]
@@ -440,6 +446,14 @@ def environment_requirements(config: dict) -> dict:
         rs = recipe["spec"]
         variants = [v for v in config["variants"] if v["target"] == target["id"]]
         components = [c for f in config["features"] for c in f["spec"]["components"]]
+        providers = {
+            f["metadata"]["id"]: {
+                option
+                for c in f["spec"]["components"]
+                for option in c["spec"].get("provides_options", [])
+            }
+            for f in config["features"]
+        }
         for role in ("build", "test"):
             definition = rs["environments"][role]
             packages = set(definition["packages"])
@@ -471,7 +485,7 @@ def environment_requirements(config: dict) -> dict:
             if role == "build":
                 for variant in variants:
                     for option, enabled in variant["build"]["options"].items():
-                        if enabled:
+                        if enabled and option not in providers[variant["feature"]]:
                             packages.update(rs["option_dependencies"][option])
                 for component in components:
                     packages.update(component["spec"]["build_dependencies"])
@@ -483,7 +497,7 @@ def environment_requirements(config: dict) -> dict:
                     runtime_packages.update(dependencies)
                 for variant in variants:
                     for option, enabled in variant["build"]["options"].items():
-                        if enabled:
+                        if enabled and option not in providers[variant["feature"]]:
                             runtime_packages.update(
                                 rs.get("option_runtime_dependencies", {}).get(option, [])
                             )

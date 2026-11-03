@@ -58,6 +58,8 @@ def build_plan(
         for component in feature["spec"]["components"]:
             if "source" in component["spec"]:
                 store.tree(component["spec"]["source"]["source_hash"])
+            for source in component["spec"].get("extra_sources", {}).values():
+                store.tree(source["source_hash"])
     environment = spec["environments"]
     env_core = {
         "api_version": "pg_maker/environment/v1",
@@ -141,6 +143,7 @@ def build_plan(
                     "materialize_source",
                     "apply_changes",
                     "integrate_source_components",
+                    "build_libraries",
                     "configure",
                     "compile_core",
                     "install_build_prefix",
@@ -202,6 +205,25 @@ def build_plan(
                 "PG_TEST_EXTRA": extra_tests(build, config["postgresql_recipe"]),
                 **{key.upper(): " ".join(value) for key, value in build["resolved_flags"].items()},
             }
+            libraries = [
+                c
+                for c in feature["spec"]["components"]
+                if c["spec"].get("build_phase") == "before-postgresql"
+            ]
+            if libraries:
+                runtime_prefix = variant["identity"]["paths"]["runtime_prefix"]
+                env.update(
+                    PKG_CONFIG_PATH=runtime_prefix + "/lib/pkgconfig",
+                    LD_LIBRARY_PATH=runtime_prefix + "/lib",
+                    ICU_DATA="",
+                )
+                env["LDFLAGS"] += " -Wl,-rpath," + runtime_prefix + "/lib"
+                add(
+                    "build_libraries",
+                    env=env,
+                    parameters={"components": libraries},
+                    checks=["exact-library-versions"],
+                )
             nls = (
                 "--enable-nls=" + " ".join(build["nls_languages"])
                 if build["nls_languages"]
@@ -294,6 +316,8 @@ def build_plan(
                 )
             for component in feature["spec"]["components"]:
                 component_id = component["metadata"]["id"]
+                if component["spec"].get("build_phase") == "before-postgresql":
+                    continue
                 if component_id not in selected:
                     continue
                 add(

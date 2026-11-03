@@ -73,7 +73,7 @@ def test_init_machine_and_module_entrypoint(tmp_path):
     payload = json.loads(result.stdout)
     validate_document(payload, "component-envelope")
     assert payload["request_id"] == "init-1" and payload["result"]["created"]
-    assert cli("--version").stdout.strip() == "pg-maker 0.1.0"
+    assert cli("--version").stdout.strip() == "pg-maker 0.2.0"
 
 
 def test_init_documentation_selection_and_standalone_commands(tmp_path):

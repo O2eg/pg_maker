@@ -7,7 +7,7 @@ from pathlib import PurePosixPath
 from pg_maker.errors import ValidationError
 from pg_maker.postgresql import version_info
 
-POLICY_VERSION = "pg_maker/naming/v2"
+POLICY_VERSION = "pg_maker/naming/v3"
 
 
 def render(template: str, context: dict[str, str]) -> str:
@@ -41,7 +41,13 @@ def identities(
     with_doc: bool,
 ) -> dict:
     info = version_info(version)
-    product_version = f"{info['major']}.{info['minor']}.{product['release']}"
+    product_version = f"{info['major']}.{info['minor']}"
+    if product.get("version_format", "three-part") == "three-part":
+        product_version += f".{product['release']}"
+    elif product.get("version_format") != "postgresql":
+        raise ValidationError("unknown product version_format")
+    elif product["release"] != 0:
+        raise ValidationError("postgresql version_format requires release=0; use package_revision")
     if info["stage"]:
         product_version += "~" + info["stage"] + info["number"]
     if "version" in product and product["version"] != product_version:

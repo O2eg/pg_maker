@@ -28,6 +28,52 @@ def missing_packages(requirements: list[str], inventory: list[dict]) -> list[str
     return missing
 
 
+def inspect_base_image(runner, context, requirement: dict) -> dict:
+    """Select a target manifest while retaining an addressable local image ID."""
+    image = requirement["image"]
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9./_:@-]*", image):
+        raise ValidationError("invalid base image reference")
+    arch = {"x86_64": "amd64", "aarch64": "arm64"}.get(
+        requirement["architecture"], requirement["architecture"]
+    )
+    platform = f"linux/{arch}"
+    image_format = (
+        '{"Id":{{json .Id}},"Os":{{json .Os}},"Architecture":{{json .Architecture}},'
+        '"RepoDigests":{{json .RepoDigests}}}'
+    )
+
+    def inspect():
+        result = runner._control(["image", "inspect", image, "--format", image_format], check=False)
+        if not result.succeeded:
+            return None
+        root = parse_json(result.stdout_tail)
+        selected = root
+        if root.get("Os") != "linux" or root.get("Architecture") != arch:
+            result = runner._control(
+                ["image", "inspect", "--platform", platform, image, "--format", image_format],
+                check=False,
+            )
+            if not result.succeeded:
+                return None
+            selected = parse_json(result.stdout_tail)
+        if selected.get("Os") != "linux" or selected.get("Architecture") != arch:
+            return None
+        # On containerd stores a child manifest ID need not be independently
+        # addressable. Pin the root ID and select the platform on container create.
+        return {**selected, "Id": root["Id"], "RepoDigests": root.get("RepoDigests") or []}
+
+    inspected = inspect()
+    if inspected is None and not context.offline and not image.startswith("sha256:"):
+        context.command(["docker", "pull", "--platform", platform, image])
+        inspected = inspect()
+    if inspected is None:
+        raise PreconditionError(
+            "base image is not available locally for target platform",
+            details={"image": image, "platform": platform},
+        )
+    return inspected
+
+
 def prepare_environments(config: dict, context) -> dict:
     requirements = environment_requirements(config)
     runner = DockerRunner(
@@ -59,36 +105,7 @@ def prepare_environments(config: dict, context) -> dict:
                 images.append(record)
                 context.advance("environment_reused", target_id=requirement["target"])
                 continue
-        image = requirement["image"]
-        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9./_:@-]*", image):
-            raise ValidationError("invalid base image reference")
-        local = runner._control(["image", "inspect", image, "--format", "{{.Id}}"], check=False)
-        if not local.succeeded:
-            if context.offline or image.startswith("sha256:"):
-                raise PreconditionError(
-                    "base image is not available locally", details={"image": image}
-                )
-            context.command(
-                [
-                    "docker",
-                    "pull",
-                    "--platform",
-                    "linux/amd64" if requirement["architecture"] == "x86_64" else "linux/arm64",
-                    image,
-                ]
-            )
-        inspected = parse_json(
-            runner._control(
-                [
-                    "image",
-                    "inspect",
-                    image,
-                    "--format",
-                    '{"Id":{{json .Id}},"Os":{{json .Os}},"Architecture":{{json .Architecture}},'
-                    '"RepoDigests":{{json .RepoDigests}}}',
-                ]
-            ).stdout_tail
-        )
+        inspected = inspect_base_image(runner, context, requirement)
         base_id = inspected["Id"]
         expected_arch = {"x86_64": "amd64", "aarch64": "arm64"}.get(
             requirement["architecture"], requirement["architecture"]
@@ -116,6 +133,8 @@ def prepare_environments(config: dict, context) -> dict:
             command = [
                 "create",
                 "--pull=never",
+                "--platform",
+                f"linux/{expected_arch}",
                 "--name",
                 handle.name,
                 "--user",

@@ -1,0 +1,38 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc-timescaledb
+  revision: 1
+spec:
+  type: library
+  source:
+    kind: git
+    repository: https://github.com/timescale/timescaledb.git
+    ref: 7b30533d4d9b6ce1353b8bac0ba6215be20f2633
+  compatible_postgresql: '>=16,<17'
+  requires: []
+  conflicts: []
+  build_dependencies:
+  - cmake
+  - libssl-dev
+  runtime_dependencies:
+  - libssl3t64
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: timescaledb
+  runtime_files:
+  - lib/postgresql/timescaledb*.so
+  - share/postgresql/extension/timescaledb.control
+  - share/postgresql/extension/timescaledb--*.sql
+  sql_extension_versions:
+    timescaledb: 2.20.3
+  build_system: cmake
+  configure_args:
+  - -DPG_CONFIG={prefix}/bin/pg_config
+  - -DREGRESS_CHECKS=OFF
+  - -DTAP_CHECKS=OFF
+  - -DWARNINGS_AS_ERRORS=OFF
