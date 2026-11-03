@@ -2213,6 +2213,26 @@
                                     ]
                                   }
                                 },
+                                "source_patches": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "input": {
+                                        "type": "string"
+                                      },
+                                      "sha256": {
+                                        "type": "string",
+                                        "pattern": "^sha256:[0-9a-f]{64}$"
+                                      }
+                                    },
+                                    "required": [
+                                      "input",
+                                      "sha256"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
                                 "make_targets": {
                                   "type": "array",
                                   "items": {
@@ -2628,6 +2648,110 @@
                                     "rules"
                                   ],
                                   "additionalProperties": false
+                                },
+                                "source_unpatched": {
+                                  "oneOf": [
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "const": "git"
+                                        },
+                                        "commit": {
+                                          "type": "string",
+                                          "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"
+                                        },
+                                        "submodules": {
+                                          "type": "array",
+                                          "items": {
+                                            "$ref": "urn:pg_maker:schema:planning-common:v1#/$defs/Submodule"
+                                          }
+                                        },
+                                        "source_hash": {
+                                          "type": "string",
+                                          "pattern": "^sha256:[0-9a-f]{64}$"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "commit",
+                                        "submodules",
+                                        "source_hash"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "const": "snapshot"
+                                        },
+                                        "selection": {
+                                          "type": "object",
+                                          "properties": {
+                                            "algorithm": {
+                                              "const": "fnmatchcase-posix/v1"
+                                            },
+                                            "include": {
+                                              "type": "array",
+                                              "items": {
+                                                "type": "string"
+                                              }
+                                            },
+                                            "exclude": {
+                                              "type": "array",
+                                              "items": {
+                                                "type": "string"
+                                              }
+                                            }
+                                          },
+                                          "required": [
+                                            "algorithm",
+                                            "include",
+                                            "exclude"
+                                          ],
+                                          "additionalProperties": false
+                                        },
+                                        "source_hash": {
+                                          "type": "string",
+                                          "pattern": "^sha256:[0-9a-f]{64}$"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "selection",
+                                        "source_hash"
+                                      ],
+                                      "additionalProperties": false
+                                    },
+                                    {
+                                      "type": "object",
+                                      "properties": {
+                                        "kind": {
+                                          "const": "archive"
+                                        },
+                                        "archive_sha256": {
+                                          "type": "string",
+                                          "pattern": "^sha256:[0-9a-f]{64}$"
+                                        },
+                                        "strip_components": {
+                                          "type": "integer",
+                                          "minimum": 0
+                                        },
+                                        "source_hash": {
+                                          "type": "string",
+                                          "pattern": "^sha256:[0-9a-f]{64}$"
+                                        }
+                                      },
+                                      "required": [
+                                        "kind",
+                                        "archive_sha256",
+                                        "strip_components",
+                                        "source_hash"
+                                      ],
+                                      "additionalProperties": false
+                                    }
+                                  ]
                                 }
                               },
                               "required": [

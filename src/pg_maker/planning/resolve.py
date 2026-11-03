@@ -7,6 +7,7 @@ from pg_maker.changes.loader import required_tests
 from pg_maker.config import environment_requirements
 from pg_maker.errors import PreconditionError
 from pg_maker.planning.documents import implementation_identity, seal, verify
+from pg_maker.sources.patches import patch_component_source
 from pg_maker.sources.resolver import SourceResolver, verify_postgresql_version
 from pg_maker.sources.store import InputStore
 from pg_maker.storage import content_hash
@@ -63,6 +64,17 @@ def resolve_inputs(request, context) -> dict:
         fid = feature["metadata"]["id"]
         required_tests(feature)
         for component in feature["spec"]["components"]:
+            for reference in component["spec"].get("source_patches", []):
+                key = fid + "/" + reference["input"]
+                digest = reference["sha256"]
+                if request.offline:
+                    try:
+                        store.blob(digest)
+                    except PreconditionError:
+                        missing.append(key)
+                else:
+                    store.put_blob(Path(request.bindings[key]), digest)
+                blobs[key] = digest
             if "source" in component["spec"]:
                 key = fid + "/components/" + component["metadata"]["id"]
                 sources.append((component["spec"], "source", Path(request.bindings[key]), key))
@@ -102,6 +114,11 @@ def resolve_inputs(request, context) -> dict:
         raise PreconditionError(
             "offline inputs are missing", details={"missing": sorted(set(missing))}
         )
+    for feature in config["features"]:
+        for component in feature["spec"]["components"]:
+            patch_component_source(
+                component["spec"], store, context.attempt_directory / "inputs", check=context.check
+            )
     verify_postgresql_version(
         store.tree(config["source"]["source_hash"]), config["postgresql"]["version"]
     )

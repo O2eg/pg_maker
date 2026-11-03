@@ -2,13 +2,15 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-plv8
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
     kind: git
     repository: https://github.com/plv8/plv8.git
     ref: eef5d3a3b9235f947eb729b3d12a2dd148f6eba9
+  source_patches:
+  - ../../patches/plv8-3.2.3-gcc14-and-resume.patch
   compatible_postgresql: '>=16,<17'
   requires: []
   conflicts: []

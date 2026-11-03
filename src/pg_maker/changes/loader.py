@@ -106,6 +106,18 @@ def load_components(references: list[str], base: Path, version: str) -> tuple[li
             raise ValidationError("external component needs a source")
         if spec["type"] == "contrib" and "source" in spec:
             raise ValidationError("contrib must use the PostgreSQL source")
+        if spec.get("source_patches") and "source" not in spec:
+            raise ValidationError("component source patches require an external source")
+        patches = []
+        for index, reference in enumerate(spec.get("source_patches", [])):
+            source = (path.parent / reference).resolve()
+            if not source.is_file():
+                raise ValidationError("component source patch is missing")
+            key = "components/" + identifier + "/source-patches/" + str(index)
+            patches.append({"input": key, "sha256": file_hash(source)})
+            bindings[key] = str(source)
+        if patches:
+            spec["source_patches"] = patches
         if spec.get("extra_sources") and spec["type"] in {"contrib", "source-tree"}:
             raise ValidationError("extra_sources require an external build directory")
         for name in spec.get("extra_sources", {}):

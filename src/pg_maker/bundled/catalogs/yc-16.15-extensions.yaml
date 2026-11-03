@@ -393,7 +393,7 @@ extensions:
   component_id: yc-plv8
   source_ref: eef5d3a3b9235f947eb729b3d12a2dd148f6eba9
   source_url: https://github.com/plv8/plv8.git
-  source_release: v3.2.3
+  source_release: v3.2.3 + bundled GCC 14 and incremental V8 build patch
   status: selected-unverified
 - name: postgis
   managed_default_version: 3.4.0

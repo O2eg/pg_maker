@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Locked component source patches with immutable original/patched source trees and
+  offline patch inputs.
+- PLV8 3.2.3: include the standard algorithm declarations required by GCC 14, complete
+  interrupted V8 builds, and use the parent make jobserver for nested compilation.
+
 ## 0.2.0 — 2026-11-03
 
 - Select the requested architecture from Docker multi-platform image stores during

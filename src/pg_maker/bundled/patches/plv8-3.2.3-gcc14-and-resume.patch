@@ -1,0 +1,34 @@
+--- a/deps/v8-cmake/v8/src/heap/cppgc/stats-collector.h
++++ b/deps/v8-cmake/v8/src/heap/cppgc/stats-collector.h
+@@ -8,6 +8,7 @@
+ #include <stddef.h>
+ #include <stdint.h>
+ 
++#include <algorithm>
+ #include <atomic>
+ #include <vector>
+ 
+--- a/Makefile
++++ b/Makefile
+@@ -39,15 +39,16 @@
+ all: v8 $(OBJS)
+ 
+ # For some reason, this solves parallel make dependency.
+-plv8_config.h plv8.so: v8
++plv8_config.h $(MODULE_big).so: v8
+ 
+ deps/v8-cmake/README.md:
+ 	@git submodule update --init --recursive
+ 
+-deps/v8-cmake/build/libv8_libbase.a: deps/v8-cmake/README.md
+-	@cd deps/v8-cmake && mkdir -p build && cd build && cmake -Denable-fPIC=ON -DCMAKE_BUILD_TYPE=Release ../ && make -j $(NUMPROC)
+-
+-v8: deps/v8-cmake/build/libv8_libbase.a
++# Complete the incremental V8 build even after an interrupted compilation.
++.PHONY: v8
++v8: deps/v8-cmake/README.md
++	cmake -S deps/v8-cmake -B deps/v8-cmake/build -Denable-fPIC=ON -DCMAKE_BUILD_TYPE=Release
++	+$(MAKE) -C deps/v8-cmake/build
+ 
+ # enable direct jsonb conversion by default
+ CCFLAGS += -DJSONB_DIRECT_CONVERSION

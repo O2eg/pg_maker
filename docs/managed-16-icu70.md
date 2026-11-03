@@ -99,6 +99,20 @@ core source is a separate hash-pinned input passed via FETCHCONTENT_SOURCE_DIR_H
 with FetchContent downloads disabled. Git submodules, including PLV8's inputs, are
 frozen by the existing resolver before compilation.
 
+PLV8 3.2.3 uses the bundled
+[source patch](../src/pg_maker/bundled/patches/plv8-3.2.3-gcc14-and-resume.patch).
+It adds the explicit `<algorithm>` include required by GCC 14 and always completes
+the nested incremental V8 build, using the parent make jobserver. SQL version 3.2.3
+is retained. The resolver records patch hashes, the original source tree and the
+patched tree; it does not modify cached upstream inputs. This fix is newer than
+the published pg-maker 0.2.0 release.
+
+The ongoing emulated build uses the same patched tree as a frozen local snapshot
+to retain already compiled objects with its original controller. Its provenance
+records the upstream commit, patch hash and patched tree hash. A fresh build from
+this checkout applies the patch through the recipe. For long QEMU builds, set
+`spec.execution.limits.stage_timeout_seconds: 21600` in `config/defaults.yaml`.
+
 Four entries require additional inputs:
 
 | Extension | Managed SQL version | Status and action |

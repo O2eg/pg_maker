@@ -462,6 +462,7 @@ component = document(
             "build_system": {"enum": ["make", "cmake"]},
             "sql_extension_versions": mapping(S),
             "extra_sources": mapping(source),
+            "source_patches": arr(S),
             "make_targets": arr(),
             "test_targets": arr(),
             "install_targets": arr(),
@@ -702,6 +703,8 @@ change_fields["acceptance"]["items"]["properties"]["script"] = file_input
 resolved_component = copy.deepcopy(component)
 resolved_component["properties"]["spec"]["properties"]["source"] = resolved_source
 resolved_component["properties"]["spec"]["properties"]["extra_sources"] = mapping(resolved_source)
+resolved_component["properties"]["spec"]["properties"]["source_patches"] = arr(file_input)
+resolved_component["properties"]["spec"]["properties"]["source_unpatched"] = resolved_source
 resolved_feature = copy.deepcopy(feature)
 resolved_feature["properties"]["spec"]["properties"].update(
     {"changes": arr(resolved_changes), "components": arr(resolved_component)}
