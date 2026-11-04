@@ -1,4 +1,4 @@
-"""Autotools execution policy and PostgreSQL 16/18 DB-test evidence adapters."""
+"""Autotools execution policy and PostgreSQL 16/17/18 DB-test evidence adapters."""
 
 from __future__ import annotations
 
@@ -144,7 +144,7 @@ def validate_build(config: dict, goal: str, *, run_db_tests: bool = True) -> Non
     if (
         run_db_tests
         and goal != "source"
-        and config["postgresql_recipe"]["db_test_adapter"] not in {"pg16", "pg18"}
+        and config["postgresql_recipe"]["db_test_adapter"] not in {"pg16", "pg17", "pg18"}
     ):
         raise UnsupportedError(
             "DB-test evidence adapter is not implemented for this PostgreSQL major; "
@@ -446,7 +446,7 @@ def reconcile(
 
 
 def verify_required_tests(
-    feature: dict, report: dict, world: dict, branch="candidate"
+    feature: dict, report: dict, world: dict, branch="candidate", *, additional=()
 ) -> list[str]:
     from pg_maker.changes.loader import required_tests
 
@@ -465,7 +465,7 @@ def verify_required_tests(
                 evidence.add(suite["path"])
         else:
             evidence.update(suite["directory"] + "/" + name for name in suite["tests"])
-    missing = sorted(set(required_tests(feature, branch)) - evidence)
+    missing = sorted((set(required_tests(feature, branch)) | set(additional)) - evidence)
     if missing:
         raise CommandError("required tests have no successful evidence", details={"tests": missing})
     return sorted(evidence)

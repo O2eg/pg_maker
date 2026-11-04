@@ -74,6 +74,6 @@ reference remains. Cardinality is exactly one. The fix is not automatically exte
 to 19rc2/19.0; a new release needs validation.
 
 The catalog does not replace acceptance evidence. Database tests default to on;
-evidence adapters support 16/18. Majors 14/15/17/19 reject tested builds until their
+evidence adapters support 16/17/18. Majors 14/15/19 reject tested builds until their
 adapters are implemented. Explicit skipped-test builds remain unverified. Deterministic source mtimes precede ChangeSets as described in
 [sources](sources.md). See the [executed matrix](../validation/postgresql-majors.md).

@@ -39,6 +39,9 @@ def finish(branch):
             or not results.get("run_database")
         ):
             raise PreconditionError("verified goal lacks source/package evidence")
+        from pg_maker.validation.test_policy import require_package_test_policy
+
+        require_package_test_policy(branch)
         qualified = "package-verified"
     # Eligibility is granted only after the entire matrix (including baseline) succeeds.
     eligible = False

@@ -874,6 +874,67 @@ def test_tests_and_clean_package_installation_are_enabled_by_default(project):
     assert "xid_wraparound" in extended["env"]["PG_TEST_EXTRA"]
 
 
+@pytest.mark.parametrize("enabled", [False, True])
+def test_package_plan_declares_the_effective_server_development_payload(project, enabled):
+    manifest = load_yaml(project / "build.yaml")
+    manifest["spec"]["packaging"] = {"server_dev_files": enabled}
+    write_yaml(project / "build.yaml", manifest)
+    state, lock = resolved(project)
+    assert state["status"] == "succeeded", state
+    for goal in ("package", "verified"):
+        plan = build_plan(lock, goal=goal)
+        collection = next(s for s in plan["spec"]["steps"] if s["kind"] == "collect_install_tree")
+        assert collection["parameters"]["server_dev_files"] is enabled
+        assert collection["parameters"]["exclude"] == (
+            ["ecpg"] if enabled else ["headers", "pgxs", "ecpg"]
+        )
+
+
+def test_package_and_verified_use_the_same_required_long_test_policy(project):
+    manifest = load_yaml(project / "build.yaml")
+    manifest["spec"]["validation"].update(
+        run_db_tests=True,
+        test_suites=["standard", "long"],
+        required_tests=["custom-acceptance"],
+    )
+    write_yaml(project / "build.yaml", manifest)
+    state, lock = resolved(project)
+    assert state["status"] == "succeeded", state
+    for goal in ("package", "verified", "build", "test-full"):
+        plan = build_plan(lock, goal=goal)
+        steps = [s for s in plan["spec"]["steps"] if s["branch"] == "candidate"]
+        world = next(s for s in steps if s["kind"] == "test_source_world")
+        assert {"wal_consistency_checking", "xid_wraparound"} <= set(
+            world["env"]["PG_TEST_EXTRA"].split()
+        )
+        assert "custom-acceptance" in world["checks"]
+        assert any(s["kind"] == "acceptance_build_prefix" for s in steps)
+        if goal in {"package", "verified"}:
+            kinds = [s["kind"] for s in steps]
+            assert (
+                kinds.index("test_source_world")
+                < kinds.index("verify_source")
+                < kinds.index("package")
+            )
+
+
+def test_diagnostic_policy_changes_invalidate_cached_compilation(project):
+    state, lock = resolved(project)
+    assert state["status"] == "succeeded", state
+    before = next(
+        s["stage_key"] for s in build_plan(lock)["spec"]["steps"] if s["kind"] == "compile_core"
+    )
+    manifest = load_yaml(project / "build.yaml")
+    manifest["spec"]["validation"]["diagnostics"] = {"warnings_as_errors": True}
+    write_yaml(project / "build.yaml", manifest)
+    state, lock = resolved(project)
+    assert state["status"] == "succeeded", state
+    after = next(
+        s["stage_key"] for s in build_plan(lock)["spec"]["steps"] if s["kind"] == "compile_core"
+    )
+    assert before != after
+
+
 def test_agent_workspace_uses_applied_change_prefix(project):
     from pg_maker.changes.apply import apply_patch
     from pg_maker.changes.workspace import export_changes, workspace

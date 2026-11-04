@@ -279,6 +279,7 @@
                   "enum": [
                     "unavailable",
                     "pg16",
+                    "pg17",
                     "pg18"
                   ]
                 },
@@ -286,6 +287,15 @@
                   "type": "array",
                   "items": {
                     "type": "string"
+                  }
+                },
+                "long_test_evidence": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
                   }
                 },
                 "documentation_input": {
@@ -1011,6 +1021,143 @@
                     "warnings_as_errors": {
                       "type": "boolean"
                     },
+                    "diagnostics": {
+                      "type": "object",
+                      "properties": {
+                        "warnings_as_errors": {
+                          "type": "boolean"
+                        },
+                        "rules": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                              },
+                              "pattern": {
+                                "type": "string",
+                                "minLength": 1,
+                                "maxLength": 2048
+                              },
+                              "severity": {
+                                "enum": [
+                                  "error",
+                                  "warning",
+                                  "info",
+                                  "ignore"
+                                ]
+                              },
+                              "stages": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "minItems": 1
+                              },
+                              "tools": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                },
+                                "minItems": 1
+                              },
+                              "contexts": {
+                                "type": "array",
+                                "items": {
+                                  "enum": [
+                                    "build",
+                                    "test",
+                                    "test-log"
+                                  ]
+                                },
+                                "minItems": 1
+                              },
+                              "channels": {
+                                "type": "array",
+                                "items": {
+                                  "enum": [
+                                    "stdout",
+                                    "stderr"
+                                  ]
+                                },
+                                "minItems": 1
+                              },
+                              "reason": {
+                                "type": "string",
+                                "minLength": 1
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "pattern",
+                              "severity"
+                            ],
+                            "additionalProperties": false,
+                            "allOf": [
+                              {
+                                "if": {
+                                  "properties": {
+                                    "severity": {
+                                      "const": "ignore"
+                                    }
+                                  }
+                                },
+                                "then": {
+                                  "required": [
+                                    "reason"
+                                  ]
+                                }
+                              },
+                              {
+                                "if": {
+                                  "required": [
+                                    "tools"
+                                  ]
+                                },
+                                "then": {
+                                  "required": [
+                                    "contexts"
+                                  ],
+                                  "properties": {
+                                    "contexts": {
+                                      "not": {
+                                        "contains": {
+                                          "const": "test-log"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "required": [],
+                      "additionalProperties": false
+                    },
+                    "test_suites": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "standard",
+                          "long"
+                        ]
+                      },
+                      "uniqueItems": true,
+                      "contains": {
+                        "const": "standard"
+                      }
+                    },
+                    "required_tests": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "uniqueItems": true
+                    },
                     "baseline": {
                       "enum": [
                         "auto",
@@ -1023,6 +1170,16 @@
                       "items": {
                         "type": "string"
                       }
+                    }
+                  },
+                  "required": [],
+                  "additionalProperties": false
+                },
+                "packaging": {
+                  "type": "object",
+                  "properties": {
+                    "server_dev_files": {
+                      "type": "boolean"
                     }
                   },
                   "required": [],

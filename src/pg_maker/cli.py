@@ -42,6 +42,22 @@ def parser() -> Parser:
     init.add_argument("--feature", action="append", dest="features")
     init.add_argument("--build-mode", choices=["release", "debug"])
     sub.add_parser("doctor", help="check the current Docker daemon")
+    logs = sub.add_parser("logs", help="verify saved build or test logs")
+    log_commands = logs.add_subparsers(dest="logs_command", required=True)
+    log_verify = log_commands.add_parser("verify")
+    log_verify.add_argument("--stdout", type=Path)
+    log_verify.add_argument("--stderr", type=Path)
+    log_policy = log_verify.add_mutually_exclusive_group()
+    log_policy.add_argument("--policy", type=Path, help="DiagnosticPolicy YAML")
+    log_policy.add_argument("--lock", type=Path, help="use the policy from a BuildLock")
+    log_verify.add_argument("--stage", default="")
+    log_verify.add_argument("--tool", default="")
+    log_verify.add_argument("--test-command", action="store_true")
+    log_verify.add_argument(
+        "--test-log", action="store_true", help="generated server/regression log"
+    )
+    log_verify.add_argument("--warnings-as-errors", action="store_true", default=None)
+    log_verify.add_argument("--out", type=Path)
     runner = sub.add_parser("runner", help="container executor checks")
     checks = runner.add_subparsers(dest="runner_command", required=True)
     check = checks.add_parser("check", help="run uname/id in an isolated pinned image")
@@ -283,6 +299,7 @@ def main(argv: list[str] | None = None) -> int:
             "package": "names",
             "env": "prepare",
             "cache": "prune",
+            "logs": "verify",
         }
         command = args.command + (
             " " + subcommand[args.command] if args.command in subcommand else ""
@@ -316,7 +333,40 @@ def main(argv: list[str] | None = None) -> int:
                 for key in ("config_dir", "features", "build_mode", "with_doc", "doc_languages")
                 if hasattr(args, key)
             }
-            if args.command == "dev":
+            if args.command == "logs":
+                from pg_maker.errors import CommandError
+                from pg_maker.validation.diagnostics import classify, policy_from_config
+                from pg_maker.yamlio import load_yaml
+
+                if args.stdout is None and args.stderr is None:
+                    raise ValidationError("logs verify requires --stdout or --stderr")
+                policy = load_yaml(args.policy, "diagnostics")["spec"] if args.policy else {}
+                if args.lock:
+                    from pg_maker.planning.documents import verify
+
+                    locked = read_json(args.lock)
+                    verify(locked, "lock")
+                    policy = policy_from_config(locked["spec"]["config"])
+                if args.warnings_as_errors is not None:
+                    policy["warnings_as_errors"] = args.warnings_as_errors
+                result = classify(
+                    args.stdout,
+                    args.stderr,
+                    policy=policy,
+                    stage=args.stage,
+                    tool=args.tool,
+                    test_command=args.test_command or args.test_log,
+                    generated_log=args.test_log,
+                )
+                if args.out:
+                    if args.out.resolve() in {
+                        p.resolve() for p in (args.stdout, args.stderr, args.policy, args.lock) if p
+                    }:
+                        raise ValidationError("diagnostic report must not overwrite an input")
+                    write_json(args.out, result)
+                if not result["passed"]:
+                    raise CommandError("blocking log diagnostics")
+            elif args.command == "dev":
                 from pg_maker.development.cli import dispatch
 
                 result = dispatch(service, args)

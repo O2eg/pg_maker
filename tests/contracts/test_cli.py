@@ -75,13 +75,72 @@ def test_full_command_always_enables_database_tests():
     assert cli("test-full", "lock.json", "--skip-db-tests", "--machine").returncode == 2
 
 
+def test_saved_log_verification_reports_failure_and_scoped_exception(tmp_path):
+    log, report = tmp_path / "configure.log", tmp_path / "diagnostics.json"
+    log.write_text("configure: error: missing dependency\n")
+    result = cli("logs", "verify", "--stdout", str(log), "--out", str(report), "--machine")
+    assert result.returncode == 6
+    payload = json.loads(result.stdout)
+    assert payload["command"] == "logs verify" and payload["status"] == "failed"
+    assert json.loads(report.read_text())["findings"][0]["line"] == 1
+    policy = tmp_path / "policy.yaml"
+    policy.write_text("""api_version: pg_maker/diagnostics/v1
+kind: DiagnosticPolicy
+metadata: {id: probe}
+spec:
+  rules:
+  - id: expected
+    pattern: '^configure: error: missing dependency$'
+    severity: ignore
+    reason: Expected failure in this fixture
+    stages: [configure]
+""")
+    args = ["logs", "verify", "--stdout", str(log), "--policy", str(policy), "--machine"]
+    assert cli(*args, "--stage", "configure").returncode == 0
+    assert cli(*args, "--stage", "compile_core").returncode == 6
+    assert cli(*args, "--out", str(log)).returncode == 2
+    assert log.read_text() == "configure: error: missing dependency\n"
+    assert cli("logs", "verify", "--machine").returncode == 2
+
+
 def test_init_machine_and_module_entrypoint(tmp_path):
     result = cli("init", str(tmp_path / "project"), "--request-id", "init-1", "--machine")
     assert result.returncode == 0
     payload = json.loads(result.stdout)
     validate_document(payload, "component-envelope")
     assert payload["request_id"] == "init-1" and payload["result"]["created"]
-    assert cli("--version").stdout.strip() == "pg-maker 0.2.0"
+    assert cli("--version").stdout.strip() == "pg-maker 0.3.0"
+
+
+def test_saved_log_tool_rule_cannot_silently_skip_generated_logs(tmp_path):
+    log, policy = tmp_path / "server.log", tmp_path / "policy.yaml"
+    log.write_text("PANIC: unexpected recovery failure\n")
+    policy.write_text("""api_version: pg_maker/diagnostics/v1
+kind: DiagnosticPolicy
+metadata: {id: probe}
+spec:
+  rules:
+  - id: unexpected-panic
+    pattern: 'PANIC: unexpected'
+    severity: error
+    contexts: [test-log]
+    tools: [postgres]
+""")
+    args = [
+        "logs",
+        "verify",
+        "--stdout",
+        str(log),
+        "--policy",
+        str(policy),
+        "--test-log",
+        "--machine",
+    ]
+    rejected = cli(*args)
+    assert rejected.returncode == 2
+    assert json.loads(rejected.stdout)["error"]["code"] == "validation_error"
+    policy.write_text(policy.read_text().replace("    tools: [postgres]\n", ""))
+    assert cli(*args).returncode == 6
 
 
 def test_init_documentation_selection_and_standalone_commands(tmp_path):

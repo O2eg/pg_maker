@@ -212,9 +212,12 @@ def load_config(
                 docs_base = path.parent
         settings[name] = value["spec"]
     defaults = settings["defaults"]
-    for section in ("build", "validation", "execution", "naming"):
+    for section in ("build", "validation", "execution", "naming", "packaging"):
         defaults[section] = merge(defaults[section], spec.get(section, {}))
         mark_leaves(spec.get(section, {}), str(manifest_path), "/defaults/" + section, provenance)
+    from pg_maker.validation.diagnostics import compile_rules
+
+    compile_rules(defaults["validation"].get("diagnostics", {}).get("rules", []))
     if build_mode is not None:
         if build_mode not in {"release", "debug"}:
             raise ValidationError("unknown build mode")
@@ -457,6 +460,10 @@ def environment_requirements(config: dict) -> dict:
         for role in ("build", "test"):
             definition = rs["environments"][role]
             packages = set(definition["packages"])
+            if role == "test" and config["defaults"].get("packaging", {}).get("server_dev_files"):
+                packages.update(["build-essential"])
+                if any(v["build"]["options"].get("llvm") for v in variants):
+                    packages.update(rs["option_dependencies"]["llvm"])
             tools = dict(definition["tools"])
             minimums = {}
             if role == "build":

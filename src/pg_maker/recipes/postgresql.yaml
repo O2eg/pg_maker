@@ -2,7 +2,7 @@ api_version: pg_maker/postgresql-catalog/v1
 kind: PostgreSQLCatalog
 metadata:
   id: upstream
-  revision: 1
+  revision: 2
 spec:
   # Upstream minima, not a claim that every compiler/library combination was tested.
   # OS package names and concrete compiler selections belong to PlatformRecipe.
@@ -58,6 +58,8 @@ spec:
       extra_tests: []
       db_test_adapter: pg16
       long_tests: [wal_consistency_checking]
+      long_test_evidence:
+        wal_consistency_checking: [src/test/recovery/t/027_stream_regress.pl]
       documentation_input: expanded-xml
       documentation_fixes: []
       reference: REL_16_STABLE
@@ -68,8 +70,12 @@ spec:
       llvm_minimum: '10'
       meson_minimum: '0.54'
       unavailable_options: []
-      extra_tests: []
-      db_test_adapter: unavailable
+      extra_tests: [libpq_encryption]
+      db_test_adapter: pg17
+      long_tests: [wal_consistency_checking, xid_wraparound]
+      long_test_evidence:
+        wal_consistency_checking: [src/test/recovery/t/027_stream_regress.pl]
+        xid_wraparound: [src/test/modules/xid_wraparound/t/*.pl]
       documentation_input: expanded-xml
       documentation_fixes: []
       reference: REL_17_STABLE
@@ -83,6 +89,9 @@ spec:
       extra_tests: [libpq_encryption]
       db_test_adapter: pg18
       long_tests: [wal_consistency_checking, xid_wraparound]
+      long_test_evidence:
+        wal_consistency_checking: [src/test/recovery/t/027_stream_regress.pl]
+        xid_wraparound: [src/test/modules/xid_wraparound/t/*.pl]
       documentation_input: expanded-xml
       documentation_fixes: []
       reference: REL_18_STABLE

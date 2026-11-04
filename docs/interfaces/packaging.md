@@ -23,11 +23,23 @@ links to excluded files, setuid/setgid and special files are rejected.
 
 Core inventory is captured immediately after make install. Payload includes core and
 explicit runtime_files of selected components; install-world-bin does not ship every
-contrib automatically. Components cannot overwrite core runtime files. Headers,
-PGXS, pkgconfig, ecpg/libecpg/libpgtypes, static libraries and the development libpq.so
-link are excluded with reasons. The private prefix still supports PGXS compilation.
+contrib automatically. Components cannot overwrite core runtime files. By default,
+headers, PGXS, pkgconfig, static libraries and the development libpq.so link are
+excluded with reasons. `spec.packaging.server_dev_files: true` delivers these files
+in the server package, including installed development files of selected components.
+The number of package roles stays unchanged. ECPG binaries/libraries and their
+pkg-config metadata remain excluded.
+The private prefix supports PGXS compilation regardless of this delivery setting.
 Upstream COPYRIGHT and discovered selected-component licenses are included.
 Configuration and file logs belong in PGDATA.
+
+When server development files are enabled, collection requires server/client headers,
+PGXS and the libpq linker symlink. The test image includes a compiler and make (plus
+LLVM tools if configured). After package installation, the harness compiles an external
+C extension through the installed pg_config/PGXS, installs it, runs CREATE EXTENSION
+and checks its SQL result. Missing SDK evidence blocks package qualification.
+End users still install their extension's compiler and third-party build dependencies;
+server packages do not depend on a complete compiler toolchain.
 
 ## Universal package description
 

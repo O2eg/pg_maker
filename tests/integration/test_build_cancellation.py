@@ -119,6 +119,7 @@ SETTINGS
             {
                 "spec": {
                     "common_changes": [],
+                    "validation": {"run_db_tests": False},
                     "build": {"jobs": min(4, len(os.sched_getaffinity(0)))},
                     "execution": {
                         "build_user": current_user(),

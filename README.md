@@ -73,7 +73,7 @@ commands run with networking disabled. Outputs stay inside the operation directo
 
 **Database tests run by default for every profile.** A normal build runs core
 regression, `check-world` (including contrib, isolation and TAP), selected component
-tests and acceptance checks. The PostgreSQL 16 and 18 evidence adapters reconcile
+tests and acceptance checks. The PostgreSQL 16, 17 and 18 evidence adapters reconcile
 executed suites; an unsupported adapter fails explicitly.
 
 Use `--goal package` for server/client/libpq DEBs and mandatory installation checks
@@ -87,7 +87,10 @@ pg-maker test-full example/lock.json --operations example/operations
 # Equivalent spelling: pg-maker build example/lock.json --goal test-full
 ```
 
-`test-full` adds WAL consistency checking, plus XID wraparound for PostgreSQL 18.
+`test-full` adds WAL consistency checking, plus XID wraparound for PostgreSQL 17/18.
+Set `spec.validation.test_suites: [standard, long]` in build.yaml to require these
+same suites before packaging. Additional mandatory test IDs belong in
+`spec.validation.required_tests`; missing or skipped evidence blocks qualification.
 It produces source-test evidence; use `--goal package` for installed-package checks.
 A supplied plan controls the test mode. `--skip-db-tests` is an explicit development
 escape hatch and produces `unverified`, `db_tests=skipped`, publication-ineligible

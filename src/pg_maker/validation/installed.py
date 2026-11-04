@@ -174,6 +174,45 @@ class Harness:
                         )
         self.check("installed-inventory-and-loader")
 
+    def extension_sdk(self):
+        """Compile, install and load an external extension using only installed packages."""
+        if not self.config.get("server_dev_files"):
+            return
+        pg_config = self.bin + "pg_config"
+        server_headers = Path(self.run([pg_config, "--includedir-server"]))
+        pgxs = Path(self.run([pg_config, "--pgxs"]))
+        if not (server_headers / "postgres.h").is_file() or not pgxs.is_file():
+            raise RuntimeError("installed extension SDK is incomplete")
+        root = self.output / "extension-sdk"
+        root.mkdir()
+        (root / "pg_maker_sdk_probe.c").write_text(
+            '#include "postgres.h"\n#include "fmgr.h"\n'
+            "PG_MODULE_MAGIC;\nPG_FUNCTION_INFO_V1(pg_maker_sdk_probe);\n"
+            "Datum pg_maker_sdk_probe(PG_FUNCTION_ARGS) { PG_RETURN_INT32(42); }\n"
+        )
+        (root / "pg_maker_sdk_probe.control").write_text(
+            "default_version = '1.0'\nmodule_pathname = '$libdir/pg_maker_sdk_probe'\n"
+            "relocatable = true\n"
+        )
+        (root / "pg_maker_sdk_probe--1.0.sql").write_text(
+            "CREATE FUNCTION pg_maker_sdk_probe() RETURNS integer "
+            "AS 'MODULE_PATHNAME', 'pg_maker_sdk_probe' LANGUAGE C STRICT;\n"
+        )
+        (root / "Makefile").write_text(
+            "EXTENSION = pg_maker_sdk_probe\nMODULES = pg_maker_sdk_probe\n"
+            "DATA = pg_maker_sdk_probe--1.0.sql\n"
+            "PGXS := $(shell $(PG_CONFIG) --pgxs)\ninclude $(PGXS)\n"
+        )
+        make = ["make", "-C", str(root), "PG_CONFIG=" + pg_config]
+        self.run(make, timeout=300)
+        self.run([*make, "install"])
+        try:
+            self.sql("CREATE EXTENSION pg_maker_sdk_probe")
+            self.check("installed-extension-sdk", self.sql("SELECT pg_maker_sdk_probe()") == "42")
+            self.sql("DROP EXTENSION pg_maker_sdk_probe")
+        finally:
+            self.run([*make, "uninstall"])
+
     def documentation(self):
         docs = self.config.get("documentation")
         if not docs:
@@ -575,6 +614,7 @@ class Harness:
         self.systemctl("status")
         self.systemctl("reload")
         self.check("service-start-status-reload")
+        self.extension_sdk()
         self.default_socket()
         self.sql('ALTER USER "' + self.service["user"] + "\" PASSWORD 'pg_maker_disposable_test'")
         self.check(

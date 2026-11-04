@@ -179,6 +179,9 @@ def validate_packages(branch, *, run_database=True):
             ],
             "acceptance": acceptance,
             "run_database": run_database,
+            "server_dev_files": branch.config["defaults"]
+            .get("packaging", {})
+            .get("server_dev_files", False),
             "previous_declared": previous is not None,
             "previous": {**previous, "packages": previous_packages} if label == "upgrade" else None,
             "documentation": read_json(branch.output / "installed-docs.json")
@@ -235,7 +238,7 @@ def validate_packages(branch, *, run_database=True):
                 check=False,
             )
             if copied.succeeded and output.is_dir():
-                from pg_maker.validation.diagnostics import classify
+                from pg_maker.validation.diagnostics import classify, policy_from_config
 
                 findings = []
                 for command_log in sorted(output.glob("*.json")):
@@ -243,7 +246,13 @@ def validate_packages(branch, *, run_database=True):
                         continue
                     receipt = read_json(command_log)
                     analysis = classify(
-                        output / receipt["stdout"], output / receipt["stderr"], test_command=True
+                        output / receipt["stdout"],
+                        output / receipt["stderr"],
+                        test_command=True,
+                        policy=policy_from_config(branch.config),
+                        stage=branch.step["kind"],
+                        tool=receipt["argv"][0],
+                        log_root=branch.output,
                     )
                     findings.append({"receipt": command_log.name, **analysis})
                 write_json(output / "diagnostics.json", findings)
@@ -270,7 +279,7 @@ def validate_packages(branch, *, run_database=True):
             required = (
                 {"previous-release-upgrade"}
                 if label == "upgrade"
-                else SERVER_CHECKS
+                else set(SERVER_CHECKS)
                 if label == "server" and run_database
                 else {
                     "installed-inventory-and-loader",
@@ -289,6 +298,8 @@ def validate_packages(branch, *, run_database=True):
             if documentation and label != "upgrade":
                 required = required | {"installed-documentation"}
             if label == "server" and run_database:
+                if config["server_dev_files"]:
+                    required.add("installed-extension-sdk")
                 required |= {
                     "component:" + c["metadata"]["id"] for c in branch.feature["spec"]["components"]
                 }

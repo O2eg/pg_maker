@@ -36,6 +36,7 @@ COMMANDS = {
     "features": False,
     "package names": False,
     "validate": False,
+    "logs verify": False,
     "platforms": False,
     "env prepare": True,
     "resolve": True,

@@ -44,10 +44,10 @@ context, extended acceptance assertions/fixtures, `build --manifest`, additional
 platform adapters, reproducibility analysis and remote execution. HTML run reports
 already exist for build operations.
 
-Product decisions: configuration and file logs live in PGDATA; development headers,
-PGXS and ecpg are not shipped; there is no separate client installer or devel package;
-documentation Suggests is emitted only with documentation enabled. Headers/PGXS
-remain available inside the build environment for compiling extensions.
+Product decisions: configuration and file logs live in PGDATA; headers/PGXS may ship
+in the server package via server_dev_files (enabled in the managed profile). ECPG
+binaries/libraries remain excluded; there is no separate client installer or devel
+package. Documentation Suggests is emitted only with documentation enabled.
 
 Evidence: [stages 5–6](validation/stage56.md), [stage 7](validation/stage7.md),
 [integration](validation/integration.md), [review fixes](validation/review-fixes.md)

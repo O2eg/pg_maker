@@ -8,13 +8,14 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-from test_build_cancellation import prepared_build
+from test_build_cancellation import prepared_build, resolve_fixture_lock
 
 from pg_maker.artifacts.manifest import verify_manifest
 from pg_maker.errors import PreconditionError
 from pg_maker.packaging.deb import inspect_deb
 from pg_maker.planning.runtime_repository import verify_repository
 from pg_maker.storage import read_json
+from pg_maker.yamlio import load_yaml
 
 pytestmark = pytest.mark.docker
 
@@ -87,6 +88,47 @@ def package_fixture(tmp_path, configure=CONFIGURE, **kwargs):
     return prepared_build(
         tmp_path, configure, source_files={"COPYRIGHT": "Fixture license\n"}, **kwargs
     )
+
+
+def test_zero_exit_diagnostic_and_exception_do_not_override_command_failure(tmp_path):
+    import yaml
+
+    configure = CONFIGURE.replace(
+        "set -eu", "set -eu\necho 'configure: error: fixture diagnostic' >&2"
+    )
+    service = package_fixture(tmp_path, configure)
+    state = service.build(tmp_path / "lock.json", use_cache=False)
+    directory = service.directory / state["operation_id"]
+    completed = service.wait(directory, timeout_seconds=60)
+    assert completed["status"] == "failed", completed
+    output = directory / "workspace/output/my-feature.debian13-x64.candidate"
+    analyses = [read_json(p) for p in (output / "diagnostics").glob("*.json")]
+    assert any(not a["passed"] and a["stage"] == "configure" for a in analyses)
+    manifest = load_yaml(tmp_path / "build.yaml")
+    manifest["spec"]["validation"]["diagnostics"] = {
+        "rules": [
+            {
+                "id": "fixture-message",
+                "pattern": "^configure: error: fixture diagnostic$",
+                "severity": "ignore",
+                "reason": "Controlled fixture output",
+                "stages": ["configure"],
+                "tools": ["configure"],
+                "contexts": ["build"],
+            }
+        ]
+    }
+    (tmp_path / "build.yaml").write_text(yaml.safe_dump(manifest))
+    resolve_fixture_lock(service, tmp_path)
+    _, completed = wait(service, service.build(tmp_path / "lock.json", use_cache=False))
+    assert completed["result"]["qualification"] == "unverified"
+    path = tmp_path / "source/configure"
+    path.write_text(path.read_text() + "\nexit 9\n")
+    resolve_fixture_lock(service, tmp_path)
+    state = service.build(tmp_path / "lock.json", use_cache=False)
+    completed = service.wait(service.directory / state["operation_id"], timeout_seconds=60)
+    assert completed["status"] == "failed", completed
+    assert completed["error"]["details"]["returncode"] == 9
 
 
 def test_package_payload_cache_and_portable_export(tmp_path):

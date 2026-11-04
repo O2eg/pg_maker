@@ -52,6 +52,7 @@ def test_upstream_version_does_not_silently_discard_product_release(tmp_path):
 def test_managed_profile_preserves_all_38_names_and_explains_exclusions(tmp_path):
     initialize_project(tmp_path, profile="yc-16.15-icu70")
     config = load_config(tmp_path / "build.yaml").data
+    assert config["defaults"]["packaging"]["server_dev_files"] is True
     assert config["variants"][0]["identity"]["product_version"] == "16.15"
     assert {p["role"]: p["name"] for p in config["variants"][0]["identity"]["packages"]} == {
         "server": "postgresql-16-yc-clone",
@@ -74,6 +75,8 @@ def test_managed_profile_preserves_all_38_names_and_explains_exclusions(tmp_path
             assert declared[entry["name"]] == entry["managed_default_version"]
     assert next(e for e in entries if e["name"] == "plv8")["status"] == "disabled"
     requirements = environment_requirements(config)
+    test_image = next(r for r in requirements["environments"] if r["role"] == "test")
+    assert "build-essential" in test_image["packages"]
     packages = {
         p for r in requirements["environments"] for p in r["packages"] + r["runtime_packages"]
     }

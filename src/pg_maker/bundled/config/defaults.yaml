@@ -61,8 +61,12 @@ spec:
       - -O0
       - -ggdb3
       cppflags: []
+  packaging:
+    server_dev_files: false
   validation:
     profile: full
+    test_suites: [standard]
+    required_tests: []
     # Only an explicit development override may skip database tests.
     run_db_tests: true
     baseline: auto

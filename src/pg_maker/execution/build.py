@@ -284,21 +284,37 @@ class BuildBranch:
             components.acceptance(self, self.feature["spec"]["changes"])
         elif kind in {"export_build", "verify_source"}:
             if self.request.plan["spec"]["run_db_tests"]:
+                from pg_maker.validation.test_policy import (
+                    source_test_policy,
+                    verify_source_test_policy,
+                )
+
+                world = read_json(
+                    self.output
+                    / (
+                        "world/world-result.json"
+                        if self.branch == "candidate"
+                        else "core/core-result.json"
+                    )
+                )
+                policy = source_test_policy(
+                    self.config,
+                    self.variant["build"],
+                    self.request.plan["spec"]["goal"],
+                    self.branch,
+                )
                 self.report["verified_test_ids"] = autotools.verify_required_tests(
                     self.feature,
                     self.report,
-                    read_json(
-                        self.output
-                        / (
-                            "world/world-result.json"
-                            if self.branch == "candidate"
-                            else "core/core-result.json"
-                        )
-                    ),
+                    world,
                     self.branch,
+                    additional=policy["required_tests"],
+                )
+                self.report["test_policy"] = verify_source_test_policy(
+                    self, read_json(self.output / "expected-tests.json"), world
                 )
                 self.report["source_test_scope"] = (
-                    ("full+long" if self.request.plan["spec"]["goal"] == "test-full" else "full")
+                    ("full+long" if "long" in policy["suites"] else "full")
                     if self.branch == "candidate"
                     else "baseline-core"
                 )

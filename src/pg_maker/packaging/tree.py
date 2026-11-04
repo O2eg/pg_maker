@@ -21,14 +21,25 @@ CLIENT_PROGRAMS = frozenset(
 )
 
 
-def excluded(path: str) -> str | None:
+def development_file(path: str) -> bool:
     parts, name = Path(path).parts, Path(path).name
-    if parts[0] == "include" or "pgxs" in parts or "pkgconfig" in parts:
-        return "development"
+    return (
+        parts[0] == "include"
+        or "pgxs" in parts
+        or "pkgconfig" in parts
+        or name.endswith((".a", ".la"))
+        or name == "libpq.so"
+    )
+
+
+def excluded(path: str, *, server_dev_files: bool = False) -> str | None:
+    parts, name = Path(path).parts, Path(path).name
     if name in {"ecpg", "ecpg.mo"} or name.startswith(("libecpg", "libpgtypes", "ecpg-")):
         return "ecpg"
+    if parts[0] == "include" or "pgxs" in parts or "pkgconfig" in parts:
+        return None if server_dev_files else "development"
     if name.endswith((".a", ".la")) or name == "libpq.so":
-        return "development"
+        return None if server_dev_files else "development"
     if path.startswith(("share/doc/", "share/man/")):
         return "documentation-disabled"
     return None
@@ -88,12 +99,17 @@ def collect(branch) -> dict:
     from pg_maker.packaging.service import service_files
 
     prefix = branch.root / "prefix"
+    server_dev_files = branch.config["defaults"].get("packaging", {}).get("server_dev_files", False)
+
+    def omit(path):
+        return excluded(path, server_dev_files=server_dev_files)
+
     source = inventory(prefix)
     core = read_json(branch.output / "core-files.json")
     core_paths = {item["path"] for item in core["entries"] if item["type"] != "directory"}
     files = {item["path"]: item for item in source["entries"] if item["type"] != "directory"}
     for entry in core["entries"]:
-        if entry["type"] != "directory" and not excluded(entry["path"]):
+        if entry["type"] != "directory" and not omit(entry["path"]):
             if files.get(entry["path"]) != entry:
                 raise PreconditionError(
                     "component install changed a core runtime file", details={"path": entry["path"]}
@@ -124,17 +140,26 @@ def collect(branch) -> dict:
         raise PreconditionError("installed pg_config version differs from the lock")
     write_json(branch.output / "build-layout.json", dict(zip(keys, values, strict=True)))
     selected = set(core_paths)
+    if server_dev_files:
+        selected.update(p for p in files if development_file(p) and not omit(p))
     for component in branch.feature["spec"]["components"]:
         for pattern in component["spec"]["runtime_files"]:
             if not relative_output(pattern):
                 raise ValidationError("component runtime pattern must be relative")
-            found = {p for p in files if matches(p, pattern) and not excluded(p)}
+            found = {p for p in files if matches(p, pattern) and not omit(p)}
             if not found:
                 raise PreconditionError(
                     "component runtime pattern matched no deliverable files",
                     details={"component": component["metadata"]["id"], "pattern": pattern},
                 )
             selected.update(found)
+    if server_dev_files:
+        # Private libraries need their unversioned linker names as well as headers.
+        for path, item in files.items():
+            if item["type"] == "symlink" and path.endswith(".so"):
+                target = os.path.normpath(str(Path(path).parent / item["target"]))
+                if target in selected and not omit(target):
+                    selected.add(path)
     destination = branch.root / "install-tree"
     if destination.exists():
         raise PreconditionError("InstallTree destination already exists")
@@ -145,7 +170,7 @@ def collect(branch) -> dict:
         staging.mkdir()
         runtime = branch.prefix.lstrip("/")
         for path, item in files.items():
-            reason = excluded(path) or (None if path in selected else "unselected-component")
+            reason = omit(path) or (None if path in selected else "unselected-component")
             if reason:
                 omissions.append({"path": path, "reason": reason})
                 continue
@@ -155,12 +180,25 @@ def collect(branch) -> dict:
                 target.symlink_to(item["target"])
             else:
                 shutil.copy2(prefix / path, target, follow_symlinks=False)
-            roles[runtime + "/" + path] = owner(path)
+            roles[runtime + "/" + path] = "server" if development_file(path) else owner(path)
         required = ("bin/postgres", "bin/psql", "bin/pg_config")
         if any(runtime + "/" + p not in roles for p in required) or not any(
             role == "libpq" for role in roles.values()
         ):
             raise PreconditionError("runtime tree is missing server/client/libpq outputs")
+        if server_dev_files:
+            layout = dict(zip(keys, values, strict=True))
+            required_sdk = (
+                layout["includedir"] + "/libpq-fe.h",
+                layout["pgxs"],
+                layout["libdir"] + "/libpq.so",
+            )
+            if any(roles.get(p.lstrip("/")) != "server" for p in required_sdk) or not any(
+                p.endswith("/server/postgres.h") and role == "server" for p, role in roles.items()
+            ):
+                raise PreconditionError(
+                    "server development payload lacks headers, PGXS or libpq link"
+                )
         for path, (text, mode) in service_files(branch.config, branch.variant).items():
             target = staging / path
             target.parent.mkdir(parents=True, exist_ok=True)

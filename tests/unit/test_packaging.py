@@ -99,6 +99,112 @@ def test_development_files_are_excluded(path):
     assert excluded(path)
 
 
+@pytest.mark.parametrize("enabled", [False, True])
+def test_collect_includes_complete_development_payload_in_server_only(
+    tmp_path, monkeypatch, enabled
+):
+    from pg_maker.packaging.tree import collect
+    from pg_maker.sources.store import inventory
+    from pg_maker.storage import write_json
+
+    runtime = "/opt/probe/17"
+    prefix = tmp_path / "prefix"
+    files = [
+        "bin/postgres",
+        "bin/psql",
+        "bin/pg_config",
+        "lib/libpq.so.5.0",
+        "include/libpq-fe.h",
+        "include/postgresql/server/postgres.h",
+        "include/postgresql/internal/pqexpbuffer.h",
+        "lib/libpgcommon.a",
+        "lib/libpgport.a",
+        "lib/postgresql/pgxs/src/makefiles/pgxs.mk",
+        "lib/postgresql/pgxs/src/Makefile.global",
+        "lib/postgresql/pgxs/src/test/regress/pg_regress",
+        "lib/pkgconfig/libpq.pc",
+    ]
+    ecpg_files = [
+        "bin/ecpg",
+        "lib/libecpg.so.6.17",
+        "lib/libecpg_compat.so.3.17",
+        "lib/libpgtypes.so.3.17",
+        "lib/pkgconfig/libecpg.pc",
+        "lib/pkgconfig/libecpg_compat.pc",
+        "lib/pkgconfig/libpgtypes.pc",
+    ]
+    for name in files + ecpg_files:
+        path = prefix / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("fixture " + name)
+    (prefix / "lib/libpq.so.5").symlink_to("libpq.so.5.0")
+    (prefix / "lib/libpq.so").symlink_to("libpq.so.5")
+    output = tmp_path / "output"
+    write_json(output / "core-files.json", inventory(prefix))
+    source = tmp_path / "source"
+    source.mkdir()
+    (source / "COPYRIGHT").write_text("fixture license")
+    layout = [
+        "bin",
+        "lib",
+        "lib/postgresql",
+        "share/postgresql",
+        "etc",
+        "share/doc",
+        "include",
+        "lib/postgresql/pgxs/src/makefiles/pgxs.mk",
+    ]
+
+    def command(argv):
+        result = output / "pg_config.log"
+        result.write_text(
+            "PostgreSQL 17.5\n"
+            if argv[-1] == "--version"
+            else "\n".join(runtime + "/" + p for p in layout) + "\n"
+        )
+        return SimpleNamespace(stdout_log=result)
+
+    branch = SimpleNamespace(
+        root=tmp_path,
+        source=source,
+        output=output,
+        prefix=runtime,
+        prepare=lambda: None,
+        command=command,
+        report={},
+        feature={"spec": {"components": []}},
+        config={
+            "defaults": {"packaging": {"server_dev_files": enabled}},
+            "documentation": {"enabled": False},
+            "postgresql": {"version": "17.5"},
+        },
+        variant={
+            "identity": {
+                "packages": [
+                    {"name": "probe-" + role, "role": role}
+                    for role in ("server", "client", "libpq")
+                ]
+            }
+        },
+    )
+    monkeypatch.setattr("pg_maker.packaging.service.service_files", lambda *a: {})
+    document = collect(branch)
+    roles = {
+        e["path"].removeprefix(runtime.lstrip("/") + "/"): e["role"]
+        for e in document["entries"]
+        if e["type"] != "directory"
+    }
+    for path in files[4:] + ["lib/libpq.so"]:
+        if enabled:
+            assert roles[path] == "server"
+        else:
+            assert path not in roles
+    assert roles["bin/pg_config"] == "client"
+    assert roles["lib/libpq.so.5.0"] == "libpq"
+    assert not set(ecpg_files) & roles.keys()
+    assert len(branch.variant["identity"]["packages"]) == 3
+
+
 def test_tree_seal_detects_content_modes_links_and_overlapping_payload(tmp_path):
     root = tmp_path / "tree"
     (root / "opt/vendor/bin").mkdir(parents=True)

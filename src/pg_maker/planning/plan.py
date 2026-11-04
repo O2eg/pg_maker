@@ -2,13 +2,13 @@
 
 from pathlib import Path
 
-from pg_maker.builders.autotools import extra_tests
 from pg_maker.changes.loader import required_tests
 from pg_maker.errors import PreconditionError, ValidationError
 from pg_maker.planning.documents import implementation_identity, seal, store_from_document, verify
 from pg_maker.planning.graph import ordered_ids
 from pg_maker.planning.reuse import compilation_inputs, selected_components
 from pg_maker.storage import content_hash
+from pg_maker.validation.test_policy import source_test_policy
 
 DOC_GOALS = {"docs", "translations", "doc-source", "translated-docs"}
 GOALS = {"source", "build", "package", "verified", "test-full", *DOC_GOALS}
@@ -71,12 +71,22 @@ def build_plan(
     images = {item["id"]: item["image_id"] for item in environment["spec"]["images"]}
     steps = []
     limits = config["defaults"]["execution"]["limits"]
+    server_dev_files = config["defaults"].get("packaging", {}).get("server_dev_files", False)
     for variant in config["variants"]:
         feature = next(f for f in config["features"] if f["metadata"]["id"] == variant["feature"])
         for branch in (
             ["candidate", "baseline"] if variant["baseline"] and run_db_tests else ["candidate"]
         ):
             tests = required_tests(feature, branch)
+            if branch == "candidate":
+                tests = list(
+                    dict.fromkeys(
+                        [
+                            *tests,
+                            *config["defaults"]["validation"].get("required_tests", []),
+                        ]
+                    )
+                )
             prefix = variant["id"] + "." + branch
             directory = prefix
             previous = []
@@ -201,11 +211,10 @@ def build_plan(
             )
             if goal == "source":
                 continue
+            test_policy = source_test_policy(config, build, goal, branch) if run_db_tests else None
             env = {
                 "LC_ALL": build["message_locale"],
-                "PG_TEST_EXTRA": extra_tests(
-                    build, config["postgresql_recipe"], long_tests=goal == "test-full"
-                ),
+                "PG_TEST_EXTRA": " ".join(test_policy["extra_tests"]) if test_policy else "",
                 **{key.upper(): " ".join(value) for key, value in build["resolved_flags"].items()},
             }
             libraries = [
@@ -293,7 +302,12 @@ def build_plan(
                 env=env,
             )
             if run_db_tests:
-                add("expected_test_inventory", env=env, checks=["mandatory-suites-present"])
+                add(
+                    "expected_test_inventory",
+                    env=env,
+                    parameters={"test_policy": test_policy},
+                    checks=["mandatory-suites-present"],
+                )
                 add(
                     "test_core",
                     argv=[*make, "check"],
@@ -350,7 +364,8 @@ def build_plan(
                 parameters={
                     "identity": variant["identity"],
                     "components": [c["metadata"]["id"] for c in feature["spec"]["components"]],
-                    "exclude": ["headers", "pgxs", "ecpg"],
+                    "server_dev_files": server_dev_files,
+                    "exclude": ["ecpg"] if server_dev_files else ["headers", "pgxs", "ecpg"],
                     "configuration": "initdb-in-pgdata",
                     "file_logs": "pgdata",
                 },

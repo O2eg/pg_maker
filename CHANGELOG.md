@@ -1,6 +1,24 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 — 2026-11-05
+
+- Add scoped, ordered diagnostic rules with recorded exceptions and standalone
+  `logs verify`; enforce policies in command, generated-test and package-install logs.
+  Reject tool selectors for generated logs, whose executable identity is unknown.
+- Apply locked standard/long test-suite policy and additional required test IDs to
+  package goals; require matching source-policy evidence before qualification.
+- Enable PostgreSQL 17 regression/TAP evidence and version-specific long suites,
+  including the mandatory libpq_encryption flag.
+- Add generic server_dev_files packaging policy, enabled in the managed profile,
+  delivering headers/PGXS/support libraries in the server package and testing an
+  external extension against the installed SDK without a separate devel package.
+  Exclude ECPG pkg-config metadata together with its libraries and reflect SDK
+  inclusion in the build plan.
+
+Validation: 331 unit/contract tests and the Docker diagnostic-policy fixture passed.
+The PostgreSQL 17.5 rerun passed core regression and reached check-world before it
+was cancelled for this commit. Complete source/package/installed-SDK qualification
+of these changes remains pending.
 
 - Enable source/component tests by default for every profile, and fresh-container
   installation checks for normal package builds. Explicit skipped-test development

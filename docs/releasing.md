@@ -38,11 +38,11 @@ ruff check .
 ruff format --check .
 python tools/generate_planning_schemas.py
 git diff --exit-code -- src/pg_maker/schemas
-python tools/check_release.py --tag v0.2.0
+python tools/check_release.py --tag v0.3.0
 python -m pytest -q tests/unit tests/contracts
 python -m build
 python -m twine check --strict dist/*
-python tools/check_release.py --dist dist --tag v0.2.0
+python tools/check_release.py --dist dist --tag v0.3.0
 python tools/smoke_wheel.py dist/*.whl
 ```
 
@@ -83,8 +83,8 @@ version tag matching the package:
 ```bash
 git remote add origin git@github.com:O2eg/pg_maker.git  # Only if origin is not configured.
 git push -u origin main
-git tag -a v0.2.0 -m "pg_maker 0.2.0"
-git push origin v0.2.0
+git tag -a v0.3.0 -m "pg_maker 0.3.0"
+git push origin v0.3.0
 ```
 
 publish.yml calls the same tests workflow on the tag. The distribution job validates

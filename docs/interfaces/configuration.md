@@ -32,6 +32,12 @@ settings and acceptance expectations remain in configuration, but baseline execu
 is omitted when tests are explicitly disabled. Goals `verified` and `test-full`
 require tests; normal package builds include fresh-container installation checks.
 `defaults.validation.warnings_as_errors: true` makes ordinary build warnings fatal.
+`validation.diagnostics` supplies ordered scoped log rules and optional warning
+policy; see [build diagnostics](build.md). `validation.test_suites: [standard, long]`
+requires long test evidence for packaging as well as source builds. `required_tests`
+adds explicit mandatory IDs. These settings enter the lock and build plan.
+`packaging.server_dev_files: true` includes the extension SDK in the server package;
+the managed profile enables it. No additional package role is created.
 Selected unsafe warnings and sanitizer findings block without this optional flag.
 
 `identity.identities(...) -> dict` computes product version, package revision,

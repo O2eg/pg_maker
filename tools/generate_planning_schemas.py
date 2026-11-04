@@ -174,11 +174,44 @@ build = obj(
         "flags": obj({"cppflags": arr(), "ldflags": arr(), "lto": B}),
     }
 )
+diagnostic_rule = obj(
+    {
+        "id": ID,
+        "pattern": {"type": "string", "minLength": 1, "maxLength": 2048},
+        "severity": {"enum": ["error", "warning", "info", "ignore"]},
+        "stages": {**arr(S), "minItems": 1},
+        "tools": {**arr(S), "minItems": 1},
+        "contexts": {**arr({"enum": ["build", "test", "test-log"]}), "minItems": 1},
+        "channels": {**arr({"enum": ["stdout", "stderr"]}), "minItems": 1},
+        "reason": {"type": "string", "minLength": 1},
+    },
+    ["id", "pattern", "severity"],
+)
+diagnostic_rule["allOf"] = [
+    {"if": {"properties": {"severity": {"const": "ignore"}}}, "then": {"required": ["reason"]}},
+    {
+        "if": {"required": ["tools"]},
+        "then": {
+            "required": ["contexts"],
+            "properties": {"contexts": {"not": {"contains": {"const": "test-log"}}}},
+        },
+    },
+]
+diagnostics = obj({"warnings_as_errors": B, "rules": arr(diagnostic_rule)}, [])
+diagnostic_policy = document("pg_maker/diagnostics/v1", "DiagnosticPolicy", diagnostics)
+packaging = obj({"server_dev_files": B}, [])
 validation = obj(
     {
         "profile": {"enum": ["smoke", "full", "release"]},
         "run_db_tests": B,
         "warnings_as_errors": B,
+        "diagnostics": diagnostics,
+        "test_suites": {
+            **arr({"enum": ["standard", "long"]}),
+            "uniqueItems": True,
+            "contains": {"const": "standard"},
+        },
+        "required_tests": {**arr(S), "uniqueItems": True},
         "baseline": {"enum": ["auto", True, False]},
         "database_locales": arr(),
     },
@@ -248,10 +281,12 @@ defaults = document(
                 }
             ),
             "validation": validation,
+            "packaging": packaging,
             "execution": execution,
         }
     ),
 )
+defaults["properties"]["spec"]["required"].remove("packaging")
 feature = document(
     "pg_maker/feature/v1",
     "FeatureProfile",
@@ -358,6 +393,7 @@ manifest = obj(
                 "build": obj(build["properties"], []),
                 "naming": obj(naming["properties"], []),
                 "validation": validation,
+                "packaging": packaging,
                 "execution": obj(execution["properties"], []),
                 "extra_build_args": arr(),
                 "coinstall": B,
@@ -632,8 +668,9 @@ postgresql_major = obj(
         "meson_minimum": {"type": ["string", "null"]},
         "unavailable_options": arr(),
         "extra_tests": arr(),
-        "db_test_adapter": {"enum": ["unavailable", "pg16", "pg18"]},
+        "db_test_adapter": {"enum": ["unavailable", "pg16", "pg17", "pg18"]},
         "long_tests": arr(),
+        "long_test_evidence": mapping(arr()),
         "documentation_input": {"enum": ["direct-entities", "expanded-xml"]},
         "documentation_fixes": arr(obj({"compatible_postgresql": S, "document": doc_rules})),
         "reference": S,
@@ -660,6 +697,8 @@ postgresql_recipe = obj(
 )
 postgresql_major["required"].remove("long_tests")
 postgresql_recipe["required"].remove("long_tests")
+postgresql_major["required"].remove("long_test_evidence")
+postgresql_recipe["required"].remove("long_test_evidence")
 definitions = {
     "SourceSpec": source,
     "VendorConfig": vendor,
@@ -674,6 +713,7 @@ definitions = {
     "ChangeSet": changes,
     "TextInsertions": insertions,
     "PostgreSQLCatalog": postgresql_catalog,
+    "DiagnosticPolicy": diagnostic_policy,
 }
 
 
@@ -951,6 +991,7 @@ for name, definition in {
     "translations": "TranslationBundle",
     "platform": "PlatformRecipe",
     "postgresql-catalog": "PostgreSQLCatalog",
+    "diagnostics": "DiagnosticPolicy",
     "component": "ComponentRecipe",
     "change-set": "ChangeSet",
     "insertions": "TextInsertions",

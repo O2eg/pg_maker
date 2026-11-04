@@ -72,6 +72,13 @@ dependencies use the new names. Installation paths and service names retain thei
 separate configuration. Existing DEBs, archived locks and acceptance evidence keep
 their original names; the new names require a fresh resolve/plan/build.
 
+The profile enables `spec.packaging.server_dev_files: true`. Headers (including
+server and internal headers), PGXS, static support libraries, pkg-config files and
+the libpq linker symlink ship in the server package. No separate devel package is
+created. Use this installation's `bin/pg_config` when building external extensions;
+install the compiler and the extension's own dependencies separately. Existing
+packages must be rebuilt to obtain this payload.
+
 See [PGDG Debian packages](https://www.postgresql.org/download/linux/debian/) and
 [the libpq packaging policy](https://wiki.postgresql.org/wiki/Apt/FAQ).
 
@@ -97,7 +104,9 @@ System ICU is not downgraded: the feature removes the direct libicu-dev/libicu76
 requirements; other platform libraries may still need system ICU independently.
 
 The server DEB includes libicudata.so.70, libicuuc.so.70 and libicui18n.so.70 with
-their versioned targets. Development headers and unselected ICU tools are excluded.
+their versioned targets. With server_dev_files enabled, development headers and
+linker symlinks for the selected libraries are also included; unselected ICU tools
+remain excluded.
 RPATH is checked by the existing ELF/package validator. Installing a package never
 initializes or starts a database automatically.
 

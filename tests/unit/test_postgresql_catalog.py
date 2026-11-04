@@ -95,6 +95,28 @@ def test_beta_lock_and_plan_do_not_promise_database_qualification(project):
         validate_build(config, "verified", run_db_tests=True)
 
 
+@pytest.mark.parametrize("openssl", [False, True])
+def test_pg17_supports_tested_builds_and_packages(project, openssl):
+    select_version(project, "17.5")
+    manifest = load_yaml(project / "build.yaml")
+    manifest["spec"]["build"] = {"options": {"openssl": openssl}}
+    write_yaml(project / "build.yaml", manifest)
+    state, lock = resolved(project)
+    assert state["status"] == "succeeded", state
+    config = lock["spec"]["config"]
+    assert config["postgresql_recipe"]["db_test_adapter"] == "pg17"
+    for goal in ("build", "package", "verified", "test-full"):
+        validate_build(config, goal, run_db_tests=True)
+        plan = build_plan(lock, goal=goal, run_db_tests=True)
+        inventory = next(s for s in plan["spec"]["steps"] if s["kind"] == "expected_test_inventory")
+        world = next(s for s in plan["spec"]["steps"] if s["kind"] == "test_source_world")
+        # PostgreSQL 17's 005_negotiate_encryption.pl otherwise skips its entire suite,
+        # including configurations without OpenSSL.
+        assert "libpq_encryption" in world["env"]["PG_TEST_EXTRA"].split()
+        assert world["env"]["PG_TEST_EXTRA"] == inventory["env"]["PG_TEST_EXTRA"]
+        assert "libpq_encryption" in inventory["parameters"]["test_policy"]["extra_tests"]
+
+
 @pytest.mark.parametrize("line", [193, 198, 210])
 def test_common_patch_is_pinned_at_the_actual_source_line(tmp_path, line):
     header = tmp_path / "src/include/pg_config_manual.h"

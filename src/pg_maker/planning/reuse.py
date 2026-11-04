@@ -2,6 +2,7 @@
 
 from pg_maker.errors import ValidationError
 from pg_maker.storage import content_hash
+from pg_maker.validation.diagnostics import policy_from_config
 
 
 def compilation_inputs(lock, feature, variant, branch="candidate"):
@@ -29,6 +30,7 @@ def compilation_inputs(lock, feature, variant, branch="candidate"):
             if c["spec"].get("build_phase") == "before-postgresql"
         ],
         "build": variant["build"],
+        "diagnostics": policy_from_config(config),
         "image": image["image_id"],
         "target": variant["target"],
         "prefix": variant["identity"]["paths"]["runtime_prefix"],

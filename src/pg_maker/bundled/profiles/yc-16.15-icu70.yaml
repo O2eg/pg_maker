@@ -35,6 +35,8 @@ spec:
   validation:
     profile: full
     baseline: false
+  packaging:
+    server_dev_files: true
   build:
     options:
       llvm: false
