@@ -135,6 +135,17 @@ def load_components(references: list[str], base: Path, version: str) -> tuple[li
                 not re.fullmatch(r"[a-zA-Z0-9_./-]+", x) or x.startswith("-") for x in spec[key]
             ):
                 raise ValidationError("invalid component make target")
+        test_ids = set()
+        for test in spec.get("test_commands", []):
+            if test["id"] in test_ids:
+                raise ValidationError("duplicate native test id")
+            test_ids.add(test["id"])
+            try:
+                pattern = re.compile(test["success_pattern"])
+            except re.error as exc:
+                raise ValidationError("invalid native test success pattern") from exc
+            if pattern.search(""):
+                raise ValidationError("native test success pattern must not match empty output")
         bindings["components/" + identifier] = str(path.parent)
         documents.append(document)
     # Library dependencies must exist before PostgreSQL's configure, not after its install.

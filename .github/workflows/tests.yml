@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       run_db_tests:
-        description: Run the long PostgreSQL and installed database qualification suites
+        description: Run standard PostgreSQL and installed-package qualification suites
         type: boolean
-        default: false
+        default: true
       with_doc:
         description: Build and install the English HTML, man and PDF documentation
         type: boolean
@@ -99,14 +99,14 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -e '.[dev]'
-      - name: Build PostgreSQL packages; database tests are explicit
+      - name: Build PostgreSQL packages with tests by default
         env:
           RUN_DB_TESTS: ${{ inputs.run_db_tests }}
           WITH_DOC: ${{ inputs.with_doc }}
         shell: bash
         run: |
           args=()
-          if [ "$RUN_DB_TESTS" = true ]; then args+=(--run-db-tests); fi
+          if [ "$RUN_DB_TESTS" = false ]; then args+=(--skip-db-tests); fi
           if [ "$WITH_DOC" = true ]; then args+=(--with-doc); fi
           python tools/ci_pipeline.py --work "${RUNNER_TEMP}/pg-maker-postgresql" "${args[@]}"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

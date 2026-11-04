@@ -25,11 +25,14 @@ acceptance definitions with the same ID are rejected. Documentation rules apply 
 profile, feature, component order. Assets and translation bundles enter InputStore
 at resolve. Derived provenance uses `derived:config/v1`.
 
-`defaults.validation.run_db_tests` defaults to false during utility development.
+`defaults.validation.run_db_tests` defaults to true for every profile.
 The manifest can override it in `spec.validation`; the effective setting enters the
 lock. Plan/build test flags affect the plan without changing the lock. Baseline
 settings and acceptance expectations remain in configuration, but baseline execution
-is omitted when tests are disabled. Goal `verified` requires tests.
+is omitted when tests are explicitly disabled. Goals `verified` and `test-full`
+require tests; normal package builds include fresh-container installation checks.
+`defaults.validation.warnings_as_errors: true` makes ordinary build warnings fatal.
+Selected unsafe warnings and sanitizer findings block without this optional flag.
 
 `identity.identities(...) -> dict` computes product version, package revision,
 service names, paths, server/client/libpq5 names and filenames. Templates allow only

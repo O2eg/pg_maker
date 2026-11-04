@@ -38,7 +38,12 @@ def project(tmp_path):
     write_yaml(directory / "config/features/my-feature.yaml", feature)
     write_yaml(
         directory / "config/defaults.yaml",
-        {"spec": {"execution": {"limits": {"min_free_disk_bytes": 1048576}}}},
+        {
+            "spec": {
+                "execution": {"limits": {"min_free_disk_bytes": 1048576}},
+                "validation": {"run_db_tests": False},
+            }
+        },
     )
     source = directory / "source"
     source.mkdir()
@@ -77,6 +82,11 @@ def environment(config):
             "tools": {},
             "method": "apt-commit",
             "reproducibility": "unit fixture",
+            "runtime_repository": {
+                "path": "/unit-fixture/runtime",
+                "files": [],
+                "repository_hash": content_hash([]),
+            },
         }
         for r in requirements["environments"]
     ]
@@ -839,6 +849,29 @@ def test_db_tests_can_be_enabled_in_config_and_explicitly_disabled(project):
     assert state["status"] == "succeeded"
     assert build_plan(lock, goal="build")["spec"]["run_db_tests"] is True
     assert build_plan(lock, goal="build", run_db_tests=False)["spec"]["run_db_tests"] is False
+
+
+def test_tests_and_clean_package_installation_are_enabled_by_default(project):
+    path = project / "config/defaults.yaml"
+    defaults = load_yaml(path)
+    defaults["spec"].pop("validation")
+    write_yaml(path, defaults)
+    state, lock = resolved(project)
+    assert state["status"] == "succeeded", state
+    plan = build_plan(lock, goal="package")
+    kinds = [s["kind"] for s in plan["spec"]["steps"]]
+    assert plan["spec"]["run_db_tests"]
+    assert kinds.index("test_core") < kinds.index("test_source_world") < kinds.index("package")
+    assert kinds.index("package") < kinds.index("test_installed_packages") < kinds.index("export")
+    installed = next(s for s in plan["spec"]["steps"] if s["kind"] == "test_installed_packages")
+    assert installed["environment_id"].endswith(".test")
+    assert installed["cache"] == "never"
+    standard = next(s for s in plan["spec"]["steps"] if s["kind"] == "test_source_world")
+    assert "wal_consistency_checking" not in standard["env"]["PG_TEST_EXTRA"]
+    full = build_plan(lock, goal="test-full")
+    extended = next(s for s in full["spec"]["steps"] if s["kind"] == "test_source_world")
+    assert "wal_consistency_checking" in extended["env"]["PG_TEST_EXTRA"]
+    assert "xid_wraparound" in extended["env"]["PG_TEST_EXTRA"]
 
 
 def test_agent_workspace_uses_applied_change_prefix(project):

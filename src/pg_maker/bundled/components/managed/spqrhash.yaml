@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-spqrhash
-  revision: 2
+  revision: 3
 spec:
   type: pgxs
   source:
@@ -17,7 +17,8 @@ spec:
   runtime_dependencies: []
   make_targets:
   - all
-  test_targets: []
+  test_targets:
+  - installcheck
   install_targets:
   - install
   required_tests: []

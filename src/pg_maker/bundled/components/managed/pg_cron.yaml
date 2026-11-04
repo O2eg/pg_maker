@@ -2,8 +2,9 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-pg-cron
-  revision: 2
+  revision: 3
 spec:
+  installed_database: postgres
   type: pgxs
   source:
     kind: git
@@ -16,7 +17,8 @@ spec:
   runtime_dependencies: []
   make_targets:
   - all
-  test_targets: []
+  test_targets:
+  - installcheck
   install_targets:
   - install
   required_tests: []
@@ -27,3 +29,5 @@ spec:
   - share/postgresql/extension/pg_cron--*.sql
   sql_extension_versions:
     pg_cron: '1.5'
+  preload:
+  - pg_cron

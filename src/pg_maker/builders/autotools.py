@@ -1,4 +1,4 @@
-"""Autotools execution policy and the PostgreSQL 18 DB-test evidence adapter."""
+"""Autotools execution policy and PostgreSQL 16/18 DB-test evidence adapters."""
 
 from __future__ import annotations
 
@@ -58,9 +58,15 @@ sub close_test {
 """
 
 
-def extra_tests(build: dict, recipe: dict) -> str:
+def extra_tests(build: dict, recipe: dict, *, long_tests: bool = False) -> str:
     # GSSAPI/LDAP/OAuth need additional service fixtures; refuse their configure options below.
-    return " ".join([*(["ssl"] if build["options"]["openssl"] else []), *recipe["extra_tests"]])
+    return " ".join(
+        [
+            *(["ssl"] if build["options"]["openssl"] else []),
+            *recipe["extra_tests"],
+            *(recipe.get("long_tests", []) if long_tests else []),
+        ]
+    )
 
 
 def verify_configure(argv, settings: str, header: str, output: str) -> dict:
@@ -128,6 +134,7 @@ def validate_build(config: dict, goal: str, *, run_db_tests: bool = True) -> Non
         "build",
         "package",
         "verified",
+        "test-full",
         "docs",
         "translations",
         "doc-source",
@@ -137,7 +144,7 @@ def validate_build(config: dict, goal: str, *, run_db_tests: bool = True) -> Non
     if (
         run_db_tests
         and goal != "source"
-        and config["postgresql_recipe"]["db_test_adapter"] != "pg18"
+        and config["postgresql_recipe"]["db_test_adapter"] not in {"pg16", "pg18"}
     ):
         raise UnsupportedError(
             "DB-test evidence adapter is not implemented for this PostgreSQL major; "
@@ -162,22 +169,31 @@ def validate_build(config: dict, goal: str, *, run_db_tests: bool = True) -> Non
     for feature in config["features"]:
         for component in feature["spec"]["components"]:
             spec = component["spec"]
-            if run_db_tests and spec.get("build_system") == "cmake":
+            if (
+                run_db_tests
+                and spec.get("build_system") == "cmake"
+                and not spec.get("test_commands")
+            ):
                 raise UnsupportedError("CMake component DB-test evidence is not implemented")
-            if run_db_tests and spec.get("build_phase") == "before-postgresql":
+            if (
+                run_db_tests
+                and spec.get("build_phase") == "before-postgresql"
+                and (not spec.get("test_commands") or spec.get("test_cluster", True))
+            ):
                 raise UnsupportedError(
                     "pre-PostgreSQL library test qualification is not implemented"
                 )
             if (
                 run_db_tests
                 and spec["type"] in {"pgxs", "utility", "library"}
-                and not spec["test_targets"]
+                and not (spec["test_targets"] or spec.get("test_commands"))
             ):
                 raise PreconditionError("external component must declare native test targets")
             if (
-                goal == "verified"
+                goal in {"verified", "package"}
+                and run_db_tests
                 and spec["type"] in {"utility", "library"}
-                and not spec.get("installed_checks")
+                and not (spec.get("installed_checks") or spec.get("sql_extension_versions"))
             ):
                 raise PreconditionError("installed utility/library checks must be declared")
 
@@ -204,7 +220,10 @@ def skip_policy(path: str, source: str, config: dict) -> str | None:
         and config.get("enable_injection_points") != "yes"
     ):
         return "Injection points not supported by this build"
-    if path.startswith("src/test/modules/xid_wraparound/t/"):
+    if (
+        path.startswith("src/test/modules/xid_wraparound/t/")
+        and "xid_wraparound" not in config.get("PG_TEST_EXTRA", "").split()
+    ):
         return "test xid_wraparound not enabled in PG_TEST_EXTRA"
     if path == "src/interfaces/libpq/t/004_load_balance_dns.pl":
         return "Potentially unsafe test load_balance not enabled in PG_TEST_EXTRA"
@@ -216,13 +235,14 @@ def skip_policy(path: str, source: str, config: dict) -> str | None:
     return None
 
 
-def expected_inventory(source: Path, obj: Path, query) -> dict:
+def expected_inventory(source: Path, obj: Path, query, *, test_extra="") -> dict:
     """Follow configured SUBDIRS, rather than a guessed list of directories in the checkout."""
     config = dict(
         re.findall(
             r"^([A-Za-z_]+)\s*=\s*(.*?)\s*$", (obj / "src/Makefile.global").read_text(), re.M
         )
     )
+    config["PG_TEST_EXTRA"] = test_extra
     if config.get("enable_tap_tests") != "yes":
         raise PreconditionError("configure did not enable mandatory TAP tests")
     suites, visited = [], set()
@@ -313,9 +333,7 @@ def expected_inventory(source: Path, obj: Path, query) -> dict:
             for key in ("gssapi", "ldap", "oauth")
             if config.get("with_" + key) not in {"yes", "curl"}
         },
-        "extended_tests": (
-            "load_balance, wal_consistency_checking, xid_wraparound require release fixtures"
-        ),
+        "extended_tests": test_extra.split(),
     }
 
 
@@ -335,7 +353,10 @@ def regression_evidence(stdout: str) -> dict:
         if entering:
             directory = entering[1] or ""
             stack.append(directory)
-            current = ("regression", directory)
+            current = (
+                "isolation" if directory == "src/test/isolation" else "regression",
+                directory,
+            )
         elif leaving:
             directory = leaving[1] or ""
             if directory in stack:
@@ -343,6 +364,10 @@ def regression_evidence(stdout: str) -> dict:
             current = ("regression", stack[-1]) if stack else None
         elif marker:
             current = ("regression" if marker[1] == "regress" else "isolation", marker[2])
+        elif current and re.search(r"(?:^|[/ ])pg_isolation_regress(?:\s|$)", line):
+            current = ("isolation", current[1])
+        elif current and re.search(r"(?:^|[/ ])pg_regress(?:\s|$)", line):
+            current = ("regression", current[1])
         elif current:
             match = re.match(r"(not )?ok\s+\d+\s+[-+]\s+(\S+)\s+\d+\s+ms$", line)
             if match:
@@ -352,6 +377,16 @@ def regression_evidence(stdout: str) -> dict:
                     value["failed"].append(match[2])
             elif re.fullmatch(r"1\.\.\d+", line) and current in observed:
                 observed[current]["plans"].append(int(line[3:]))
+            else:
+                legacy = re.match(r"\s*(?:test\s+)?(\S+)\s+\.{3,}\s+(ok|FAILED|failed)\b", line)
+                total = re.fullmatch(r"\s*All (\d+) tests passed\.\s*", line)
+                if legacy and not legacy[1].endswith(".pl"):
+                    value = observed.setdefault(current, {"tests": [], "failed": [], "plans": []})
+                    value["tests"].append(legacy[1])
+                    if legacy[2] != "ok":
+                        value["failed"].append(legacy[1])
+                elif total and current in observed:
+                    observed[current]["plans"].append(int(total[1]))
     return observed
 
 

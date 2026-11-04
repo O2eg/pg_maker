@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-pg-partman
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
@@ -12,7 +12,9 @@ spec:
   compatible_postgresql: '>=16,<17'
   requires: []
   conflicts: []
-  build_dependencies: []
+  build_dependencies:
+  - libtap-parser-sourcehandler-pgtap-perl
+  - python3-psycopg2
   runtime_dependencies: []
   make_targets:
   - all
@@ -27,3 +29,32 @@ spec:
   - share/postgresql/extension/pg_partman--*.sql
   sql_extension_versions:
     pg_partman: 4.7.4
+  extra_sources:
+    pgtap:
+      kind: git
+      repository: https://github.com/theory/pgtap.git
+      ref: 968eb53a33114e83042b3bdb0c664b5b80cf8bdf
+  test_setup:
+  - - make
+    - -C
+    - '{source:pgtap}'
+    - PG_CONFIG={prefix}/bin/pg_config
+    - all
+    - install
+  - - '{prefix}/bin/psql'
+    - -X
+    - -v
+    - ON_ERROR_STOP=1
+    - -Atqc
+    - CREATE SCHEMA partman; CREATE EXTENSION pg_partman SCHEMA partman; CREATE EXTENSION pgtap;
+  test_commands:
+  - id: upstream-pgtap
+    argv:
+    - python3
+    - '{test_helpers}/partman.py'
+    success_pattern: ^PG_MAKER_PARTMAN_TESTS_PASSED=(?P<count>\d+)$
+  preload:
+  - pg_partman_bgw
+  test_settings:
+    pg_partman_bgw.interval: '5'
+    pg_partman_bgw.role: builder

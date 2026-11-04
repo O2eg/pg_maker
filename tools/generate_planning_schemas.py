@@ -178,6 +178,7 @@ validation = obj(
     {
         "profile": {"enum": ["smoke", "full", "release"]},
         "run_db_tests": B,
+        "warnings_as_errors": B,
         "baseline": {"enum": ["auto", True, False]},
         "database_locales": arr(),
     },
@@ -469,6 +470,24 @@ component = document(
             "source_patches": arr(S),
             "make_targets": arr(),
             "test_targets": arr(),
+            "test_make_args": arr(),
+            "test_commands": arr(
+                obj(
+                    {
+                        "id": ID,
+                        "argv": {**arr(), "minItems": 1},
+                        "cwd": S,
+                        "env": mapping(),
+                        "success_pattern": S,
+                    },
+                    ["id", "argv", "success_pattern"],
+                )
+            ),
+            "test_setup": arr({**arr(), "minItems": 1}),
+            "test_cluster": B,
+            "test_database": S,
+            "installed_database": S,
+            "test_settings": mapping(),
             "install_targets": arr(),
             "required_tests": arr(),
             "runtime_files": arr(),
@@ -613,7 +632,8 @@ postgresql_major = obj(
         "meson_minimum": {"type": ["string", "null"]},
         "unavailable_options": arr(),
         "extra_tests": arr(),
-        "db_test_adapter": {"enum": ["unavailable", "pg18"]},
+        "db_test_adapter": {"enum": ["unavailable", "pg16", "pg18"]},
+        "long_tests": arr(),
         "documentation_input": {"enum": ["direct-entities", "expanded-xml"]},
         "documentation_fixes": arr(obj({"compatible_postgresql": S, "document": doc_rules})),
         "reference": S,
@@ -638,6 +658,8 @@ postgresql_recipe = obj(
         **postgresql_major["properties"],
     }
 )
+postgresql_major["required"].remove("long_tests")
+postgresql_recipe["required"].remove("long_tests")
 definitions = {
     "SourceSpec": source,
     "VendorConfig": vendor,
@@ -895,6 +917,7 @@ plan_spec = obj(
                 "build",
                 "package",
                 "verified",
+                "test-full",
                 "docs",
                 "translations",
                 "doc-source",

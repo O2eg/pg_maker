@@ -37,7 +37,7 @@ def test_default_components_dependency_order_pins_and_documentation(tmp_path, ve
     for component in components[1:]:
         assert re.fullmatch("[0-9a-f]{40}", component["spec"]["source"]["ref"])
         assert component["spec"]["test_targets"] == ["installcheck"]
-    assert not loaded.data["defaults"]["validation"]["run_db_tests"]
+    assert loaded.data["defaults"]["validation"]["run_db_tests"]
     assets = references(loaded.data)
     assert len(assets) == 2
     for asset in assets:

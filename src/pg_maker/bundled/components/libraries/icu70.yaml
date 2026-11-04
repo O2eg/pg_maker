@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: icu70
-  revision: 1
+  revision: 2
 spec:
   type: library
   build_phase: before-postgresql
@@ -38,3 +38,23 @@ spec:
     icu-uc: '70.1'
   provides_options:
   - icu
+  test_cluster: false
+  test_commands:
+  - id: icu-check
+    argv:
+    - make
+    - --output-sync=target
+    - -j
+    - '{jobs}'
+    - check
+    success_pattern: 'OK: All tests passed without error\.'
+  installed_checks:
+  - argv:
+    - '{prefix}/bin/psql'
+    - -X
+    - -v
+    - ON_ERROR_STOP=1
+    - -Atqc
+    - SELECT pg_collation_actual_version(oid) FROM pg_collation WHERE collname='en-US-x-icu'
+    timeout_seconds: 60
+    stdout_contains: '153.112'

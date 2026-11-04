@@ -11,6 +11,7 @@ from pathlib import Path
 from pg_maker.artifacts.manifest import complete_matrix, render_report
 from pg_maker.builders import autotools, components
 from pg_maker.changes.apply import apply_changes
+from pg_maker.config import resource_path
 from pg_maker.errors import CancelledError, CommandError, MakerError, PreconditionError
 from pg_maker.execution.cancellation import process_identity
 from pg_maker.execution.checkpoints import Checkpoints
@@ -64,6 +65,12 @@ class BuildBranch:
         (self.helper / "inventory.mk").write_text(autotools.INVENTORY_MAKE)
         ensure_directory(self.helper / "PgMaker")
         (self.helper / "PgMaker/Formatter.pm").write_text(autotools.TAP_FORMATTER)
+        shutil.copytree(
+            resource_path("validation", "upstream"),
+            self.helper / "upstream-tests",
+            dirs_exist_ok=True,
+            ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+        )
         self.step = step
 
     def begin(self):
@@ -114,7 +121,16 @@ class BuildBranch:
             ],
         )
 
-    def command(self, argv, *, cwd=None, env=None, timeout=None, accepted_exit_codes=(0,)):
+    def command(
+        self,
+        argv,
+        *,
+        cwd=None,
+        env=None,
+        timeout=None,
+        accepted_exit_codes=(0,),
+        test_command=False,
+    ):
         self.context.check()
         self.counter += 1
         command = CommandSpec(
@@ -135,6 +151,14 @@ class BuildBranch:
             record["result"][key] = relative
         # Keep per-command records bounded in the journal; detailed evidence lives in report files.
         write_json(self.output / "commands" / (str(self.counter) + ".json"), record)
+        from pg_maker.validation.diagnostics import record as record_diagnostics
+
+        diagnostics = record_diagnostics(self, command, result, test_command=test_command)
+        test_logs_passed = True
+        if test_command:
+            from pg_maker.validation.diagnostics import preserve_test_logs
+
+            test_logs_passed = preserve_test_logs(self, command.cwd)
         self.context.check()
         if result.cancelled or result.timed_out or result.returncode not in accepted_exit_codes:
             raise CommandError(
@@ -148,6 +172,11 @@ class BuildBranch:
                     "stderr_log": result.stderr_log,
                     "stderr": result.stderr_tail,
                 },
+            )
+        if not diagnostics["passed"] or not test_logs_passed:
+            raise CommandError(
+                "blocking command diagnostics",
+                details={"step": self.step["id"], "command": command.id},
             )
         return result
 
@@ -214,14 +243,17 @@ class BuildBranch:
 
             execute(self, step)
         elif kind == "expected_test_inventory":
-            self.inventory = autotools.expected_inventory(self.source, self.obj, self.query)
-            self.inventory["extra_tests"] = autotools.extra_tests(
-                self.variant["build"], self.config["postgresql_recipe"]
+            self.inventory = autotools.expected_inventory(
+                self.source, self.obj, self.query, test_extra=step["env"].get("PG_TEST_EXTRA", "")
             )
             write_json(self.output / "expected-tests.json", self.inventory)
         elif kind == "build_libraries":
             self.prepare()
-            components.build_components(self, step["parameters"]["components"], run_tests=False)
+            components.build_components(
+                self,
+                step["parameters"]["components"],
+                run_tests=self.request.plan["spec"]["run_db_tests"],
+            )
             versions = {}
             for library in step["parameters"]["components"]:
                 for module, expected in library["spec"]["pkg_config_versions"].items():
@@ -266,7 +298,9 @@ class BuildBranch:
                     self.branch,
                 )
                 self.report["source_test_scope"] = (
-                    "full" if self.branch == "candidate" else "baseline-core"
+                    ("full+long" if self.request.plan["spec"]["goal"] == "test-full" else "full")
+                    if self.branch == "candidate"
+                    else "baseline-core"
                 )
                 self.report["qualification"] = "source-verified"
                 self.report["db_tests"] = "passed"
@@ -321,7 +355,7 @@ class BuildBranch:
                     if phase == "core"
                     else max(step["timeout_seconds"], 14400)
                 )
-                result = self.command(argv, env=env, timeout=timeout)
+                result = self.command(argv, env=env, timeout=timeout, test_command=True)
                 result = autotools.reconcile(
                     self.inventory,
                     self.obj,
@@ -493,11 +527,11 @@ def execute_build(directory, token):
                     break
             qualification = "unverified"
             if not failures and request.plan["spec"]["run_db_tests"]:
-                if request.plan["spec"]["goal"] == "verified":
+                if request.plan["spec"]["goal"] in {"verified", "package"}:
                     complete_matrix([Path(p) for p in reports])
                 qualification = (
                     "package-verified"
-                    if request.plan["spec"]["goal"] == "verified"
+                    if request.plan["spec"]["goal"] in {"verified", "package"}
                     else "source-verified"
                 )
             result = {

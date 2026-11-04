@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-h3
-  revision: 1
+  revision: 2
 spec:
   type: library
   source:
@@ -34,12 +34,26 @@ spec:
   configure_args:
   - -DPostgreSQL_CONFIG={prefix}/bin/pg_config
   - -DPOSTGRESQL_VERSION=16
-  - -DBUILD_TESTING=OFF
+  - -DBUILD_TESTING=ON
   - -DFETCHCONTENT_FULLY_DISCONNECTED=ON
   - -DFETCHCONTENT_SOURCE_DIR_H3={source:h3-core}
+  - -DPostgreSQL_REGRESS={postgresql_build}/src/test/regress/pg_regress
+  - -DCMAKE_BUILD_TYPE=Release
   extra_sources:
     h3-core:
       kind: archive
       location: https://github.com/uber/h3/archive/refs/tags/v4.1.0.tar.gz
       sha256: sha256:ec99f1f5974846bde64f4513cf8d2ea1b8d172d2218ab41803bf6a63532272bc
       strip_components: 1
+  test_cluster: false
+  test_commands:
+  - id: ctest
+    argv:
+    - ctest
+    - --test-dir
+    - '{build}'
+    - --output-on-failure
+    - --no-tests=error
+    - -C
+    - Release
+    success_pattern: 100% tests passed, 0 tests failed out of (?P<count>\d+)

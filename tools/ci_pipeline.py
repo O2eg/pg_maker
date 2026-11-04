@@ -1,4 +1,4 @@
-"""Run the same public CLI used locally; database tests require an explicit flag."""
+"""Run the public CLI with database tests enabled unless explicitly skipped."""
 
 import argparse
 import json
@@ -34,7 +34,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--work", type=Path, required=True)
     parser.add_argument("--fixtures-only", action="store_true")
-    parser.add_argument("--run-db-tests", action="store_true")
+    test_mode = parser.add_mutually_exclusive_group()
+    test_mode.add_argument("--run-db-tests", dest="run_db_tests", action="store_true", default=True)
+    test_mode.add_argument("--skip-db-tests", dest="run_db_tests", action="store_false")
     parser.add_argument("--with-doc", action="store_true")
     args = parser.parse_args()
     root = args.work.absolute()

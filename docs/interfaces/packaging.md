@@ -91,8 +91,10 @@ creates sentinel data/config, upgrades and checks version/data/ownership. Missin
 changed packages fail rather than skip. Without a predecessor, first-release is
 not-applicable. Major upgrades are unsupported.
 
-Quick package remains unverified. Verified requires source verification and every
-required installed check, acceptance and declared upgrade. Only candidate can become
+Package goals run these checks by default. Source verification and every required
+installed check, acceptance and declared upgrade must pass for package-verified.
+Every selected component and declared SQL extension version requires explicit passed
+evidence. An explicitly skipped-test package remains unverified; verified refuses skips. Only candidate can become
 publication-eligible, after the entire matrix including baseline succeeds. Baseline
 failure blocks promotion before candidate manifests change. The internal run_database=False
 fixture mode never qualifies PostgreSQL. See [executed evidence](../validation/stage56.md).

@@ -8,7 +8,7 @@ Implementation and executed validation are recorded separately.
 | 1. Structure and contracts | Package layout, MD interfaces, reuse map and installable CLI implemented. |
 | 2. Execution infrastructure | Errors, IO, logging, subprocesses, Docker, worker/state/events/cancel and machine envelope implemented and exercised with real containers. |
 | 3. Configuration and inputs | Strict YAML, identities, recipes, sources, ChangeSets, BuildLock and BuildPlan implemented; explicit environment preparation and durable resolve. |
-| 4. Build pipeline | Source/build goals, Autotools, release/debug and components implemented. Database suites are opt-in; quick builds remain unverified. |
+| 4. Build pipeline | Source/build goals, Autotools, release/debug and components implemented. Database suites and installed-package checks run by default; explicit quick builds remain unverified. |
 | 5. Distribution | InstallTree, server/client/libpq DEBs, installation/lifecycle checks, manifests and reports implemented for the initial platform. |
 | 6. Recovery and CI | Verified resume, attempts, caches, resource guards and portable exports implemented; workflows prepared. Remote CI status must be checked separately. |
 | 7. Documentation | Structural writer, translation bundles, DocBook/Sphinx, HTML/man/PDF, docs DEB and independent validation implemented. No complete Russian manual translation is bundled. |

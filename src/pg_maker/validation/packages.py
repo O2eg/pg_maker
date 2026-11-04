@@ -234,6 +234,23 @@ def validate_packages(branch, *, run_database=True):
                 ["cp", handle.container_id + ":/tmp/pg-maker-results", str(output)],
                 check=False,
             )
+            if copied.succeeded and output.is_dir():
+                from pg_maker.validation.diagnostics import classify
+
+                findings = []
+                for command_log in sorted(output.glob("*.json")):
+                    if not command_log.stem.isdigit():
+                        continue
+                    receipt = read_json(command_log)
+                    analysis = classify(
+                        output / receipt["stdout"], output / receipt["stderr"], test_command=True
+                    )
+                    findings.append({"receipt": command_log.name, **analysis})
+                write_json(output / "diagnostics.json", findings)
+                if any(not finding["passed"] for finding in findings):
+                    raise CommandError(
+                        "blocking installed-package diagnostics", details={"scenario": label}
+                    )
             if result.cancelled:
                 raise CancelledError("package validation cancelled")
             if (
@@ -271,6 +288,15 @@ def validate_packages(branch, *, run_database=True):
             passed = {c["id"] for c in report["checks"] if c["status"] == "passed"}
             if documentation and label != "upgrade":
                 required = required | {"installed-documentation"}
+            if label == "server" and run_database:
+                required |= {
+                    "component:" + c["metadata"]["id"] for c in branch.feature["spec"]["components"]
+                }
+                required |= {
+                    "extension:" + name
+                    for c in branch.feature["spec"]["components"]
+                    for name in c["spec"].get("sql_extension_versions", {})
+                }
             if not report["passed"] or not required <= passed:
                 raise CommandError("installed check evidence is incomplete")
             if (

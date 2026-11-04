@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-logerrors
-  revision: 2
+  revision: 3
 spec:
   type: pgxs
   source:
@@ -29,3 +29,11 @@ spec:
   - share/postgresql/extension/logerrors--*.sql
   sql_extension_versions:
     logerrors: '2.1'
+  preload:
+  - logerrors
+  test_commands:
+  - id: error-log-functions
+    argv:
+    - python3
+    - '{test_helpers}/logerrors.py'
+    success_pattern: ^PG_MAKER_LOGERRORS_CHECKS_PASSED=(?P<count>\d+)$

@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-pg-repack
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
@@ -16,7 +16,8 @@ spec:
   runtime_dependencies: []
   make_targets:
   - all
-  test_targets: []
+  test_targets:
+  - installcheck
   install_targets:
   - install
   required_tests: []
@@ -28,3 +29,14 @@ spec:
   - share/postgresql/extension/pg_repack--*.sql
   sql_extension_versions:
     pg_repack: 1.5.3
+  test_commands:
+  - id: regression
+    argv:
+    - make
+    - --output-sync=target
+    - -j
+    - '{jobs}'
+    - USE_PGXS=1
+    - PG_CONFIG={prefix}/bin/pg_config
+    - installcheck
+    success_pattern: All (?P<count>\d+) tests passed\.

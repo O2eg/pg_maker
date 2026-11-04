@@ -195,11 +195,22 @@ ICU data or vendor patches. Do not use REFRESH COLLATION VERSION to hide a misma
 Default LC_COLLATE/LC_CTYPE and any libc-based objects need separate compatibility
 checks when the OS differs. Physical PGDATA must never be initialized with initdb.
 
-PostgreSQL 16's full database-test evidence adapter remains unavailable, so the
-profile builds/packages in quick mode and reports unverified. Pre-core libraries and
-CMake components also reject full qualification rather than marking skipped tests
-as passed. The historical manual acceptance below covers the 34-extension package;
-the current 33-extension profile has not yet produced a new tested DEB.
+The current controller enables tests by default and adds PostgreSQL 16 regression
+parsing, ICU make check, PGXS/TAP and explicit CMake/native component suites. The
+package goal also installs the exact DEBs in fresh offline containers. Use
+`pg-maker test-full yc16/lock.json --operations yc16/operations` to add expensive
+WAL consistency checks to the standard source suites. No DB/package build using
+this new test configuration has been started as of 2026-11-05; the historical manual
+acceptance below covers the earlier 34-extension package only. The current
+33-extension profile still needs its first complete tested build.
+
+pg_partman tests run with pinned pgTAP, including staged procedures/reindexing,
+non-superuser, tablespace and background-worker scenarios. Upstream's two
+not_working_yet scripts and its PostgreSQL <=11 tablespace variant are explicitly
+not applicable; the pg12+ tablespace scenario runs. The logerrors pin has no upstream
+regression target, so a functional helper checks statistics, error capture and reset.
+These recipes are test definitions, not evidence of a passed run. Preparing a new
+environment is required for CUnit, pgTAP and Python test dependencies.
 
 ### Compiler version and physical replication
 

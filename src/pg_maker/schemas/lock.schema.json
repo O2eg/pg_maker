@@ -278,8 +278,15 @@
                 "db_test_adapter": {
                   "enum": [
                     "unavailable",
+                    "pg16",
                     "pg18"
                   ]
+                },
+                "long_tests": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
                 },
                 "documentation_input": {
                   "enum": [
@@ -999,6 +1006,9 @@
                       ]
                     },
                     "run_db_tests": {
+                      "type": "boolean"
+                    },
+                    "warnings_as_errors": {
                       "type": "boolean"
                     },
                     "baseline": {
@@ -2261,6 +2271,74 @@
                                 "test_targets": {
                                   "type": "array",
                                   "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "test_make_args": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "string"
+                                  }
+                                },
+                                "test_commands": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string",
+                                        "pattern": "^[a-z][a-z0-9-]{0,63}$"
+                                      },
+                                      "argv": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        },
+                                        "minItems": 1
+                                      },
+                                      "cwd": {
+                                        "type": "string"
+                                      },
+                                      "env": {
+                                        "type": "object",
+                                        "additionalProperties": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "success_pattern": {
+                                        "type": "string"
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "argv",
+                                      "success_pattern"
+                                    ],
+                                    "additionalProperties": false
+                                  }
+                                },
+                                "test_setup": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "minItems": 1
+                                  }
+                                },
+                                "test_cluster": {
+                                  "type": "boolean"
+                                },
+                                "test_database": {
+                                  "type": "string"
+                                },
+                                "installed_database": {
+                                  "type": "string"
+                                },
+                                "test_settings": {
+                                  "type": "object",
+                                  "additionalProperties": {
                                     "type": "string"
                                   }
                                 },

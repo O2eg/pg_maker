@@ -22,6 +22,7 @@
             "build",
             "package",
             "verified",
+            "test-full",
             "docs",
             "translations",
             "doc-source",

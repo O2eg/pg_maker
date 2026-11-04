@@ -11,7 +11,7 @@ from pg_maker.planning.reuse import compilation_inputs, selected_components
 from pg_maker.storage import content_hash
 
 DOC_GOALS = {"docs", "translations", "doc-source", "translated-docs"}
-GOALS = {"source", "build", "package", "verified", *DOC_GOALS}
+GOALS = {"source", "build", "package", "verified", "test-full", *DOC_GOALS}
 
 
 def build_plan(
@@ -36,14 +36,14 @@ def build_plan(
         raise ValidationError("documentation goal requires --with-doc before resolve")
     if run_db_tests is not None and type(run_db_tests) is not bool:
         raise ValidationError("run_db_tests must be a boolean")
-    if goal == "verified":
+    if goal in {"verified", "test-full"}:
         if run_db_tests is False:
-            raise ValidationError("verified goal requires DB tests; use goal build or package")
+            raise ValidationError("this goal requires DB tests; use goal build or package")
         run_db_tests = True
     elif goal == "source" or goal in DOC_GOALS:
         run_db_tests = False
     elif run_db_tests is None:
-        run_db_tests = config["defaults"]["validation"].get("run_db_tests", False)
+        run_db_tests = config["defaults"]["validation"].get("run_db_tests", True)
     if components is not None and run_db_tests:
         raise ValidationError("component selection requires DB tests disabled")
     if spec.get("development") and run_db_tests:
@@ -136,6 +136,7 @@ def build_plan(
                     "cache": "never"
                     if stage.startswith(("test", "acceptance", "verify"))
                     or stage == "build_and_test_tools"
+                    or (stage == "build_libraries" and run_db_tests)
                     else "verified-outputs",
                     "recovery": "rerun-in-fresh-environment",
                 }
@@ -202,7 +203,9 @@ def build_plan(
                 continue
             env = {
                 "LC_ALL": build["message_locale"],
-                "PG_TEST_EXTRA": extra_tests(build, config["postgresql_recipe"]),
+                "PG_TEST_EXTRA": extra_tests(
+                    build, config["postgresql_recipe"], long_tests=goal == "test-full"
+                ),
                 **{key.upper(): " ".join(value) for key, value in build["resolved_flags"].items()},
             }
             libraries = [
@@ -337,7 +340,7 @@ def build_plan(
                 )
             if config["documentation"]["enabled"]:
                 documentation_steps()
-            if goal == "build":
+            if goal in {"build", "test-full"}:
                 add("export_build", outputs=[{"root": "output", "path": prefix + "/report.json"}])
                 continue
             if run_db_tests:
@@ -365,7 +368,7 @@ def build_plan(
                 },
                 checks=["package-metadata"],
             )
-            if goal == "package":
+            if goal == "package" and not run_db_tests:
                 if config["documentation"]["enabled"]:
                     add(
                         "test_documentation_packages",

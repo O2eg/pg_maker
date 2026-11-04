@@ -78,6 +78,6 @@ contain host paths, but artifact/evidence references do not depend on them.
 
 CI uses the public CLI through tools/ci_pipeline.py. Push/PR runs utility checks and
 small Docker fixtures. Manual workflow dispatch builds PostgreSQL; long database
-suites require run_db_tests=true, default false. Failure/cancellation triggers targeted
+suites run by default; the longest core suites use the separate test-full command. Failure/cancellation triggers targeted
 cancel and diagnostic export. Local script validation and remote workflow success are
 separate evidence. See [disk management](../development-storage.md).

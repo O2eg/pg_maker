@@ -19,7 +19,7 @@ and checkpoint creation. Development snapshot/copy paths also estimate their cop
 size. This is a preflight guard, not a filesystem quota: a compiler or renderer can
 consume additional space within a step. Reserve enough space for expected working
 trees. Prefer a small fixture or documentation-only goal when a full build is
-unnecessary. Database tests remain opt-in.
+unnecessary. Database tests run by default; skipping them explicitly yields unverified results.
 
 ## Completed operations
 

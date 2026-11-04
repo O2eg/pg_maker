@@ -63,8 +63,8 @@ spec:
       cppflags: []
   validation:
     profile: full
-    # Temporary development default; enable explicitly for source verification.
-    run_db_tests: false
+    # Only an explicit development override may skip database tests.
+    run_db_tests: true
     baseline: auto
     database_locales:
     - en_US.UTF-8

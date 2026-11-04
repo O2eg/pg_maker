@@ -28,7 +28,8 @@ keys. Other steps conservatively include the full lock identity. Test steps use
 and source snapshot for each scope. Input hashes are verified normally. Development
 locks cannot be used for full release qualification.
 
-Goals form source → build → package → verified. Documentation goals are `doc-source`,
+Goals include source, build and package; verified forces package tests even if disabled
+in the lock. The separate test-full goal adds expensive core suites to source tests. Documentation goals are `doc-source`,
 `translations`, `translated-docs` and `docs`; they require enabled documentation,
 configure sources and generate tables without compiling/testing the database.
 With documentation enabled, ordinary builds include its outputs and InstallTree.
@@ -37,8 +38,8 @@ common changes only, when baseline and database tests are enabled. Baselines are
 not publishable distributions. The implemented platform uses DEB and Autotools.
 
 `spec.run_db_tests` is part of the plan hash. Build/package inherit the lock default
-when no override is supplied; the development default is false. Source always has
-false. Verified requires true and rejects an explicit false. The default CLI plan
+when no override is supplied; the default is true. Source always has false.
+Verified/test-full require true and reject an explicit false. The default CLI plan
 goal is build. Without database tests, inventory/test/acceptance steps and baseline
 are absent; component build/install remains enabled.
 

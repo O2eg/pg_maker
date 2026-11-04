@@ -97,6 +97,7 @@ def parser() -> Parser:
             "doc-source",
             "translated-docs",
             "verified",
+            "test-full",
         ],
         default="build",
     )
@@ -113,6 +114,7 @@ def parser() -> Parser:
             "doc-source",
             "translated-docs",
             "verified",
+            "test-full",
         ],
         default=None,
     )
@@ -130,6 +132,19 @@ def parser() -> Parser:
     build.add_argument("--doc-language", action="append", dest="doc_languages")
     build.add_argument("--feature", action="append", dest="features")
     build.add_argument("--build-mode", choices=["release", "debug"])
+    test_full = sub.add_parser(
+        "test-full", help="run all source tests including expensive core suites"
+    )
+    test_full.set_defaults(goal="test-full", run_db_tests=True)
+    test_full.add_argument("lock", type=Path)
+    test_full.add_argument("--plan", type=Path)
+    test_full.add_argument("--plan-hash")
+    test_full.add_argument("--input-store", type=Path)
+    test_full.add_argument("--operations", type=Path, default=Path("operations"))
+    test_full.add_argument("--operation-id")
+    test_full.add_argument("--detach", action="store_true")
+    test_full.add_argument("--cache-store", type=Path)
+    test_full.add_argument("--no-cache", action="store_true")
     docs = sub.add_parser("docs", help="containerized documentation tools")
     docs_commands = docs.add_subparsers(dest="docs_command", required=True)
     for name, goal in (
@@ -205,7 +220,7 @@ def parser() -> Parser:
             dest="run_db_tests",
             action="store_true",
             default=None,
-            help="run PostgreSQL, component and acceptance tests (build default: disabled)",
+            help="run PostgreSQL, component and acceptance tests (default: enabled)",
         )
         tests.add_argument(
             "--skip-db-tests",
@@ -404,7 +419,7 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 if args.out:
                     write_json(args.out.absolute(), result)
-            elif args.command in {"build", "docs"}:
+            elif args.command in {"build", "docs", "test-full"}:
                 result = service.build(
                     args.lock,
                     goal=args.goal,
@@ -513,7 +528,7 @@ def main(argv: list[str] | None = None) -> int:
                         0 if status == "succeeded" else EXIT_CODES.get((error or {}).get("code"), 6)
                     )
             elif args.command == "wait" or (
-                args.command in {"runner", "env", "resolve", "build", "docs", "resume"}
+                args.command in {"runner", "env", "resolve", "build", "docs", "test-full", "resume"}
                 and not args.detach
             ):
                 status = result["status"]
@@ -525,7 +540,15 @@ def main(argv: list[str] | None = None) -> int:
                     if status == "partial"
                     else EXIT_CODES.get((error or {}).get("code"), 6)
                 )
-            elif args.command in {"runner", "env", "resolve", "build", "docs", "resume"}:
+            elif args.command in {
+                "runner",
+                "env",
+                "resolve",
+                "build",
+                "docs",
+                "test-full",
+                "resume",
+            }:
                 status = result["status"]
     except MakerError as exc:
         code, error, status = exc.exit_code, exc.as_dict(), "failed"

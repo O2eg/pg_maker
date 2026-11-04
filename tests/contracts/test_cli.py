@@ -67,6 +67,14 @@ def test_schemas_and_assets_in_installed_package():
     assert files("pg_maker").joinpath("bundled", "PROJECT.md").is_file()
 
 
+def test_full_command_always_enables_database_tests():
+    from pg_maker.cli import parser
+
+    args = parser().parse_args(["test-full", "lock.json", "--detach"])
+    assert args.goal == "test-full" and args.run_db_tests is True
+    assert cli("test-full", "lock.json", "--skip-db-tests", "--machine").returncode == 2
+
+
 def test_init_machine_and_module_entrypoint(tmp_path):
     result = cli("init", str(tmp_path / "project"), "--request-id", "init-1", "--machine")
     assert result.returncode == 0

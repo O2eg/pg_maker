@@ -3,9 +3,11 @@
 
 from __future__ import annotations
 
+import grp
 import hashlib
 import json
 import os
+import pwd
 import re
 import shutil
 import signal
@@ -451,6 +453,69 @@ class Harness:
         self.systemctl("stop")
         self.run([*self.apt, "purge", *self.package_names])
 
+    def check_components(self):
+        for index, component in enumerate(self.config["components"]):
+            versions = component.get("sql_extension_versions", {})
+            names = list(versions) or (
+                [component["sql_extension"]] if component.get("sql_extension") else []
+            )
+            isolated = bool(names) and not component.get("installed_database")
+            database = (
+                "pg_maker_component_" + str(index)
+                if isolated
+                else component.get("installed_database", "postgres")
+            )
+            if isolated:
+                self.sql('CREATE DATABASE "' + database + '" TEMPLATE template0')
+            try:
+                if component.get("shared_library"):
+                    self.sql(
+                        "LOAD '" + component["shared_library"].replace("'", "''") + "'",
+                        database=database,
+                    )
+                for name in names:
+                    self.sql(
+                        'CREATE EXTENSION IF NOT EXISTS "' + name.replace('"', '""') + '" CASCADE',
+                        database=database,
+                    )
+                    if name in versions:
+                        actual = self.sql(
+                            "SELECT extversion FROM pg_extension WHERE extname='"
+                            + name.replace("'", "''")
+                            + "'",
+                            database=database,
+                        )
+                        self.check(
+                            "extension:" + name,
+                            actual == versions[name],
+                            expected=versions[name],
+                            actual=actual,
+                        )
+                for test in component.get("installed_checks", []):
+                    output = self.run(
+                        [a.replace("{prefix}", self.service["prefix"]) for a in test["argv"]],
+                        user=True,
+                        timeout=test["timeout_seconds"],
+                        env={
+                            "PGHOST": self.service["socket"],
+                            "PGPORT": self.service["port"],
+                            "PGUSER": self.service["user"],
+                            "PGDATABASE": database,
+                        },
+                    )
+                    if test.get("stdout_contains", "") not in output:
+                        raise RuntimeError("installed component check failed: " + component["id"])
+                self.check("component:" + component["id"])
+            finally:
+                if isolated:
+                    self.sql('DROP DATABASE "' + database + '" WITH (FORCE)')
+                elif component.get("installed_database"):
+                    for name in reversed(names):
+                        self.sql(
+                            'DROP EXTENSION IF EXISTS "' + name.replace('"', '""') + '" CASCADE',
+                            database=database,
+                        )
+
     def execute(self):
         self.prepare()
         if self.config.get("previous"):
@@ -495,11 +560,13 @@ class Harness:
                 + self.service["port"]
                 + "\nlogging_collector = on\nlog_directory = 'log'\n"
             )
-            preload = [
-                name
-                for component in self.config["components"]
-                for name in component.get("preload", [])
-            ]
+            preload = list(
+                dict.fromkeys(
+                    name
+                    for component in self.config["components"]
+                    for name in component.get("preload", [])
+                )
+            )
             if preload:
                 stream.write(
                     "shared_preload_libraries = '" + ",".join(preload).replace("'", "''") + "'\n"
@@ -522,20 +589,7 @@ class Harness:
             "INSERT INTO pg_maker_sentinel VALUES (42)"
         )
         self.sql("BEGIN; INSERT INTO pg_maker_sentinel VALUES (7); ROLLBACK")
-        for component in self.config["components"]:
-            if component.get("shared_library"):
-                self.sql("LOAD '" + component["shared_library"].replace("'", "''") + "'")
-            if component.get("sql_extension"):
-                self.sql('CREATE EXTENSION "' + component["sql_extension"].replace('"', '""') + '"')
-            for test in component.get("installed_checks", []):
-                output = self.run(
-                    [a.replace("{prefix}", self.service["prefix"]) for a in test["argv"]],
-                    user=True,
-                    timeout=test["timeout_seconds"],
-                )
-                self.check(
-                    "component:" + component["id"], test.get("stdout_contains", "") in output
-                )
+        self.check_components()
         old_pid = (self.data / "postmaster.pid").read_text().splitlines()[0]
         self.systemctl("restart")
         self.check(
@@ -606,13 +660,20 @@ class Harness:
             blocker.listen()
             self.systemctl("start", expected=1)
         lock = Path(self.service["socket"]) / (".s.PGSQL." + self.service["port"] + ".lock")
+        # PostgreSQL ignores an EPERM from kill(root_pid, 0); use a live PID owned
+        # by the database account so this negative fixture tests a real conflict.
+        uid = pwd.getpwnam(self.service["user"]).pw_uid
+        gid = grp.getgrnam(self.service["group"]).gr_gid
+        blocker = subprocess.Popen(["sleep", "120"], user=uid, group=gid)
         lock.write_text(
-            str(os.getpid()) + "\n" + str(self.data) + "\n" + str(int(time.time())) + "\n"
+            str(blocker.pid) + "\n" + str(self.data) + "\n" + str(int(time.time())) + "\n"
         )
         try:
             self.systemctl("start", expected=1)
         finally:
             lock.unlink(missing_ok=True)
+            blocker.terminate()
+            blocker.wait(timeout=10)
         self.check("invalid-config-permissions-port-socket-rejected")
         self.systemctl("start")
         self.run([*self.apt, "--reinstall", "install", *self.package_paths])

@@ -571,12 +571,18 @@ class MakerService:
         validate_build(
             locked["spec"]["config"], goal, run_db_tests=expected["spec"]["run_db_tests"]
         )
-        if goal == "verified" and any(
-            not image.get("runtime_repository")
-            for image in locked["spec"]["environments"]["spec"]["images"]
-            if image["role"] == "build"
+        if (
+            goal in {"verified", "package"}
+            and expected["spec"]["run_db_tests"]
+            and any(
+                not image.get("runtime_repository")
+                for image in locked["spec"]["environments"]["spec"]["images"]
+                if image["role"] == "build"
+            )
         ):
-            raise PreconditionError("verified goal requires a prepared offline runtime repository")
+            raise PreconditionError(
+                "package testing requires a prepared offline runtime repository"
+            )
         # Regenerating a plan must not change an idempotent build request's input hash.
         expected["created_at"] = locked["created_at"]
         if supplied is not None:

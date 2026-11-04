@@ -170,6 +170,7 @@ def test_library_rejects_wrong_version_or_system_prefix(tmp_path, monkeypatch, a
 
     branch = SimpleNamespace(
         context=SimpleNamespace(check=lambda: None),
+        request=SimpleNamespace(plan={"spec": {"run_db_tests": True}}),
         prepare=lambda: None,
         prefix="/opt/test",
         command=command,

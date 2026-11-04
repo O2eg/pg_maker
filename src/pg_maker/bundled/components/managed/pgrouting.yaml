@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-pgrouting
-  revision: 2
+  revision: 3
 spec:
   type: library
   source:
@@ -18,6 +18,7 @@ spec:
   build_dependencies:
   - cmake
   - libboost-graph-dev
+  - libtap-parser-sourcehandler-pgtap-perl
   runtime_dependencies: []
   make_targets:
   - all
@@ -37,4 +38,24 @@ spec:
   - -DPOSTGRESQL_PG_CONFIG={prefix}/bin/pg_config
   - -DPOSTGRESQL_BIN={prefix}/bin
   - -DWITH_DOC=OFF
-  - -DBUILD_TESTING=OFF
+  extra_sources:
+    pgtap:
+      kind: git
+      repository: https://github.com/theory/pgtap.git
+      ref: 968eb53a33114e83042b3bdb0c664b5b80cf8bdf
+  test_setup:
+  - - make
+    - -C
+    - '{source:pgtap}'
+    - PG_CONFIG={prefix}/bin/pg_config
+    - all
+    - install
+  test_commands:
+  - id: pgtap
+    argv:
+    - bash
+    - ./tools/testers/pg_prove_tests.sh
+    - '{user}'
+    - '{port}'
+    - Release
+    success_pattern: Files=\d+, Tests=(?P<count>\d+)

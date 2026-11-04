@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Enable source/component tests by default for every profile, and fresh-container
+  installation checks for normal package builds. Explicit skipped-test development
+  builds remain unverified. Add `test-full` for expensive core suites.
+- Add PostgreSQL 16 regression evidence parsing and explicit native test commands for
+  ICU, CMake and managed extension recipes, with nonempty result checks.
+- Inventory command warnings/errors, retain generated test logs and block failing
+  stages or dangerous diagnostics. Optional warnings_as_errors tightens build policy.
+- Check all declared installed SQL extension versions and fix the live socket-lock
+  fixture for PostgreSQL 16. The new DB suites await an authorized native build.
+
 - Add per-role package-name templates and manifest naming overrides. The managed
   profile now selects postgresql-16-yc-clone, postgresql-client-16-yc-clone and
   libpq5-yc-clone; finished DEBs keep their original names until rebuilt.

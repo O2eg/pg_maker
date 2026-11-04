@@ -1,12 +1,13 @@
 """Explicit Make/PGXS components and fresh-cluster acceptance checks."""
 
+import hashlib
 import re
 import shutil
 import sys
 from contextlib import contextmanager
 from pathlib import Path
 
-from pg_maker.builders.autotools import regression_evidence
+from pg_maker.builders.autotools import regression_evidence, schedule_tests
 from pg_maker.documents import relative_output
 from pg_maker.errors import CommandError, MakerError, PreconditionError, ValidationError
 from pg_maker.storage import read_json, write_json
@@ -33,15 +34,15 @@ def integrate(branch, components):
 
 
 @contextmanager
-def cluster(branch, name, *, database="postgres", preload=()):
+def cluster(branch, name, *, database="postgres", preload=(), settings=None):
     if not re.fullmatch(r"[A-Za-z0-9_.-]+", name):
         raise ValidationError("invalid cluster identifier")
     root = branch.root / "clusters" / name
     root.mkdir(parents=True)
     container = branch.container_root + "/clusters/" + name
     data = container + "/data"
-    sockets = container + "/socket"
-    (root / "socket").mkdir()
+    sockets = "/tmp/pg-maker-socket-" + hashlib.sha256(name.encode()).hexdigest()[:16]
+    branch.command(["mkdir", "-p", sockets])
     prefix = branch.prefix
     env = {
         "PGHOST": sockets,
@@ -52,15 +53,31 @@ def cluster(branch, name, *, database="postgres", preload=()):
         "LC_ALL": "C.UTF-8",
     }
     branch.command(
-        [prefix + "/bin/initdb", "-D", data, "-A", "trust", "--no-locale", "-U", "builder"]
+        [
+            prefix + "/bin/initdb",
+            "-D",
+            data,
+            "-A",
+            "trust",
+            "--no-locale",
+            "--encoding=UTF8",
+            "-U",
+            "builder",
+        ]
     )
-    settings = "listen_addresses = ''\nport = 55432\nunix_socket_directories = '" + sockets + "'\n"
+    configuration = (
+        "listen_addresses = ''\nport = 55432\nunix_socket_directories = '" + sockets + "'\n"
+    )
     if preload:
         if any(not re.fullmatch(r"[A-Za-z0-9_/-]+", item) for item in preload):
             raise ValidationError("invalid preload library")
-        settings += "shared_preload_libraries = '" + ",".join(preload) + "'\n"
+        configuration += "shared_preload_libraries = '" + ",".join(preload) + "'\n"
+    for key, value in (settings or {}).items():
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z_0-9.]*", key):
+            raise ValidationError("invalid test configuration setting")
+        configuration += key + " = '" + str(value).replace("'", "''").replace("\\", "\\\\") + "'\n"
     with (root / "data/postgresql.conf").open("a") as stream:
-        stream.write(settings)
+        stream.write(configuration)
     # pg_ctl readiness is bounded; all PostgreSQL file logs stay under PGDATA.
     branch.command(
         [prefix + "/bin/pg_ctl", "-D", data, "-l", data + "/server.log", "-w", "-t", "60", "start"]
@@ -117,6 +134,8 @@ def verify_extension_versions(branch, spec):
 
 
 def build_components(branch, components, *, run_tests=True):
+    from pg_maker.builders import native_tests
+
     reports = []
     for component in components:
         spec, identifier = component["spec"], component["metadata"]["id"]
@@ -141,7 +160,8 @@ def build_components(branch, components, *, run_tests=True):
                 path /= spec["source_directory"]
             component_source, container_source = path, cwd
             configure_args = [
-                arg.replace("{prefix}", branch.prefix) for arg in spec.get("configure_args", [])
+                native_tests.render(arg, native_tests.substitutions(branch, component, cwd))
+                for arg in spec.get("configure_args", [])
             ]
             for name, source in spec.get("extra_sources", {}).items():
                 extra_path = branch.root / "extra-sources" / identifier / name
@@ -183,7 +203,9 @@ def build_components(branch, components, *, run_tests=True):
                 branch.command(["cmake", "--install", build_path], cwd=cwd)
                 verify_extension_versions(branch, spec)
                 reports.append(
-                    {"id": identifier, "built": True, "native_targets": [], "tests": "skipped"}
+                    native_tests.run(branch, component, cwd)
+                    if run_tests
+                    else {"id": identifier, "built": True, "native_targets": [], "tests": "skipped"}
                 )
                 continue
             if spec.get("configure_args") or (
@@ -213,11 +235,19 @@ def build_components(branch, components, *, run_tests=True):
                 {"id": identifier, "built": True, "native_targets": [], "tests": "skipped"}
             )
             continue
+        if spec.get("test_commands"):
+            reports.append(native_tests.run(branch, component, cwd))
+            continue
         expected = None
+        substitutions = native_tests.substitutions(branch, component, cwd)
+        test_make = [
+            *make,
+            *[native_tests.render(a, substitutions) for a in spec.get("test_make_args", [])],
+        ]
         if kind in {"pgxs", "contrib", "source-tree"} and spec["test_targets"]:
             result = branch.command(
                 [
-                    *make,
+                    *test_make,
                     *(["-f", "Makefile"] if kind == "pgxs" else []),
                     "-f",
                     "/work/source/inventory.mk",
@@ -238,10 +268,22 @@ def build_components(branch, components, *, run_tests=True):
                 if values["TAP"] == "1"
                 else [],
             }
+            for schedule in re.findall(r"--schedule=(\S+)", values.get("REGRESS_OPTS", "")):
+                path = Path(schedule)
+                if str(path).startswith(container_source + "/"):
+                    path = component_source / str(path).removeprefix(container_source + "/")
+                elif not path.is_absolute():
+                    path = component_source / path
+                expected["regression"].extend(schedule_tests(path))
             if not any(expected.values()):
                 raise PreconditionError("component has no declared native test inventory")
             write_json(branch.output / "components" / identifier / "expected.json", expected)
-        with cluster(branch, "component-" + identifier, preload=spec.get("preload", [])) as (
+        with cluster(
+            branch,
+            "component-" + identifier,
+            preload=spec.get("preload", []),
+            settings=spec.get("test_settings", {}),
+        ) as (
             env,
             _,
         ):
@@ -276,7 +318,7 @@ def build_components(branch, components, *, run_tests=True):
                 tap.mkdir(parents=True)
                 test_env = {
                     **env,
-                    "PERL5LIB": "/work/source",
+                    "PERL5LIB": "/work/source:" + branch.container_root + "/source/src/test/perl",
                     "PG_MAKER_SOURCE": container_source,
                     "PG_MAKER_TAP": "/work/output/"
                     + branch.id
@@ -287,9 +329,10 @@ def build_components(branch, components, *, run_tests=True):
                     + "/tap",
                 }
                 result = branch.command(
-                    [*make, target, "PROVE_FLAGS=--formatter=PgMaker::Formatter"],
+                    [*test_make, target, "PROVE_FLAGS=--formatter=PgMaker::Formatter"],
                     cwd=cwd,
                     env=test_env,
+                    test_command=True,
                 )
                 if expected is not None:
                     verify_component_tests(expected, Path(result.stdout_log).read_text(), tap)
@@ -378,6 +421,7 @@ def acceptance(branch, changes):
                     env=env,
                     timeout=test["timeout_seconds"],
                     accepted_exit_codes=(0, 3) if sqlstate_assertion else (0,),
+                    test_command=True,
                 )
                 stdout, stderr = (
                     Path(result.stdout_log).read_text(),

@@ -28,7 +28,10 @@ from pg_maker.storage import (
 
 def finish(branch):
     qualified = branch.report["qualification"]
-    if branch.request.plan["spec"]["goal"] == "verified":
+    if (
+        branch.request.plan["spec"]["goal"] in {"verified", "package"}
+        and branch.request.plan["spec"]["run_db_tests"]
+    ):
         results = branch.report.get("package_tests", {})
         if (
             qualified != "source-verified"
@@ -112,7 +115,7 @@ def finish(branch):
     ]
     if branch.config.get("documentation", {}).get("enabled", False):
         docs = read_json(branch.output / "docs-manifest.json")
-        if branch.request.plan["spec"]["goal"] == "verified" and any(
+        if qualified == "package-verified" and any(
             not value["quality"]["complete"] for value in docs["languages"].values()
         ):
             raise PreconditionError("incomplete documentation cannot qualify a package")

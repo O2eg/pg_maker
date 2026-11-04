@@ -221,7 +221,7 @@ def test_skipped_installed_database_tests_never_qualify():
             "qualification": "source-verified",
             "package_tests": {"passed": True, "run_database": False},
         },
-        request=SimpleNamespace(plan={"spec": {"goal": "verified"}}),
+        request=SimpleNamespace(plan={"spec": {"goal": "verified", "run_db_tests": True}}),
     )
     with pytest.raises(PreconditionError, match="lacks"):
         finish(branch)

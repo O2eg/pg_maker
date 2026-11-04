@@ -56,6 +56,12 @@ assert (target['platform'], target['architecture']) == ('debian-13', 'x86_64')
 components = {c['metadata']['id']: c['spec'] for c in config['features'][0]['spec']['components']}
 assert components['icu70']['build_phase'] == 'before-postgresql'
 assert components['icu70']['pkg_config_versions'] == {'icu-i18n': '70.1', 'icu-uc': '70.1'}
+assert config['defaults']['validation']['run_db_tests'] is True
+assert config['postgresql_recipe']['db_test_adapter'] == 'pg16'
+assert all(c['test_targets'] or c.get('test_commands') for c in components.values())
+from pg_maker.config import resource_path
+assert resource_path('validation', 'upstream', 'partman.py').is_file()
+assert resource_path('validation', 'upstream', 'logerrors.py').is_file()
 declared = {
     n: v for c in components.values() for n, v in c.get('sql_extension_versions', {}).items()
 }
@@ -78,6 +84,7 @@ print('OK: installed managed profile: PostgreSQL 16.15, Debian 13 amd64, '
 """
         print(run([binaries / "python", "-c", profile_check, managed]).strip())
         run([binaries / "pg-maker", "dev", "--help"])
+        run([binaries / "pg-maker", "test-full", "--help"])
         run([binaries / "sgml-writer", "--help"])
         run([binaries / "sgml-translate", "--help"])
         manuals = directory / "venv/share/doc/pg-maker"

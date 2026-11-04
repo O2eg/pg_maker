@@ -71,26 +71,30 @@ The build user defaults to `1000:1000` and must match the non-root owner of the
 workspace. Environment preparation creates this user inside the image. Build
 commands run with networking disabled. Outputs stay inside the operation directory.
 
-**Database tests are disabled by default while developing the utility.** A normal
-build compiles the candidate and components without `check`, `check-world`,
-component tests, acceptance tests or a baseline build. Reports remain `unverified`,
-with `db_tests=skipped` and `publication_eligible=false`. Tests of pg_maker itself
-remain enabled.
+**Database tests run by default for every profile.** A normal build runs core
+regression, `check-world` (including contrib, isolation and TAP), selected component
+tests and acceptance checks. The PostgreSQL 16 and 18 evidence adapters reconcile
+executed suites; an unsupported adapter fails explicitly.
 
-Use `--goal package` to build server/client/libpq DEBs, manifests, installation
-instructions and HTML/JSON reports. A quick package build remains unverified.
-The long source/database test adapter currently supports major 18 only:
+Use `--goal package` for server/client/libpq DEBs and mandatory installation checks
+in fresh, offline containers. The longest core suites are separate:
 
 ```bash
-pg-maker build example/lock.json --run-db-tests --operations example/operations
-# Explicitly requests source and installed-package qualification:
-pg-maker build example/lock.json --goal verified --operations example/operations
+# Standard source and installed-package qualification:
+pg-maker build example/lock.json --goal package --operations example/operations
+# All standard source tests plus expensive core suites:
+pg-maker test-full example/lock.json --operations example/operations
+# Equivalent spelling: pg-maker build example/lock.json --goal test-full
 ```
 
-A supplied plan controls the test mode; create it with `plan --run-db-tests` when
-needed. `--skip-db-tests` explicitly selects the quick path. Successful source
-suites grant at most `source-verified`; `package-verified` requires installed-package
-qualification too. See [build](docs/interfaces/build.md) and [packaging](docs/interfaces/packaging.md).
+`test-full` adds WAL consistency checking, plus XID wraparound for PostgreSQL 18.
+It produces source-test evidence; use `--goal package` for installed-package checks.
+A supplied plan controls the test mode. `--skip-db-tests` is an explicit development
+escape hatch and produces `unverified`, `db_tests=skipped`, publication-ineligible
+results. Existing projects with a copied false default need to enable it and resolve
+again. Successful source suites grant at most `source-verified`; `package-verified`
+requires installed-package qualification too. See [build](docs/interfaces/build.md)
+and [packaging](docs/interfaces/packaging.md).
 
 ## Build documentation only
 

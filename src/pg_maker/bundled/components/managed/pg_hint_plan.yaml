@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-pg-hint-plan
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
@@ -10,13 +10,15 @@ spec:
     repository: https://github.com/ossc-db/pg_hint_plan.git
     ref: fa0a461af929c06f7c96956369458456c26e7ad9
   compatible_postgresql: '>=16,<17'
-  requires: []
+  requires:
+  - pg-stat-statements
   conflicts: []
   build_dependencies: []
   runtime_dependencies: []
   make_targets:
   - all
-  test_targets: []
+  test_targets:
+  - installcheck
   install_targets:
   - install
   required_tests: []
@@ -27,3 +29,7 @@ spec:
   - share/postgresql/extension/pg_hint_plan--*.sql
   sql_extension_versions:
     pg_hint_plan: 1.6.0
+  preload:
+  - pg_hint_plan
+  - pg_stat_statements
+  - file_fdw

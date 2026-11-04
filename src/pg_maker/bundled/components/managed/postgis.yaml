@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-postgis
-  revision: 3
+  revision: 4
 spec:
   type: library
   source:
@@ -26,6 +26,7 @@ spec:
   - libxml2-dev
   - xsltproc
   - docbook-xsl
+  - libcunit1-dev
   runtime_dependencies:
   - libgeos-c1t64
   - libproj25
@@ -63,3 +64,12 @@ spec:
   - --with-raster
   - --with-sfcgal
   - --with-address-standardizer
+  test_commands:
+  - id: unit-and-regression
+    argv:
+    - make
+    - --output-sync=target
+    - -j
+    - '{jobs}'
+    - check
+    success_pattern: 'Run tests: (?P<count>\d+)\nFailed: 0'
