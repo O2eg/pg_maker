@@ -2,10 +2,23 @@
 
 ## Unreleased
 
+- Add per-role package-name templates and manifest naming overrides. The managed
+  profile now selects postgresql-16-yc-clone, postgresql-client-16-yc-clone and
+  libpq5-yc-clone; finished DEBs keep their original names until rebuilt.
+- Disable PLV8 by commenting out its managed-profile entry; retain the pinned
+  recipe and catalog entry with an explicit disabled status. New projects select
+  33 SQL extensions from 25 managed recipes. Existing packages are unchanged.
 - Locked component source patches with immutable original/patched source trees and
   offline patch inputs.
 - PLV8 3.2.3: include the standard algorithm declarations required by GCC 14, complete
   interrupted V8 builds, and use the parent make jobserver for nested compilation.
+- pgRouting 3.5.0: remove an invalid Datum conversion of SPI_getvalue's text pointer
+  so the pinned release builds with Debian 13's GCC 14.
+- PostGIS 3.4.0: require its actual postgis_raster-3.so runtime library when packaging.
+- Install the logerrors 2.0-to-2.1 SQL upgrade path and include contrib fuzzystrmatch,
+  required by postgis_tiger_geocoder, in the managed profile.
+- Native Debian 13 amd64 packages passed isolated installation/lifecycle checks,
+  creation of all 34 selected extensions and ICU 70.1 collation checks (153.112).
 
 ## 0.2.0 — 2026-11-03
 

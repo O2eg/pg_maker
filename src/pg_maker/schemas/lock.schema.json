@@ -795,6 +795,25 @@
                     },
                     "rpm_release": {
                       "type": "string"
+                    },
+                    "package_by_role": {
+                      "type": "object",
+                      "properties": {
+                        "server": {
+                          "type": "string"
+                        },
+                        "client": {
+                          "type": "string"
+                        },
+                        "libpq": {
+                          "type": "string"
+                        },
+                        "docs": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
@@ -3730,7 +3749,8 @@
                         "enum": [
                           "pg_maker/naming/v1",
                           "pg_maker/naming/v2",
-                          "pg_maker/naming/v3"
+                          "pg_maker/naming/v3",
+                          "pg_maker/naming/v4"
                         ]
                       },
                       "product_version": {

@@ -250,6 +250,25 @@
                 },
                 "rpm_release": {
                   "type": "string"
+                },
+                "package_by_role": {
+                  "type": "object",
+                  "properties": {
+                    "server": {
+                      "type": "string"
+                    },
+                    "client": {
+                      "type": "string"
+                    },
+                    "libpq": {
+                      "type": "string"
+                    },
+                    "docs": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "additionalProperties": false
                 }
               },
               "required": [
@@ -2266,6 +2285,47 @@
                     "ldflags",
                     "lto"
                   ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [],
+              "additionalProperties": false
+            },
+            "naming": {
+              "type": "object",
+              "properties": {
+                "package": {
+                  "type": "string"
+                },
+                "service": {
+                  "type": "string"
+                },
+                "deb_version": {
+                  "type": "string"
+                },
+                "rpm_version": {
+                  "type": "string"
+                },
+                "rpm_release": {
+                  "type": "string"
+                },
+                "package_by_role": {
+                  "type": "object",
+                  "properties": {
+                    "server": {
+                      "type": "string"
+                    },
+                    "client": {
+                      "type": "string"
+                    },
+                    "libpq": {
+                      "type": "string"
+                    },
+                    "docs": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
                   "additionalProperties": false
                 }
               },
@@ -5307,6 +5367,25 @@
                 },
                 "rpm_release": {
                   "type": "string"
+                },
+                "package_by_role": {
+                  "type": "object",
+                  "properties": {
+                    "server": {
+                      "type": "string"
+                    },
+                    "client": {
+                      "type": "string"
+                    },
+                    "libpq": {
+                      "type": "string"
+                    },
+                    "docs": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [],
+                  "additionalProperties": false
                 }
               },
               "required": [
@@ -8242,7 +8321,8 @@
                     "enum": [
                       "pg_maker/naming/v1",
                       "pg_maker/naming/v2",
-                      "pg_maker/naming/v3"
+                      "pg_maker/naming/v3",
+                      "pg_maker/naming/v4"
                     ]
                   },
                   "product_version": {

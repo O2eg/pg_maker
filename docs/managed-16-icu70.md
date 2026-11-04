@@ -20,9 +20,12 @@ pg-maker build yc16/lock.json --plan yc16/plan.json --operations yc16/operations
 Run as the non-root UID/GID in `config/defaults.yaml` (default `1000:1000`). All
 project files remain editable. The standard `init` still creates the 18.1 profile.
 Reserve substantially more than the configured 20 GiB minimum for the complete
-extension set, especially PostGIS/GDAL and PLV8/V8, inputs and checkpoints.
-No full amd64 distribution build has yet qualified this new profile. Each selected
-extension is marked `selected-unverified`, never implicitly certified by metadata.
+extension set, especially PostGIS/GDAL, inputs and checkpoints. Enabling the optional
+PLV8/V8 recipe adds substantial build time and disk usage.
+Native amd64 packages have passed the installed-package acceptance recorded below.
+Those 2026-11-03 packages include PLV8. Since 2026-11-05, PLV8 is commented out in
+the profile for future builds; the existing packages and their evidence are unchanged.
+The catalog retains `selected-unverified` pending full upstream regression qualification.
 
 ## Version policy
 
@@ -43,6 +46,34 @@ Set `version_format: three-part` to get `16.15.0`; this remains the backward-com
 default when omitted. PostgreSQL format requires `release: 0`, avoiding silently
 discarded vendor release numbers. Increment package_revision for rebuilds.
 PostgreSQL's own `version()` and pg_config version are taken from upstream sources.
+
+## Package names
+
+Since 2026-11-05, the profile declares per-role names in `spec.naming.package_by_role`
+in `build.yaml`, following Debian/PGDG names with the suffix `yc-clone`:
+
+| Role | Package built on 2026-11-03 | Current profile name |
+| --- | --- | --- |
+| Server | `test-yc16-icu70-server-16` | `postgresql-16-yc-clone` |
+| Client | `test-yc16-icu70-client-16` | `postgresql-client-16-yc-clone` |
+| libpq | `test-yc16-icu70-libpq5-16` | `libpq5-yc-clone` |
+
+For example, the server filename becomes
+`postgresql-16-yc-clone_16.15-1.deb13_amd64.deb`. The optional documentation package
+is `postgresql-doc-16-yc-clone`. Debug builds insert `-debug` before `-yc-clone`.
+The `5` in libpq5 is its ABI version; it is not a PostgreSQL major. This package
+name allows one libpq clone version per architecture rather than parallel packages
+for each PostgreSQL major.
+
+This naming is a local packaging convention, not an official PGDG release or proof
+of managed-server compatibility. Package versions retain the local `deb13` suffix;
+the profile does not claim the PGDG `pgdg13` package origin. Server/client internal
+dependencies use the new names. Installation paths and service names retain their
+separate configuration. Existing DEBs, archived locks and acceptance evidence keep
+their original names; the new names require a fresh resolve/plan/build.
+
+See [PGDG Debian packages](https://www.postgresql.org/download/linux/debian/) and
+[the libpq packaging policy](https://wiki.postgresql.org/wiki/Apt/FAQ).
 
 ## Pinned library mechanism
 
@@ -82,8 +113,9 @@ The source inventory is the 2026-11-02 non-contrib catalog snapshot from
 Only pg_repack was installed in that database; the list describes availability.
 The editable [catalog](../src/pg_maker/bundled/catalogs/yc-16.15-extensions.yaml)
 retains all 38 names, default/installed/catalog versions, source pins, selection and
-exclusion reasons. The profile selects 34 SQL extensions through 26 source recipes,
-plus contrib pg_stat_statements and ICU. No missing component is silently substituted.
+exclusion reasons. The profile selects 33 SQL extensions through 25 source recipes,
+plus contrib pg_stat_statements, contrib fuzzystrmatch (required by the Tiger geocoder)
+and ICU. No missing component is silently substituted.
 
 SQL extension versions are not necessarily project release versions. For example,
 pg_cron 1.5.2 plus upstream compiler fix `0cb8118` supplies SQL version 1.5;
@@ -96,10 +128,17 @@ match control versions, not a proven managed implementation/patchset.
 PostGIS supplies seven catalog entries. pglogical also supplies pglogical_origin;
 h3 supplies h3_postgis. CMake recipes use explicit private pg_config paths. H3's
 core source is a separate hash-pinned input passed via FETCHCONTENT_SOURCE_DIR_H3,
-with FetchContent downloads disabled. Git submodules, including PLV8's inputs, are
+with FetchContent downloads disabled. Git submodules of selected components are
 frozen by the existing resolver before compilation.
 
-PLV8 3.2.3 uses the bundled
+PLV8 3.2.3 is disabled by commenting out its component in
+`config/features/yc16-icu70.yaml`; its catalog status is `disabled`. Its recipe and
+sources remain described in the inventory. To opt in, uncomment the component,
+change its catalog status to `selected-unverified`, remove the disabled reason,
+and prepare/resolve a new lock and plan. Existing locks still select their original
+components and must not be reused to request a build without PLV8. Already initialized
+projects keep their copied configuration and do not automatically inherit profile edits.
+The retained PLV8 recipe uses the bundled
 [source patch](../src/pg_maker/bundled/patches/plv8-3.2.3-gcc14-and-resume.patch).
 It adds the explicit `<algorithm>` include required by GCC 14 and always completes
 the nested incremental V8 build, using the parent make jobserver. SQL version 3.2.3
@@ -107,11 +146,21 @@ is retained. The resolver records patch hashes, the original source tree and the
 patched tree; it does not modify cached upstream inputs. This fix is newer than
 the published pg-maker 0.2.0 release.
 
-The ongoing emulated build uses the same patched tree as a frozen local snapshot
+The paused emulated build used the same patched tree as a frozen local snapshot
 to retain already compiled objects with its original controller. Its provenance
 records the upstream commit, patch hash and patched tree hash. A fresh build from
 this checkout applies the patch through the recipe. For long QEMU builds, set
 `spec.execution.limits.stage_timeout_seconds: 21600` in `config/defaults.yaml`.
+
+The pgRouting 3.5.0 recipe also applies
+[a GCC 14 compatibility patch](../src/pg_maker/bundled/patches/pgrouting-3.5.0-gcc14.patch).
+`SPI_getvalue` already returns `char *`; the patch removes the incorrect
+`DatumGetCString` wrapper rejected by GCC 14. The SQL extension version remains
+3.5.0, and the patch and resulting source tree are recorded in the lock.
+
+The logerrors 2.1 recipe includes its upstream `2.0--2.1` SQL upgrade script in
+the Makefile install list. PostGIS packaging requires `postgis_raster-3.so` and
+selects contrib fuzzystrmatch so `postgis_tiger_geocoder` can be created with CASCADE.
 
 Four entries require additional inputs:
 
@@ -149,8 +198,41 @@ checks when the OS differs. Physical PGDATA must never be initialized with initd
 PostgreSQL 16's full database-test evidence adapter remains unavailable, so the
 profile builds/packages in quick mode and reports unverified. Pre-core libraries and
 CMake components also reject full qualification rather than marking skipped tests
-as passed. Instructions to run the new profile are not evidence that all 34 extensions
-have compiled, loaded or passed application queries on this platform.
+as passed. The historical manual acceptance below covers the 34-extension package;
+the current 33-extension profile has not yet produced a new tested DEB.
+
+### Compiler version and physical replication
+
+| Build | Compiler |
+| --- | --- |
+| Managed `16.15-201-yandex.58146.d4afcfb9ca` (reported server version) | GCC 11.4.0, Ubuntu `11.4.0-1ubuntu1~22.04.3` |
+| Native package built on 2026-11-03 (version string extracted from packaged postgres) | GCC 14.2.0, Debian `14.2.0-19` |
+
+Matching the compiler version is not itself a physical-replication requirement.
+The relevant constraints are compatible architecture/data layout, PostgreSQL data,
+catalog and WAL formats, and compatible runtime behavior. GCC documents ABI and
+alignment as compatibility properties; compiler flags can change them. Thus a normal
+x86_64 GCC 11-to-14 change alone is not grounds to expect broken WAL replay, but
+matching GCC 11 does not establish compatibility with Yandex's patched server either.
+This is a compatibility assessment, not evidence from a managed-to-upstream replica test.
+
+Compare data-layout parameters such as block sizes, relation segment size and
+alignment, and check any vendor changes to catalogs, WAL and extension storage.
+Build extension shared libraries for the receiver's PostgreSQL and runtime libraries.
+ICU and libc collation behavior must match for every collation actually used;
+the matched ICU 70.1 en-US version `153.112` does not validate libc collations.
+Qualification still requires an isolated physical replica with WAL replay and
+application/index checks against the managed source.
+
+Omitting PLV8 does not by itself change PostgreSQL's core WAL format. It does mean
+PLV8 functions cannot run on the receiver; a configuration that preloads the missing
+library must also be corrected before startup. Inventory installed extensions,
+functions and preloads across all source databases before using this profile as a replica.
+
+References: [PostgreSQL standby planning](https://www.postgresql.org/docs/16/warm-standby.html#WARM-STANDBY-PLANNING),
+[GCC binary compatibility](https://gcc.gnu.org/onlinedocs/gcc/Compatibility.html),
+[PostgreSQL control-file format](https://github.com/postgres/postgres/blob/REL_16_STABLE/src/include/catalog/pg_control.h),
+[collation version changes](https://www.postgresql.org/docs/16/sql-altercollation.html).
 
 Source references: [PostgreSQL 16.15](https://ftp.postgresql.org/pub/source/v16.15/),
 [ICU 70.1](https://github.com/unicode-org/icu/releases/tag/release-70-1),
@@ -179,9 +261,39 @@ Other per-extension source URLs and immutable refs are in the catalog.
   Both recipes now pin upstream fixes while preserving the managed SQL versions.
   The spqrhash recipe also declares python3-docutils, needed by its install target
   to generate bundled HTML documentation with rst2html.
-  The complete extension set and DEB installation qualification remain pending;
-  no full package is certified by these partial results.
+  At that emulated-build checkpoint, the complete extension set and DEB installation
+  qualification were still pending.
 - The installed-wheel smoke check creates this named profile, validates its
   version/platform/private-ICU policy, checks all 38 catalog entries and the 34
   selected SQL versions, and verifies source pins against the catalog. The same
   check runs in the existing distribution CI job.
+
+## Native Debian 13 amd64 package acceptance — 2026-11-03
+
+Build operation `op-49302543516b4ad6ae84819fadc21446` completed all 42 steps
+on the native amd64 builder `10.248.45.7`, using 8 build jobs and a 30 GiB
+container memory limit. The builder host runs Debian 12; build and installation
+test containers run Debian 13. Packages are version `16.15-1.deb13`.
+
+Fresh offline test containers passed separate libpq, client and server installation
+scenarios. All 34 selected non-contrib SQL extensions were created at the declared
+versions, including logerrors 2.1 and postgis_tiger_geocoder 3.4.0. Twelve functional
+SQL probes passed, including PLV8 execution, pgRouting path finding, PostGIS raster,
+H3, a TimescaleDB hypertable and vector distance.
+
+The installed server loaded `libicudata.so.70.1`, `libicui18n.so.70.1` and
+`libicuuc.so.70.1` from `/opt/test/yc16-icu70/16/lib`. An ICU en-US database reported
+stored and actual collation version `153.112`; imported explicit ICU collations also
+matched. Indexed and sequential queries agreed for 24,000 surname rows on Cyrillic
+and Latin text, including straight and typographic apostrophes, pagination, ranges
+and maximum values.
+
+Lifecycle checks passed for startup/reload/restart, dump/restore, crash recovery,
+page checksums, rejected invalid startup conditions, reinstall, removal and purge
+with preserved PGDATA. The tests use an emulated systemctl in containers. Native
+systemd, full upstream regression suites and physical replication from managed
+PGDATA were not tested by this acceptance run.
+
+The complete exported build is in `/home/debian/pg_maker/yc16/delivery` on the
+builder. Installed-package evidence is in `yc16/package-acceptance`; local packages,
+checksums and the acceptance report are in `work/native-build-20261103`.

@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-postgis
-  revision: 1
+  revision: 3
 spec:
   type: library
   source:
@@ -11,7 +11,8 @@ spec:
     sha256: sha256:aee9b60a6c884d354164b3096c4657f324454186607f859d1ce05d899798af9d
     strip_components: 1
   compatible_postgresql: '>=16,<17'
-  requires: []
+  requires:
+  - fuzzystrmatch
   conflicts: []
   build_dependencies:
   - libgeos-dev
@@ -43,7 +44,7 @@ spec:
   sql_extension: postgis
   runtime_files:
   - lib/postgresql/postgis*.so
-  - lib/postgresql/rtpostgis*.so
+  - lib/postgresql/postgis_raster-3.so
   - lib/postgresql/address_standardizer*.so
   - share/postgresql/extension/postgis*.control
   - share/postgresql/extension/postgis*--*.sql

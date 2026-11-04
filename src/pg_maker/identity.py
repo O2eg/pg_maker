@@ -7,7 +7,7 @@ from pathlib import PurePosixPath
 from pg_maker.errors import ValidationError
 from pg_maker.postgresql import version_info
 
-POLICY_VERSION = "pg_maker/naming/v3"
+POLICY_VERSION = "pg_maker/naming/v4"
 
 
 def render(template: str, context: dict[str, str]) -> str:
@@ -83,7 +83,10 @@ def identities(
             "role": role,
             "role.abi_suffix": platform["roles"][role]["abi_suffix"],
         }
-        name = render(defaults["naming"]["package"], role_context)
+        template = (
+            defaults["naming"].get("package_by_role", {}).get(role, defaults["naming"]["package"])
+        )
+        name = render(template, role_context)
         if not re.fullmatch(r"[a-z0-9][a-z0-9+.-]+", name):
             raise ValidationError("invalid package name", details={"role": role})
         values = {

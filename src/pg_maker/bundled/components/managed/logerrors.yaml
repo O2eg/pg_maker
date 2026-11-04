@@ -2,13 +2,15 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-logerrors
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
     kind: git
     repository: https://github.com/munakoiso/logerrors.git
     ref: 9ea8b0134ecf4217cc7e7e7abff736db779a9713
+  source_patches:
+  - ../../patches/logerrors-2.1-install-upgrade.patch
   compatible_postgresql: '>=16,<17'
   requires: []
   conflicts: []

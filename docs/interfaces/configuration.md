@@ -18,7 +18,7 @@ or an explicit path. References resolve relative to their containing file. The
 built-in feature is `my-feature`. Platform overrides require an explicit path or
 `replace_builtin: true`. Recipes are data, not Python plugins.
 
-Manifest build/validation/execution values override defaults; CLI mode/documentation
+Manifest build/validation/execution/naming values override defaults; CLI mode/documentation
 options override the manifest. Common changes precede ordered feature ChangeSets.
 Required tests are deduplicated while preserving first occurrence; conflicting
 acceptance definitions with the same ID are rejected. Documentation rules apply in
@@ -55,8 +55,32 @@ acceptance includes baseline expectations.
 `postgresql` (`16.15`). The latter requires `release: 0`; use `package_revision`
 for package rebuilds. DEB revisions/suffixes still apply, e.g. `16.15-1.deb13`.
 An explicit `product.version` must match the computed value. Prerelease identities
-retain Debian ordering (`19.0~rc1` with PostgreSQL format). Naming policy v3 is
+retain Debian ordering (`19.0~rc1` with PostgreSQL format). Naming policy v4 is
 recorded in identities; server source/version strings are not rewritten.
+
+## Package names by role
+
+`spec.naming.package_by_role` in `build.yaml` overrides individual package-name
+templates from `config/defaults.yaml`. Supported keys are `server`, `client`,
+`libpq` and `docs`; omitted roles use `naming.package`. Maps merge across the two
+files, with the manifest taking precedence. Existing single-template configurations
+remain valid, and identities from naming policies v1–v3 remain readable.
+
+```yaml
+spec:
+  naming:
+    package_by_role:
+      server: 'postgresql-{postgresql.major}{build.mode_suffix}-yc-clone'
+      client: 'postgresql-client-{postgresql.major}{build.mode_suffix}-yc-clone'
+      libpq: 'libpq{role.abi_suffix}{build.mode_suffix}-yc-clone'
+      docs: 'postgresql-doc-{postgresql.major}{build.mode_suffix}-yc-clone'
+```
+
+Names flow into DEB metadata, filenames and internal package dependencies. Service
+names and installation paths have their own templates. A naming change requires
+resolve/plan/build with a new lock; renaming a finished DEB file does not change
+its Package or Depends fields. The unversioned `libpq5-yc-clone` name follows the
+libpq ABI; it permits one installed version of that package name per architecture.
 
 ## Previous releases
 

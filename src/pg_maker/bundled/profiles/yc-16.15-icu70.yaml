@@ -15,6 +15,12 @@ spec:
     release: 0
     package_revision: 1
     version_format: postgresql
+  naming:
+    package_by_role:
+      server: 'postgresql-{postgresql.major}{build.mode_suffix}-yc-clone'
+      client: 'postgresql-client-{postgresql.major}{build.mode_suffix}-yc-clone'
+      libpq: 'libpq{role.abi_suffix}{build.mode_suffix}-yc-clone'
+      docs: 'postgresql-doc-{postgresql.major}{build.mode_suffix}-yc-clone'
   features:
   - yc16-icu70
   targets:

@@ -2,13 +2,15 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-pgrouting
-  revision: 1
+  revision: 2
 spec:
   type: library
   source:
     kind: git
     repository: https://github.com/pgRouting/pgrouting.git
     ref: 55c68b0a2417d2ca5d6145fca5389763c67b0760
+  source_patches:
+  - ../../patches/pgrouting-3.5.0-gcc14.patch
   compatible_postgresql: '>=16,<17'
   requires:
   - yc-postgis

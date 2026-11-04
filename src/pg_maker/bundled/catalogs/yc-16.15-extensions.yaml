@@ -144,7 +144,7 @@ extensions:
   component_id: yc-logerrors
   source_ref: 9ea8b0134ecf4217cc7e7e7abff736db779a9713
   source_url: https://github.com/munakoiso/logerrors.git
-  source_release: v2.1
+  source_release: v2.1 + bundled SQL upgrade installation patch
   status: selected-unverified
 - name: lwaldump
   managed_default_version: '1.0'
@@ -374,7 +374,7 @@ extensions:
   component_id: yc-pgrouting
   source_ref: 55c68b0a2417d2ca5d6145fca5389763c67b0760
   source_url: https://github.com/pgRouting/pgrouting.git
-  source_release: v3.5.0
+  source_release: v3.5.0 + bundled GCC 14 SPI text-return patch
   status: selected-unverified
 - name: pgvector
   managed_default_version: 0.8.2
@@ -394,7 +394,9 @@ extensions:
   source_ref: eef5d3a3b9235f947eb729b3d12a2dd148f6eba9
   source_url: https://github.com/plv8/plv8.git
   source_release: v3.2.3 + bundled GCC 14 and incremental V8 build patch
-  status: selected-unverified
+  status: disabled
+  reason: 'Disabled in the profile by request on 2026-11-05. The pinned recipe
+    remains available; uncomment its feature entry to build PLV8 again.'
 - name: postgis
   managed_default_version: 3.4.0
   managed_installed_version: null

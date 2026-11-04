@@ -46,6 +46,11 @@ assert config['postgresql']['version'] == '16.15'
 variant = config['variants'][0]
 assert variant['identity']['product_version'] == '16.15'
 assert all(p['deb_version'] == '16.15-1.deb13' for p in variant['identity']['packages'])
+assert {p['role']: p['name'] for p in variant['identity']['packages']} == {
+    'server': 'postgresql-16-yc-clone',
+    'client': 'postgresql-client-16-yc-clone',
+    'libpq': 'libpq5-yc-clone',
+}
 target = load_yaml(root / 'build.yaml')['spec']['targets'][0]
 assert (target['platform'], target['architecture']) == ('debian-13', 'x86_64')
 components = {c['metadata']['id']: c['spec'] for c in config['features'][0]['spec']['components']}
@@ -55,9 +60,9 @@ declared = {
     n: v for c in components.values() for n, v in c.get('sql_extension_versions', {}).items()
 }
 entries = load_yaml(root / 'catalogs/yc-16.15-extensions.yaml')['extensions']
-assert len(entries) == 38 and len(declared) == 34
+assert len(entries) == 38 and len(declared) == 33
 for entry in entries:
-    if entry['status'] == 'blocked':
+    if entry['status'] in {'blocked', 'disabled'}:
         assert entry['reason'] and entry['name'] not in declared
     else:
         assert declared[entry['name']] == entry['managed_default_version']
@@ -66,8 +71,10 @@ for entry in entries:
             assert entry['source_ref'] == source['ref']
 assert components['yc-jsquery']['source']['ref'] == '40b1db58b3f3f4b315a6f606ba88752c0f8b6aaf'
 assert components['yc-pg-cron']['source']['ref'] == '0cb8118e8dfda30af58a65e14e2b7fe73ec6c931'
+assert 'yc-plv8' not in components
+assert next(e for e in entries if e['name'] == 'plv8')['status'] == 'disabled'
 print('OK: installed managed profile: PostgreSQL 16.15, Debian 13 amd64, '
-      'ICU 70.1, 34 selected extensions')
+      'ICU 70.1, 33 selected extensions; PLV8 disabled')
 """
         print(run([binaries / "python", "-c", profile_check, managed]).strip())
         run([binaries / "pg-maker", "dev", "--help"])

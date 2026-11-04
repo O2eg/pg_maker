@@ -53,6 +53,11 @@ def test_managed_profile_preserves_all_38_names_and_explains_exclusions(tmp_path
     initialize_project(tmp_path, profile="yc-16.15-icu70")
     config = load_config(tmp_path / "build.yaml").data
     assert config["variants"][0]["identity"]["product_version"] == "16.15"
+    assert {p["role"]: p["name"] for p in config["variants"][0]["identity"]["packages"]} == {
+        "server": "postgresql-16-yc-clone",
+        "client": "postgresql-client-16-yc-clone",
+        "libpq": "libpq5-yc-clone",
+    }
     components = config["features"][0]["spec"]["components"]
     declared = {
         name: version
@@ -61,12 +66,13 @@ def test_managed_profile_preserves_all_38_names_and_explains_exclusions(tmp_path
     }
     entries = load_yaml(tmp_path / "catalogs/yc-16.15-extensions.yaml")["extensions"]
     assert len(entries) == len({e["name"] for e in entries}) == 38
-    assert len(declared) == 34
+    assert len(declared) == 33
     for entry in entries:
-        if entry["status"] == "blocked":
+        if entry["status"] in {"blocked", "disabled"}:
             assert entry["reason"] and entry["name"] not in declared
         else:
             assert declared[entry["name"]] == entry["managed_default_version"]
+    assert next(e for e in entries if e["name"] == "plv8")["status"] == "disabled"
     requirements = environment_requirements(config)
     packages = {
         p for r in requirements["environments"] for p in r["packages"] + r["runtime_packages"]

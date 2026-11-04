@@ -208,6 +208,14 @@ vendor = document(
         }
     ),
 )
+naming_fields = ("package", "service", "deb_version", "rpm_version", "rpm_release")
+naming = obj(
+    {
+        **{key: S for key in naming_fields},
+        "package_by_role": obj({role: S for role in ("server", "client", "libpq", "docs")}, []),
+    },
+    list(naming_fields),
+)
 defaults = document(
     "pg_maker/defaults/v1",
     "MakerDefaults",
@@ -222,12 +230,7 @@ defaults = document(
                     "port": {"type": "integer", "minimum": 1, "maximum": 65535},
                 }
             ),
-            "naming": obj(
-                {
-                    key: S
-                    for key in ("package", "service", "deb_version", "rpm_version", "rpm_release")
-                }
-            ),
+            "naming": naming,
             "common_changes": arr(obj({"builtin": {"const": "unix-socket-directory"}})),
             "build": build,
             "build_modes": obj(
@@ -352,6 +355,7 @@ manifest = obj(
                 "targets": {**arr(target), "minItems": 1},
                 "documentation": obj({"profile": S, "enabled": B, "languages": arr()}, []),
                 "build": obj(build["properties"], []),
+                "naming": obj(naming["properties"], []),
                 "validation": validation,
                 "execution": obj(execution["properties"], []),
                 "extra_build_args": arr(),
@@ -712,7 +716,12 @@ resolved_feature["properties"]["spec"]["properties"].update(
 identity = obj(
     {
         "policy_version": {
-            "enum": ["pg_maker/naming/v1", "pg_maker/naming/v2", "pg_maker/naming/v3"]
+            "enum": [
+                "pg_maker/naming/v1",
+                "pg_maker/naming/v2",
+                "pg_maker/naming/v3",
+                "pg_maker/naming/v4",
+            ]
         },
         "product_version": S,
         "service": S,

@@ -174,6 +174,62 @@ def test_init_defaults_and_identity(project):
     assert not any("FORTIFY_SOURCE" in x for x in debug["build"]["resolved_flags"]["cppflags"])
 
 
+def test_role_naming_overrides_merge_and_survive_locking(project):
+    defaults_path = project / "config/defaults.yaml"
+    defaults = load_yaml(defaults_path)
+    defaults["spec"]["naming"] = {
+        "package_by_role": {
+            "server": "postgresql-{postgresql.major}-yc-clone",
+            "client": "overridden-client",
+        }
+    }
+    write_yaml(defaults_path, defaults)
+    manifest_path = project / "build.yaml"
+    manifest = load_yaml(manifest_path)
+    manifest["spec"]["naming"] = {
+        "package_by_role": {
+            "client": "postgresql-client-{postgresql.major}-yc-clone",
+            "libpq": "libpq{role.abi_suffix}-yc-clone",
+        }
+    }
+    write_yaml(manifest_path, manifest)
+    config = load_config(manifest_path, with_doc=True)
+    names = {p["role"]: p["name"] for p in config.data["variants"][0]["identity"]["packages"]}
+    assert names == {
+        "server": "postgresql-18-yc-clone",
+        "client": "postgresql-client-18-yc-clone",
+        "libpq": "libpq5-yc-clone",
+        "docs": "test-my-feature-docs-18",
+    }
+    assert config.provenance["/defaults/naming/package_by_role/client"] == str(manifest_path)
+    state, lock = resolved(project)
+    assert state["status"] == "succeeded", state
+    packages = lock["spec"]["config"]["variants"][0]["identity"]["packages"]
+    assert {p["role"]: p["name"] for p in packages} == {
+        k: v for k, v in names.items() if k != "docs"
+    }
+    assert all(p["filename"].startswith(p["name"] + "_") for p in packages)
+    validate_document(build_plan(lock), "plan")
+
+
+@pytest.mark.parametrize(
+    "overrides",
+    [
+        {"typo": "postgresql-16-yc-clone"},
+        {"server": "{unknown}"},
+        {"server": "invalid_name"},
+        {"server": "same-name", "client": "same-name"},
+    ],
+)
+def test_role_naming_rejects_invalid_names_and_collisions(project, overrides):
+    path = project / "build.yaml"
+    manifest = load_yaml(path)
+    manifest["spec"]["naming"] = {"package_by_role": overrides}
+    write_yaml(path, manifest)
+    with pytest.raises(ValidationError):
+        load_config(path)
+
+
 def test_configuration_precedence_and_list_replacement(project, monkeypatch, tmp_path):
     env_config = tmp_path / "env_config"
     cli_config = tmp_path / "cli_config"

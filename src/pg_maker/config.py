@@ -212,7 +212,7 @@ def load_config(
                 docs_base = path.parent
         settings[name] = value["spec"]
     defaults = settings["defaults"]
-    for section in ("build", "validation", "execution"):
+    for section in ("build", "validation", "execution", "naming"):
         defaults[section] = merge(defaults[section], spec.get(section, {}))
         mark_leaves(spec.get(section, {}), str(manifest_path), "/defaults/" + section, provenance)
     if build_mode is not None:
