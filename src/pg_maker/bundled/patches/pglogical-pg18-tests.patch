@@ -9,7 +9,7 @@
  max_replication_slots = 20
 --- a/t/010_pglogical_create_subscriber.pl
 +++ b/t/010_pglogical_create_subscriber.pl
-@@ -2,17 +2,26 @@
+@@ -2,22 +2,31 @@
  use warnings;
  use Cwd;
  use Config;
@@ -40,6 +40,12 @@
  
  system_or_bail 'rm', '-rf', '/tmp/tmp_datadir';
  system_or_bail 'rm', '-rf', '/tmp/tmp_backupdir';
+ 
+-system_or_bail 'initdb', '-A trust', '-D', '/tmp/tmp_datadir';
++system_or_bail 'initdb', '-A', 'trust', '-D', '/tmp/tmp_datadir';
+ 
+ system_or_bail 'pwd';
+ 
 @@ -36,34 +45,34 @@
  #allow Postgres server to startup
  system_or_bail 'sleep', '17';
@@ -178,6 +184,17 @@
  
  my $PGPORT=65432; #subscriber's port
  my $PROVIDER_PORT=65431;
+@@ -14,8 +16,8 @@
+ system_or_bail 'rm', '-rf', '/tmp/tmp_020_sdatadir';
+ 
+ #provider's and subscriber's datadir
+-system_or_bail 'initdb', '-A trust', '-D', '/tmp/tmp_020_pdatadir';
+-system_or_bail 'initdb', '-A trust', '-D', '/tmp/tmp_020_sdatadir';
++system_or_bail 'initdb', '-A', 'trust', '-D', '/tmp/tmp_020_pdatadir';
++system_or_bail 'initdb', '-A', 'trust', '-D', '/tmp/tmp_020_sdatadir';
+ 
+ system_or_bail 'pwd';
+ 
 @@ -93,7 +95,7 @@
  system_or_bail 'psql', '-X', '-p', "$PROVIDER_PORT", '-d', "postgres", '-c', "CREATE OR REPLACE FUNCTION public.pg_xlog_wait_remote_apply(i_pos pg_lsn, i_pid integer) RETURNS VOID
  AS \$FUNC\$
@@ -198,6 +215,17 @@
  use Test::More;
  #use Test::More tests => 6;
  # This is a special test, that tries to modify system time 
+@@ -33,8 +33,8 @@
+ system_or_bail 'sleep', '10';
+ 
+ #provider's and subscriber's datadir
+-system_or_bail 'initdb', '-A trust', '-D', '/tmp/tmp_030_pdatadir';
+-system_or_bail 'initdb', '-A trust', '-D', '/tmp/tmp_030_sdatadir';
++system_or_bail 'initdb', '-A', 'trust', '-D', '/tmp/tmp_030_pdatadir';
++system_or_bail 'initdb', '-A', 'trust', '-D', '/tmp/tmp_030_sdatadir';
+ 
+ system_or_bail 'pwd';
+ 
 @@ -153,7 +153,7 @@
  system_or_bail 'psql', '-X', '-p', "$PROVIDER_PORT", '-c', "CREATE OR REPLACE FUNCTION public.pg_xlog_wait_remote_apply(i_pos pg_lsn, i_pid integer) RETURNS VOID
  AS \$FUNC\$
