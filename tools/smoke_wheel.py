@@ -106,7 +106,9 @@ assert c['postgresql']['version'] == '18.6'
 assert c['postgresql_recipe']['db_test_adapter'] == 'pg18'
 components = {x['metadata']['id']: x['spec'] for x in c['features'][0]['spec']['components']}
 assert 'yc18-plv8' not in components and 'yc18-repl-mon' in components
-assert len(components['yc18-vectorscale']['extra_sources']) == 625
+rust_inputs = components['yc18-vectorscale']['extra_sources']
+assert len(rust_inputs) == 626 and 'rustfmt' in rust_inputs
+assert len([name for name in rust_inputs if name.startswith('crate-')]) == 621
 assert sum(len(x.get('sql_extension_versions', {})) for x in components.values()) == 39
 assert len(load_yaml(root / 'catalogs/yc-18.6-extensions.yaml')['extensions']) == 44
 for helper in ('vectorscale', 'partman5', 'lwaldump'):
