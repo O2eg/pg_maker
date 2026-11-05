@@ -39,9 +39,10 @@ PG_MAKER_BUILD_IMAGE, PG_MAKER_PREPARATION_IMAGE, PG_MAKER_PACKAGE_ENVIRONMENTS 
 PG_MAKER_DOC_ENVIRONMENTS. CI prepares its own fixture environments through
 `tools/ci_pipeline.py --fixtures-only`.
 
-Database suites remain off by default. The expensive PG_MAKER_BUILD_LOCK integration
-and manual --run-db-tests path are separate checks, not routine prerequisites for
-editing the Python utility. Never treat a successful quick build as database qualification.
+Database builds run the standard core, contrib and extension suites by default.
+`test-full` adds the expensive core suites. The PG_MAKER_BUILD_LOCK integration
+fixture is a separate check, not a routine prerequisite for editing the Python utility.
+Never treat a build with explicitly disabled tests as database qualification.
 Check free disk before work; use [explicit cleanup](docs/development-storage.md) and
 retain useful evidence. Do not put runs, inputs, environments, credentials or build
 artifacts into Git.

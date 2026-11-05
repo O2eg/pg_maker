@@ -1,0 +1,31 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc18-hypopg
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: archive
+    location: https://codeload.github.com/HypoPG/hypopg/tar.gz/8d7ca569185edc7549b983736c8862fbe211144f
+    sha256: sha256:9ee915bfa6cf12cb98e8c369f200ae9f6cc167bf517a5261b0f01a648e169035
+    strip_components: 1
+  compatible_postgresql: '>=18.6,<19'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets:
+  - installcheck
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: hypopg
+  runtime_files:
+  - lib/postgresql/hypopg.so
+  - share/postgresql/extension/hypopg.control
+  - share/postgresql/extension/hypopg--*.sql
+  sql_extension_versions:
+    hypopg: 1.4.2

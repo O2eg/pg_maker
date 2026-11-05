@@ -39,7 +39,7 @@ def procedure_calls(source):
     ]
 
 
-def clock_fixture(library):
+def clock_fixture(library, runner=None):
     """Run calendar-sensitive upstream fixtures on a mid-month Friday.
 
     Keep time advancing and preserve monotonic clocks. The offset is shared by
@@ -81,7 +81,7 @@ def clock_fixture(library):
                 "CREATE EXTENSION pgtap; SELECT now() AS fixture_clock;",
             ]
         )
-        run([sys.executable, __file__])
+        run([sys.executable, runner or __file__])
     finally:
         run(["pg_ctl", "-D", str(data), "-m", "immediate", "-w", "stop"])
 

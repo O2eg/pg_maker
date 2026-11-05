@@ -60,6 +60,7 @@ pg_maker = [
   "bundled/patches/*.patch", "recipes/platforms/*.yaml",
   "bundled/components/*.yaml", "bundled/documentation/*.yaml",
   "bundled/components/managed/*.yaml", "bundled/components/libraries/*.yaml",
+  "bundled/components/managed18/*.yaml",
   "bundled/catalogs/*.yaml", "bundled/profiles/*.yaml",
   "bundled/documentation/*.sgml", "bundled/documentation/*.md",
   "packaging/templates/*.in",

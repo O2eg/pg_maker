@@ -500,9 +500,16 @@ component = document(
             "build_dependencies": arr(),
             "runtime_dependencies": arr(),
             "configure_args": arr(),
+            "build_commands": arr(
+                obj(
+                    {"argv": {**arr(), "minItems": 1}, "env": mapping()},
+                    ["argv"],
+                )
+            ),
             "build_system": {"enum": ["make", "cmake"]},
             "sql_extension_versions": mapping(S),
             "extra_sources": mapping(source),
+            "extra_source_catalogs": arr(S),
             "source_patches": arr(S),
             "make_targets": arr(),
             "test_targets": arr(),

@@ -1,0 +1,64 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc18-pg-partman
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: archive
+    location: https://codeload.github.com/pgpartman/pg_partman/tar.gz/a12b23ee6615d179dfaa38cc6fed8ed44cd61ba2
+    sha256: sha256:9c8251492110d8dc94555fd3384e376f86e3b42bde33a17a2efa867b54cc8c1e
+    strip_components: 1
+  compatible_postgresql: '>=18.6,<19'
+  requires: []
+  conflicts: []
+  build_dependencies:
+  - libtap-parser-sourcehandler-pgtap-perl
+  - python3-psycopg2
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: pg_partman
+  runtime_files:
+  - lib/postgresql/pg_partman_bgw.so
+  - share/postgresql/extension/pg_partman.control
+  - share/postgresql/extension/pg_partman--*.sql
+  sql_extension_versions:
+    pg_partman: 5.4.3
+  extra_sources:
+    faketime:
+      kind: archive
+      location: https://deb.debian.org/debian/pool/main/f/faketime/faketime_0.9.10+2024-06-05+gba9ed5b2.orig.tar.xz
+      sha256: sha256:879597d9b3469b062314dbac70b2dd3b393053086772999ed94401b8ddb412de
+      strip_components: 1
+    pgtap:
+      kind: git
+      repository: https://github.com/theory/pgtap.git
+      ref: 968eb53a33114e83042b3bdb0c664b5b80cf8bdf
+  test_setup:
+  - - make
+    - -C
+    - '{source:faketime}/src'
+    - -j
+    - '{jobs}'
+  - - make
+    - -C
+    - '{source:pgtap}'
+    - PG_CONFIG={prefix}/bin/pg_config
+    - all
+    - install
+  test_cluster: false
+  test_commands:
+  - id: upstream-pgtap
+    argv:
+    - python3
+    - '{test_helpers}/partman5.py'
+    - '{source:faketime}/src/libfaketime.so.1'
+    success_pattern: ^PG_MAKER_PARTMAN_TESTS_PASSED=(?P<count>\d+)$
+  preload:
+  - pg_partman_bgw

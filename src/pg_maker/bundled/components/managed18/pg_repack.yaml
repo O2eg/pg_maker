@@ -1,0 +1,62 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc18-pg-repack
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: archive
+    location: https://codeload.github.com/reorg/pg_repack/tar.gz/6902ab313aeb49227867087dca99cf107f7be23b
+    sha256: sha256:8dae055868982913728152bc8dd51e6ba74764bb25aba323d73dc20d277dfc49
+    strip_components: 1
+  compatible_postgresql: '>=18.6,<19'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets:
+  - installcheck
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: pg_repack
+  runtime_files:
+  - bin/pg_repack
+  - lib/postgresql/pg_repack.so
+  - share/postgresql/extension/pg_repack.control
+  - share/postgresql/extension/pg_repack--*.sql
+  sql_extension_versions:
+    pg_repack: 1.5.3
+  test_setup:
+  - - mkdir
+    - -p
+    - '{component}/tablespaces/ts1'
+    - '{component}/tablespaces/ts2'
+    - '{component}/tablespaces/ts3'
+    - '{component}/tablespaces/ts4'
+  - - '{prefix}/bin/psql'
+    - -X
+    - -v
+    - ON_ERROR_STOP=1
+    - -c
+    - CREATE TABLESPACE testts LOCATION '{component}/tablespaces/ts1'
+    - -c
+    - CREATE TABLESPACE "1testts" LOCATION '{component}/tablespaces/ts2'
+    - -c
+    - CREATE TABLESPACE "test ts" LOCATION '{component}/tablespaces/ts3'
+    - -c
+    - CREATE TABLESPACE "test""ts" LOCATION '{component}/tablespaces/ts4'
+  test_commands:
+  - id: regression
+    argv:
+    - make
+    - --output-sync=target
+    - -j
+    - '{jobs}'
+    - USE_PGXS=1
+    - PG_CONFIG={prefix}/bin/pg_config
+    - installcheck
+    success_pattern: All (?P<count>\d+) tests passed\.

@@ -3300,6 +3300,31 @@
                 "type": "string"
               }
             },
+            "build_commands": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "argv": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1
+                  },
+                  "env": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "argv"
+                ],
+                "additionalProperties": false
+              }
+            },
             "build_system": {
               "enum": [
                 "make",
@@ -3392,6 +3417,12 @@
                     "additionalProperties": false
                   }
                 ]
+              }
+            },
+            "extra_source_catalogs": {
+              "type": "array",
+              "items": {
+                "type": "string"
               }
             },
             "source_patches": {
@@ -7385,6 +7416,31 @@
                                 "type": "string"
                               }
                             },
+                            "build_commands": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "argv": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "minItems": 1
+                                  },
+                                  "env": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                      "type": "string"
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "argv"
+                                ],
+                                "additionalProperties": false
+                              }
+                            },
                             "build_system": {
                               "enum": [
                                 "make",
@@ -7502,6 +7558,12 @@
                                     "additionalProperties": false
                                   }
                                 ]
+                              }
+                            },
+                            "extra_source_catalogs": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
                               }
                             },
                             "source_patches": {

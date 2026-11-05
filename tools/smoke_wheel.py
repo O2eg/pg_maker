@@ -87,6 +87,36 @@ print('OK: installed managed profile: PostgreSQL 16.15, Debian 13 amd64, '
       'ICU 70.1, 33 selected extensions; PLV8 disabled')
 """
         print(run([binaries / "python", "-c", profile_check, managed]).strip())
+        managed18 = directory / "yc18"
+        run([binaries / "pg-maker", "init", managed18, "--profile", "yc-18.6-icu70"])
+        run([binaries / "pg-maker", "validate", managed18 / "build.yaml"])
+        print(
+            run(
+                [
+                    binaries / "python",
+                    "-c",
+                    """
+import sys
+from pathlib import Path
+from pg_maker.config import load_config, resource_path
+from pg_maker.yamlio import load_yaml
+root = Path(sys.argv[1])
+c = load_config(root / 'build.yaml').data
+assert c['postgresql']['version'] == '18.6'
+assert c['postgresql_recipe']['db_test_adapter'] == 'pg18'
+components = {x['metadata']['id']: x['spec'] for x in c['features'][0]['spec']['components']}
+assert 'yc18-plv8' not in components and 'yc18-repl-mon' in components
+assert len(components['yc18-vectorscale']['extra_sources']) == 625
+assert sum(len(x.get('sql_extension_versions', {})) for x in components.values()) == 39
+assert len(load_yaml(root / 'catalogs/yc-18.6-extensions.yaml')['extensions']) == 44
+for helper in ('vectorscale', 'partman5', 'lwaldump'):
+    assert resource_path('validation', 'upstream', helper + '.py').is_file()
+print('OK: installed PG18 profile, private ICU70.1, frozen Cargo inputs, PLV8 disabled')
+""",
+                    managed18,
+                ]
+            ).strip()
+        )
         run([binaries / "pg-maker", "dev", "--help"])
         run([binaries / "pg-maker", "test-full", "--help"])
         run([binaries / "pg-maker", "logs", "verify", "--help"])

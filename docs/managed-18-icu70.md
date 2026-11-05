@@ -1,0 +1,115 @@
+# PostgreSQL 18 managed-compatibility profile
+
+`yc-18.6-icu70` builds community PostgreSQL **18.6** for **Debian 13 amd64**,
+with private **ICU 70.1** and the public extension versions observed on
+`rc1a-novptt4hkfpbodb6.mdb.yandexcloud.net` on 2026-11-05. It has independent
+component recipes; the qualified PostgreSQL 16 profile remains unchanged.
+
+```bash
+pg-maker init yc18 --profile yc-18.6-icu70
+pg-maker validate yc18/build.yaml
+pg-maker env prepare yc18/build.yaml --out yc18/environments.json --operations yc18/operations
+pg-maker resolve yc18/build.yaml --environments yc18/environments.json --out yc18/lock.json --input-store yc18/inputs --operations yc18/operations
+pg-maker plan yc18/lock.json --goal package --out yc18/plan.json
+pg-maker build yc18/lock.json --plan yc18/plan.json --operations yc18/operations --detach
+```
+
+The resulting package names are:
+
+| Role | Filename |
+| --- | --- |
+| Server and extensions | `postgresql-18-yc-clone_18.6-1.deb13_amd64.deb` |
+| Client | `postgresql-client-18-yc-clone_18.6-1.deb13_amd64.deb` |
+| Client library | `libpq5-yc-clone_18.6-1.deb13_amd64.deb` |
+
+The PostgreSQL version format has two components. `libpq5` follows the upstream
+ABI naming convention and intentionally has no PostgreSQL major in its name.
+ICU is installed under the distribution's private prefix and travels with the
+server package; the package does not request the host's ICU 70 package.
+LZ4 and Zstandard are enabled, including support for the source's LZ4 TOAST/WAL.
+
+## Managed observations and limits
+
+| Input | Managed observation | Profile |
+| --- | --- | --- |
+| PostgreSQL | `18.6-201-yandex.62650.c500aa0389` | Community 18.6 |
+| Architecture | x86_64 | x86-64 baseline, amd64 packages |
+| Database ICU locale | `en-US`, UTF-8 | Private ICU 70.1 |
+| en-US stored / actual collation | `153.112` / `153.112` | Expected `153.112` |
+| ru-RU actual collation | `153.112.40` | Expected `153.112.40` |
+| ICU Unicode data | `14.0` | ICU 70.1 Unicode 14.0 |
+| Exact managed libicu package | Not exposed to the audit role | **Not confirmed** |
+| libc en_US.utf8 collation | `2.35` | Debian 13 libc; not matched by private ICU |
+| Data checksums | Enabled | Physical copies preserve the source setting |
+| Block / WAL block / WAL segment | 8192 / 8192 / 16 MiB | Upstream defaults |
+
+Matching extension SQL versions and ICU collation versions does not establish
+vendor binary equivalence or qualify a physical replica. Vendor core patches,
+extension patches, on-disk formats and libc collations still need separate
+verification. No managed source credentials are included in the project.
+
+## Extension inventory
+
+The editable `catalogs/yc-18.6-extensions.yaml` retains all **44** non-contrib
+names. **39** are selected for compilation and testing. Each selected recipe
+asserts the installed SQL version from the managed catalog.
+
+| Excluded name | Reason |
+| --- | --- |
+| `plv8` 3.2.4 | Explicitly disabled; its feature entry remains commented out |
+| `anon` 1.3.2.1 | Public 1.3.2 does not establish the vendor's additional `.1` patch |
+| `sa_mon` 1.0 | Matching public source not found |
+| `pgvector` 0.8.2 | Unconfirmed managed alias; upstream provides `vector`, which is selected |
+| `oracle_fdw` 1.2 | Requires a separately provisioned Oracle Instant Client SDK/runtime |
+
+`repl_mon` is additionally selected as a preload module without an SQL extension.
+The source did not report its module version. Public source availability is
+recorded separately from license status: the audit did not find explicit license
+files for `lwaldump`, `smlar` and `spqrguard`; TimescaleDB includes TSL code.
+
+## Frozen Rust inputs and test fixtures
+
+`vectorscale` 0.9.0 uses Rust 1.91.1 and cargo-pgrx 0.16.1. The recipe pins the
+toolchain archives and a generated Cargo.lock patch. A separate YAML catalog
+pins 621 crate archives with their Cargo checksums. `extra_source_catalogs`
+merges these into ordinary `extra_sources` before locking; duplicate keys fail
+validation. The build runs Cargo offline against these inputs. Rust tools and
+crate sources are build inputs and are not copied into the database packages.
+
+Explicit `build_commands` support the pgrx build/install steps. They are argv
+arrays, are included in reuse identity, and cannot be combined with Make or
+CMake build actions. Standard native-test and installed-version gates still
+apply. The production release library is restored after pgrx's test build.
+
+The profile also exercises pg_partman's role/procedure/BGW fixtures and checks
+`lwaldump` on a temporary physical standby, including an abrupt restart.
+
+## Full qualification and preserving previous releases
+
+Standard source and extension tests are enabled by default. For a package run
+that must also include the expensive core suites, set the following **before**
+preparing and resolving the project:
+
+```yaml
+spec:
+  validation:
+    profile: full
+    baseline: false
+    test_suites: [standard, long]
+    run_db_tests: true
+```
+
+`test-full` is the standalone command for the expensive source suites. Package
+acceptance runs in fresh containers of the target OS. Qualification requires
+successful source, extension and package gates, plus review of diagnostic logs.
+An operator-approved one-hour test exclusion must retain the timed-out test's
+identity, elapsed time and logs; it must not hide an assertion or compiler failure.
+
+Use a separate project, operation directory and delivery directory for each major.
+Before a new major build, copy all three previous DEBs, SHA256SUMS and the complete
+qualified delivery archive to a release directory, then verify their checksums.
+Do not clean that directory while preparing or retrying the new build.
+
+This profile's initial status is **selected, pending native qualification**.
+The completed operation's reports, rather than the existence of a recipe, establish
+whether the resulting packages passed qualification.

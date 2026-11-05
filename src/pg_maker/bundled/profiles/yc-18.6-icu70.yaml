@@ -1,0 +1,46 @@
+api_version: pg_maker/v1
+kind: PostgreSQLBuild
+metadata:
+  name: yc-18-6-icu70
+spec:
+  config_dir: ./config
+  source:
+    kind: archive
+    location: https://ftp.postgresql.org/pub/source/v18.6/postgresql-18.6.tar.bz2
+    sha256: sha256:555610c24d53e4316da5b7d3fc25c279d96856d5e0e23ee308c328c5fa881d9f
+    strip_components: 1
+  postgresql:
+    version: '18.6'
+  product:
+    release: 0
+    package_revision: 1
+    version_format: postgresql
+  naming:
+    package_by_role:
+      server: postgresql-{postgresql.major}{build.mode_suffix}-yc-clone
+      client: postgresql-client-{postgresql.major}{build.mode_suffix}-yc-clone
+      libpq: libpq{role.abi_suffix}{build.mode_suffix}-yc-clone
+      docs: postgresql-doc-{postgresql.major}{build.mode_suffix}-yc-clone
+  features:
+  - yc18-icu70
+  targets:
+  - id: debian13-x64
+    platform: debian-13
+    architecture: x86_64
+    cpu_target: x86-64
+    artifacts:
+    - deb
+  documentation:
+    profile: ./config/documentation.yaml
+  validation:
+    profile: full
+    baseline: false
+  packaging:
+    server_dev_files: true
+  build:
+    options:
+      llvm: false
+      lz4: true
+      zstd: true
+      libxml: true
+      libxslt: true

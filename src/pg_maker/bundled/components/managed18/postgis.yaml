@@ -1,0 +1,79 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc18-postgis
+  revision: 1
+spec:
+  type: library
+  source:
+    kind: archive
+    location: https://download.osgeo.org/postgis/source/postgis-3.6.0.tar.gz
+    sha256: sha256:8caffef4b457ed70d5328bf4e5a21f9306b06c271662e03e1a65d30090e5f25f
+    strip_components: 1
+  compatible_postgresql: '>=18.6,<19'
+  requires:
+  - fuzzystrmatch
+  conflicts: []
+  build_dependencies:
+  - libgeos-dev
+  - libproj-dev
+  - libgdal-dev
+  - libsfcgal-dev
+  - libjson-c-dev
+  - libprotobuf-c-dev
+  - protobuf-c-compiler
+  - libpcre2-dev
+  - libxml2-dev
+  - libxml2-utils
+  - docbook-xml
+  - xsltproc
+  - docbook-xsl
+  - libcunit1-dev
+  runtime_dependencies:
+  - libgeos-c1t64
+  - libproj25
+  - libgdal36
+  - libsfcgal2
+  - libjson-c5
+  - libprotobuf-c1
+  - libpcre2-8-0
+  - libxml2
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: postgis
+  runtime_files:
+  - lib/postgresql/postgis*.so
+  - lib/postgresql/postgis_raster-3.so
+  - lib/postgresql/address_standardizer*.so
+  - share/postgresql/extension/postgis*.control
+  - share/postgresql/extension/postgis*--*.sql
+  - share/postgresql/extension/address_standardizer*.control
+  - share/postgresql/extension/address_standardizer*--*.sql
+  sql_extension_versions:
+    postgis: 3.6.0
+    postgis_raster: 3.6.0
+    postgis_sfcgal: 3.6.0
+    postgis_tiger_geocoder: 3.6.0
+    postgis_topology: 3.6.0
+    address_standardizer: 3.6.0
+    address_standardizer_data_us: 3.6.0
+  configure_args:
+  - --with-pgconfig={prefix}/bin/pg_config
+  - --with-raster
+  - --with-sfcgal
+  - --with-address-standardizer
+  test_commands:
+  - id: unit-and-regression
+    env:
+      PGIS_REG_TMPDIR: '{component}/pg-maker-regression'
+    argv:
+    - make
+    - --output-sync=target
+    - -j
+    - '{jobs}'
+    - check
+    success_pattern: 'Run tests: (?P<count>\d+)\nFailed: 0'

@@ -1,0 +1,52 @@
+api_version: pg_maker/feature/v1
+kind: FeatureProfile
+metadata:
+  id: yc18-icu70
+  revision: 1
+spec:
+  description: PostgreSQL 18.6 with private ICU 70.1 and the managed PG18 extension inventory
+  numeric_id: null
+  changes: []
+  components:
+  - ../../components/libraries/icu70.yaml
+  - ../../components/pg-stat-statements.yaml
+  - ../../components/fuzzystrmatch.yaml
+  - ../../components/managed18/age.yaml
+  - ../../components/managed18/hypopg.yaml
+  - ../../components/managed18/jsquery.yaml
+  - ../../components/managed18/logerrors.yaml
+  - ../../components/managed18/orafce.yaml
+  - ../../components/managed18/pg_cron.yaml
+  - ../../components/managed18/pg_hint_plan.yaml
+  - ../../components/managed18/pg_qualstats.yaml
+  - ../../components/managed18/pg_stat_query_plans.yaml
+  - ../../components/managed18/pg_tm_aux.yaml
+  - ../../components/managed18/pg_uuidv7.yaml
+  - ../../components/managed18/pgaudit.yaml
+  - ../../components/managed18/rum.yaml
+  - ../../components/managed18/spqrguard.yaml
+  - ../../components/managed18/spqrhash.yaml
+  - ../../components/managed18/pg_stat_kcache.yaml
+  - ../../components/managed18/pg_partman.yaml
+  - ../../components/managed18/pg_repack.yaml
+  - ../../components/managed18/pglogical.yaml
+  - ../../components/managed18/vector.yaml
+  - ../../components/managed18/smlar.yaml
+  - ../../components/managed18/postgis.yaml
+  - ../../components/managed18/pgrouting.yaml
+  - ../../components/managed18/timescaledb.yaml
+  - ../../components/managed18/h3.yaml
+  - ../../components/managed18/ip4r.yaml
+  - ../../components/managed18/pg_clickhouse.yaml
+  - ../../components/managed18/pg_textsearch.yaml
+  - ../../components/managed18/prefix.yaml
+  - ../../components/managed18/vectorscale.yaml
+  - ../../components/managed18/lwaldump.yaml
+  - ../../components/managed18/repl_mon.yaml
+  # PLV8 remains disabled by request; this entry is opt-in only.
+  # - ../../components/managed18/plv8.yaml
+  build_options: {}
+  documentation:
+    rules: []
+  required_tests: []
+  compatible_postgresql: ==18.6

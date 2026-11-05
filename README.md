@@ -44,6 +44,10 @@ For PostgreSQL 16.15 with private ICU 70.1 and the managed extension catalog, us
 See the [profile and version policy](docs/managed-16-icu70.md) for included recipes,
 explicit exclusions and qualification limits. The default init profile is unchanged.
 
+For PostgreSQL 18.6, use `pg-maker init example --profile yc-18.6-icu70`.
+The [PG18 profile](docs/managed-18-icu70.md) pins its own extension versions and
+Rust dependencies; PLV8 remains disabled in both managed profiles.
+
 ```bash
 pg-maker init example
 pg-maker validate example/build.yaml

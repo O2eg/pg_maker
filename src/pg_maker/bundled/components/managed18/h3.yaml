@@ -1,0 +1,60 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc18-h3
+  revision: 1
+spec:
+  type: library
+  source:
+    kind: archive
+    location: https://codeload.github.com/postgis/h3-pg/tar.gz/a26630b8353d441e6bc8065c0a8dcaa3d89ef87b
+    sha256: sha256:b46d6d7bd1ae59f35382de4eaa810be2fafcb1a337cc4869dacd0b51c38b66ce
+    strip_components: 1
+  compatible_postgresql: '>=18.6,<19'
+  requires:
+  - yc18-postgis
+  conflicts: []
+  build_dependencies:
+  - cmake
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: h3
+  runtime_files:
+  - lib/postgresql/h3*.so
+  - share/postgresql/extension/h3*.control
+  - share/postgresql/extension/h3*--*.sql
+  sql_extension_versions:
+    h3: 4.2.3
+    h3_postgis: 4.2.3
+  build_system: cmake
+  configure_args:
+  - -DPostgreSQL_CONFIG={prefix}/bin/pg_config
+  - -DPOSTGRESQL_VERSION=18
+  - -DBUILD_TESTING=ON
+  - -DFETCHCONTENT_FULLY_DISCONNECTED=ON
+  - -DFETCHCONTENT_SOURCE_DIR_H3={source:h3-core}
+  - -DPostgreSQL_REGRESS={postgresql_build}/src/test/regress/pg_regress
+  - -DCMAKE_BUILD_TYPE=Release
+  extra_sources:
+    h3-core:
+      kind: archive
+      location: https://codeload.github.com/uber/h3/tar.gz/refs/tags/v4.2.0
+      sha256: sha256:438db46fc2b388785d2a0d8e26aa5509739240a7b50b2510c416778d871a4e11
+      strip_components: 1
+  test_cluster: false
+  test_commands:
+  - id: ctest
+    argv:
+    - ctest
+    - --test-dir
+    - '{build}'
+    - --output-on-failure
+    - --no-tests=error
+    - -C
+    - Release
+    success_pattern: 100% tests passed, 0 tests failed out of (?P<count>\d+)

@@ -6,6 +6,8 @@ from pathlib import Path
 from pg_maker.errors import OwnershipError, ValidationError
 from pg_maker.storage import ensure_directory, write_text
 
+BUILD_PROFILES = ("yc-16.15-icu70", "yc-18.6-icu70")
+
 
 def initialize_project(
     directory: Path,
@@ -21,7 +23,7 @@ def initialize_project(
     bundled = files("pg_maker").joinpath("bundled")
     assets["build.yaml"] = bundled.joinpath("build.yaml").read_text()
     if profile is not None:
-        if profile != "yc-16.15-icu70":
+        if profile not in BUILD_PROFILES:
             raise ValidationError("unknown build profile")
         assets["build.yaml"] = bundled.joinpath("profiles", profile + ".yaml").read_text()
     for item in bundled.joinpath("config").iterdir():

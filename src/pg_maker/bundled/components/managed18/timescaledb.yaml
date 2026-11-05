@@ -1,0 +1,68 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc18-timescaledb
+  revision: 1
+spec:
+  type: library
+  source:
+    kind: archive
+    location: https://codeload.github.com/timescale/timescaledb/tar.gz/ba5dcfd1c69f3529d0cc9de3028e1a12a36042ba
+    sha256: sha256:dbf6f09402e805e824c92242ecad01a18363816e48676b1f53ad3d2a788d00fe
+    strip_components: 1
+  compatible_postgresql: '>=18.6,<19'
+  requires: []
+  conflicts: []
+  build_dependencies:
+  - cmake
+  - libssl-dev
+  runtime_dependencies:
+  - libssl3t64
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: timescaledb
+  runtime_files:
+  - lib/postgresql/timescaledb.so
+  - lib/postgresql/timescaledb-2.23.0.so
+  - lib/postgresql/timescaledb-tsl-2.23.0.so
+  - share/postgresql/extension/timescaledb.control
+  - share/postgresql/extension/timescaledb--*.sql
+  sql_extension_versions:
+    timescaledb: 2.23.0
+  build_system: cmake
+  configure_args:
+  - -DEXT_GIT_COMMIT_TAG=2.23.0-pg-maker
+  - -DEXT_GIT_COMMIT_HASH=ba5dcfd1c69f3529d0cc9de3028e1a12a36042ba
+  - -DPG_CONFIG={prefix}/bin/pg_config
+  - -DREGRESS_CHECKS=ON
+  - -DTAP_CHECKS=ON
+  - -DWARNINGS_AS_ERRORS=OFF
+  - -DREQUIRE_ALL_TESTS=ON
+  - -DPG_SOURCE_DIR={postgresql_source}
+  - -DPG_ISOLATION_REGRESS={postgresql_build}/src/test/isolation/pg_isolation_regress
+  - -DEXT_GIT_COMMIT_TIME=2025-10-29T08:03:03Z
+  preload:
+  - timescaledb
+  test_cluster: false
+  test_commands:
+  - id: upstream-installcheck
+    env:
+      PGTZ: US/Pacific
+      PG_REGRESS_OPTS: --encoding=UTF8
+      LANG: C.UTF-8
+      LC_CTYPE: C.UTF-8
+    argv:
+    - cmake
+    - --build
+    - '{build}'
+    - --target
+    - installcheck
+    - --parallel
+    - '1'
+    success_pattern: All (?P<count>\d+) tests passed\.
+  source_patches:
+  - ../../patches/timescaledb-archive-metadata.patch

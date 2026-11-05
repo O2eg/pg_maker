@@ -63,6 +63,7 @@ def compilation_recipe(component):
         "pkg_config_versions",
         "provides_options",
         "build_system",
+        "build_commands",
         "sql_extension_versions",
         "extra_sources",
     )

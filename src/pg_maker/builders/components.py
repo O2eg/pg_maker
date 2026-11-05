@@ -175,6 +175,24 @@ def build_components(branch, components, *, run_tests=True):
                 configure_args = [
                     arg.replace("{source:" + name + "}", extra_container) for arg in configure_args
                 ]
+            if spec.get("build_commands"):
+                values = native_tests.substitutions(branch, component, cwd)
+                for command in spec["build_commands"]:
+                    branch.command(
+                        [native_tests.render(arg, values) for arg in command["argv"]],
+                        cwd=cwd,
+                        env={
+                            k: native_tests.render(v, values)
+                            for k, v in command.get("env", {}).items()
+                        },
+                    )
+                verify_extension_versions(branch, spec)
+                reports.append(
+                    native_tests.run(branch, component, cwd)
+                    if run_tests
+                    else {"id": identifier, "built": True, "native_targets": [], "tests": "skipped"}
+                )
+                continue
             if spec.get("build_system") == "cmake":
                 build_path = cwd + "/pg-maker-build"
                 branch.command(

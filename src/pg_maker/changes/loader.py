@@ -3,7 +3,7 @@
 import re
 from pathlib import Path
 
-from pg_maker.documents import relative_output
+from pg_maker.documents import relative_output, validate_document
 from pg_maker.errors import ValidationError
 from pg_maker.planning.graph import ordered_ids
 from pg_maker.storage import content_hash, file_hash
@@ -101,6 +101,14 @@ def load_components(references: list[str], base: Path, version: str) -> tuple[li
         path = (base / reference).resolve()
         document = load_yaml(path, "component")
         identifier, spec = document["metadata"]["id"], document["spec"]
+        for catalog in spec.pop("extra_source_catalogs", []):
+            sources = load_yaml((path.parent / catalog).resolve())
+            extras = spec.setdefault("extra_sources", {})
+            if extras.keys() & sources.keys():
+                raise ValidationError("duplicate extra source across component catalogs")
+            extras.update(sources)
+        # Catalog contents become ordinary immutable source inputs in the lock.
+        validate_document(document, "component")
         compatible(version, spec["compatible_postgresql"], identifier)
         if spec["type"] != "contrib" and "source" not in spec:
             raise ValidationError("external component needs a source")
@@ -127,6 +135,16 @@ def load_components(references: list[str], base: Path, version: str) -> tuple[li
             raise ValidationError("component directory must be relative")
         if spec.get("build_system") == "cmake" and spec["type"] not in {"utility", "library"}:
             raise ValidationError("CMake components must have type utility or library")
+        if spec.get("build_commands") and (
+            spec["type"] not in {"utility", "library"}
+            or spec.get("build_system", "make") != "make"
+            or spec.get("configure_args")
+            or spec["make_targets"]
+            or spec["install_targets"]
+        ):
+            raise ValidationError(
+                "explicit build commands require a utility/library with no Make or CMake actions"
+            )
         for name, expected in spec.get("sql_extension_versions", {}).items():
             if not re.fullmatch(r"[a-zA-Z0-9_-]+", name) or not expected:
                 raise ValidationError("invalid extension version assertion")

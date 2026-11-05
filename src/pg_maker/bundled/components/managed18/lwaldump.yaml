@@ -1,0 +1,37 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc18-lwaldump
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: archive
+    location: https://codeload.github.com/munakoiso/lwaldump/tar.gz/91d7a88e35fc75b5e04b68cc34d2b9a56ca7b34e
+    sha256: sha256:62d7b7471a3f02811316f32e8f6eb02dc37933e2d20409d8755163b0ea347a35
+    strip_components: 1
+  compatible_postgresql: '>=18.6,<19'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: lwaldump
+  runtime_files:
+  - lib/postgresql/lwaldump*.so
+  - share/postgresql/extension/lwaldump.control
+  - share/postgresql/extension/lwaldump--*.sql
+  sql_extension_versions:
+    lwaldump: '1.0'
+  test_cluster: false
+  test_commands:
+  - id: physical-standby-wal
+    argv:
+    - python3
+    - '{test_helpers}/lwaldump.py'
+    success_pattern: ^PG_MAKER_LWALDUMP_TESTS_PASSED=(?P<count>\d+)$
