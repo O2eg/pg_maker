@@ -70,10 +70,19 @@ def main():
         for statement in procedure_diagnostics(prove(path)):
             sql(statement)
 
-    sql("ALTER SYSTEM SET pg_partman_bgw.dbname = 'postgres'")
+    command(["createdb", "partman_mixed"])
+    os.environ["PGDATABASE"] = "partman_mixed"
+    sql(
+        'CREATE SCHEMA "PartMan"; CREATE EXTENSION pg_partman SCHEMA "PartMan"; '
+        "CREATE EXTENSION pgtap"
+    )
+    os.environ["PGDATABASE"] = "postgres"
+    sql("ALTER SYSTEM SET pg_partman_bgw.dbname = 'postgres,partman_mixed'")
     sql("SELECT pg_reload_conf()")
     for path in sorted((root / "test_bgw").glob("*.sql")):
+        os.environ["PGDATABASE"] = "partman_mixed" if "mixed-case" in path.name else "postgres"
         prove(path)
+    os.environ["PGDATABASE"] = "postgres"
     sql("ALTER SYSTEM RESET pg_partman_bgw.dbname")
     sql("SELECT pg_reload_conf()")
 
