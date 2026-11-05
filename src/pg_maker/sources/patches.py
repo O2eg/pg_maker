@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 
 from pg_maker.changes.apply import apply_patch
+from pg_maker.errors import MakerError
 
 
 def patch_component_source(spec, store, directory, *, check=lambda: None):
@@ -20,7 +21,11 @@ def patch_component_source(spec, store, directory, *, check=lambda: None):
         for reference in patches:
             check()
             patch = store.blob(reference["sha256"]).read_text(encoding="utf-8")
-            apply_patch(tree, patch)
+            try:
+                apply_patch(tree, patch)
+            except MakerError as exc:
+                exc.details.update(patch_input=reference["input"], patch_sha256=reference["sha256"])
+                raise
         check()
         patched_hash = store.put_tree(tree)
     spec["source_unpatched"] = original

@@ -20,13 +20,14 @@ spec:
   runtime_dependencies: []
   make_targets:
   - all
-  test_targets: []
+  test_targets:
+  - installcheck
   install_targets:
   - install
   required_tests: []
   sql_extension: plv8
   runtime_files:
-  - lib/postgresql/plv8-3.2.3.so
+  - lib/postgresql/plv8-3.2.4.so
   - share/postgresql/extension/plv8.control
   - share/postgresql/extension/plv8--*.sql
   sql_extension_versions:

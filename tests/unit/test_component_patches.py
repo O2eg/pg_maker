@@ -106,3 +106,12 @@ def test_component_patch_requires_external_source(project):
     write_yaml(recipe, component)
     with pytest.raises(ValidationError, match="external source"):
         load_config(project / "build.yaml")
+
+
+def test_failed_component_patch_identifies_its_input(project):
+    _, patch = configure_patch(project)
+    patch.write_text(patch.read_text().replace("-original", "-wrong context"))
+    state, _ = resolved(project)
+    assert state["status"] == "failed"
+    assert state["error"]["details"]["patch_input"] == "components/patched/source-patches/0"
+    assert state["error"]["details"]["patch_sha256"] == file_hash(patch)

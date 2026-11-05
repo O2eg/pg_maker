@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-timescaledb
-  revision: 1
+  revision: 2
 spec:
   type: library
   source:
@@ -65,4 +65,4 @@ spec:
     - '1'
     success_pattern: All (?P<count>\d+) tests passed\.
   source_patches:
-  - ../../patches/timescaledb-archive-metadata.patch
+  - ../../patches/timescaledb-2.23-archive-metadata.patch
