@@ -18,6 +18,8 @@ def run_suites(root, scripts):
     env = {
         k: v for k, v in os.environ.items() if k not in {"PGHOST", "PGPORT", "PGDATABASE", "PGUSER"}
     }
+    # Fixtures without an explicit socket path use the writable test directory.
+    env["PGHOST"] = "/tmp"
     for path in selected:
         # This scenario uses the parent test cluster; the others create their own.
         test_env = dict(os.environ) if path.name == "hypertable.sh" else dict(env)

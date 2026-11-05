@@ -1,0 +1,48 @@
+--- a/test/scripts/crash_safety_spill.sh
++++ b/test/scripts/crash_safety_spill.sh
+@@ -46,6 +46,7 @@
+ 
+     cat >> "${DATA_DIR}/postgresql.conf" << EOF
+ port = ${TEST_PORT}
++unix_socket_directories = '/tmp'
+ shared_preload_libraries = 'pg_textsearch'
+ logging_collector = on
+ log_directory = '.'
+--- a/test/scripts/logical_replication.sh
++++ b/test/scripts/logical_replication.sh
+@@ -131,6 +131,7 @@
+ 
+     cat >> "${PUB_DIR}/postgresql.conf" << EOF
+ port = ${PUB_PORT}
++unix_socket_directories = '/tmp'
+ shared_buffers = 128MB
+ max_connections = 20
+ log_min_messages = notice
+@@ -164,6 +165,7 @@
+ 
+     cat >> "${SUB_DIR}/postgresql.conf" << EOF
+ port = ${SUB_PORT}
++unix_socket_directories = '/tmp'
+ shared_buffers = 128MB
+ max_connections = 20
+ log_min_messages = notice
+--- a/test/scripts/recovery.sh
++++ b/test/scripts/recovery.sh
+@@ -59,6 +59,7 @@
+     # Configure test instance
+     cat >> "${DATA_DIR}/postgresql.conf" << EOF
+ port = ${TEST_PORT}
++unix_socket_directories = '/tmp'
+ log_statement = 'all'
+ shared_buffers = 128MB
+ max_connections = 20
+--- a/test/scripts/replication_compat.sh
++++ b/test/scripts/replication_compat.sh
+@@ -47,6 +47,7 @@
+         --auth-host=trust >/dev/null 2>&1
+     cat >> "${LOGICAL_SUB_DIR}/postgresql.conf" <<EOF
+ port = ${LOGICAL_SUB_PORT}
++unix_socket_directories = '/tmp'
+ shared_preload_libraries = 'pg_textsearch'
+ wal_level = logical
+ log_min_messages = notice

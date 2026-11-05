@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-pg-textsearch
-  revision: 2
+  revision: 3
 spec:
   type: pgxs
   source:
@@ -12,6 +12,7 @@ spec:
     strip_components: 1
   source_patches:
   - ../../patches/pg-textsearch-1.3-timescale-tests.patch
+  - ../../patches/pg-textsearch-1.3-socket-tests.patch
   compatible_postgresql: '>=18.6,<19'
   requires:
   - yc18-timescaledb
