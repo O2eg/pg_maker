@@ -1,0 +1,11 @@
+--- a/test/scripts/replication_lib.sh
++++ b/test/scripts/replication_lib.sh
+@@ -189,7 +189,7 @@
+ log_min_messages = notice
+ logging_collector = on
+ log_filename = 'postgres.log'
+-shared_preload_libraries = 'pg_textsearch'
++shared_preload_libraries = '${PG_MAKER_TEST_PRELOAD:-pg_textsearch}'
+ wal_level = replica
+ max_wal_senders = 8
+ hot_standby = on

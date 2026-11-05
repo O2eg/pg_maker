@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-pg-textsearch
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
@@ -10,6 +10,8 @@ spec:
     location: https://codeload.github.com/timescale/pg_textsearch/tar.gz/f50e9831edffd97f4f1977448fe708c4575f7ebb
     sha256: sha256:648fdd4b3d8ed09b150f095e5afd642e7c90ab13bcccc93c7fd231c215e5d52d
     strip_components: 1
+  source_patches:
+  - ../../patches/pg-textsearch-1.3-timescale-tests.patch
   compatible_postgresql: '>=18.6,<19'
   requires:
   - yc18-timescaledb
@@ -31,6 +33,7 @@ spec:
   sql_extension_versions:
     pg_textsearch: 1.3.0
   preload:
+  - timescaledb
   - pg_textsearch
   test_commands:
   - id: regression

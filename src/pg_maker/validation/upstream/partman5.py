@@ -8,7 +8,12 @@ import sys
 import time
 from pathlib import Path
 
-from partman import clock_fixture, procedure_calls
+from partman import clock_fixture
+
+
+def procedure_diagnostics(output):
+    """Read executed pgTAP diagnostics, excluding commented-out SQL instructions."""
+    return re.findall(r'^#.*?"(CALL [^\n]+;)"', output, re.M)
 
 
 def main():
@@ -42,6 +47,7 @@ def main():
             raise RuntimeError("missing nonempty passing TAP result: " + name)
         counts.append(int(match[0]))
         completed.add(name)
+        return text
 
     for directory in (root, root / "test_no_search_path", root / "test_pg17plus"):
         for path in sorted(directory.glob("*.sql")):
@@ -61,8 +67,7 @@ def main():
     prove(non_super / "test-nonsuperuser-part3.sql")
 
     for path in sorted((root / "test_procedure").glob("*.sql")):
-        prove(path)
-        for statement in procedure_calls(path.read_text()):
+        for statement in procedure_diagnostics(prove(path)):
             sql(statement)
 
     sql("ALTER SYSTEM SET pg_partman_bgw.dbname = 'postgres'")
@@ -79,8 +84,7 @@ def main():
     for path in sorted((root / "test_manual").glob("*public*.sql")):
         prove(path)
     for path in sorted((root / "test_manual/procedures").glob("*.sql")):
-        prove(path)
-        for statement in procedure_calls(path.read_text()):
+        for statement in procedure_diagnostics(prove(path)):
             sql(statement)
 
     evidence = {

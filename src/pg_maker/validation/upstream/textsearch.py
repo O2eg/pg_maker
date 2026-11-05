@@ -19,15 +19,30 @@ def main():
         k: v for k, v in os.environ.items() if k not in {"PGHOST", "PGPORT", "PGDATABASE", "PGUSER"}
     }
     for path in selected:
+        # This scenario uses the parent test cluster; the others create their own.
+        test_env = dict(os.environ) if path.name == "hypertable.sh" else dict(env)
+        if path.name == "replication_compat.sh":
+            test_env["PG_MAKER_TEST_PRELOAD"] = "pg_textsearch,timescaledb"
         log = root / ("pg-maker-" + path.stem + ".log")
         with log.open("w") as output:
             result = subprocess.run(
-                ["bash", path.name], cwd=scripts, env=env, stdout=output, stderr=subprocess.STDOUT
+                ["bash", path.name],
+                cwd=scripts,
+                env=test_env,
+                stdout=output,
+                stderr=subprocess.STDOUT,
             )
-        print(log.read_text(errors="replace"), end="", flush=True)
+        text = log.read_text(errors="replace")
+        print(text, end="", flush=True)
         outcomes.append({"script": path.name, "returncode": result.returncode})
         (root / "pg-maker-shell-tests.log").write_text(json.dumps(outcomes, indent=2))
         result.check_returncode()
+        required = {
+            "hypertable.sh": "All hypertable tests passed!",
+            "replication_compat.sh": "F2 PASSED",
+        }.get(path.name)
+        if required and required not in text:
+            raise RuntimeError(path.name + " did not execute its TimescaleDB assertions")
     print("PG_MAKER_TEXTSEARCH_SUITES_PASSED=" + str(len(outcomes)), flush=True)
 
 
