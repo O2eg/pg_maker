@@ -1,0 +1,5 @@
+--- a/source/python/icutools/databuilder/test/filtration_test.py
++++ b/source/python/icutools/databuilder/test/filtration_test.py
+@@ -421 +421 @@
+-suite = unittest.makeSuite(FiltrationTest)
++suite = unittest.defaultTestLoader.loadTestsFromTestCase(FiltrationTest)

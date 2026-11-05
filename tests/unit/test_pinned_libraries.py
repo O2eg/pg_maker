@@ -99,6 +99,8 @@ def library_fixture(project):
         "exclude": [],
     }
     component["spec"].pop("source_directory")
+    # This synthetic library does not contain ICU's Python test sources.
+    component["spec"].pop("source_patches", None)
     write_yaml(path, component)
     feature_path = project / "config/features/my-feature.yaml"
     feature = load_yaml(feature_path)

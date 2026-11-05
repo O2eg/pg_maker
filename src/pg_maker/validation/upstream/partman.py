@@ -4,10 +4,12 @@ This helper runs only inside the disposable build container against its test clu
 It leaves failed suites and their evidence intact and never retries failed assertions.
 """
 
+import datetime as dt
 import json
 import os
 import re
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -20,6 +22,13 @@ def inventory(root):
     excluded["test_native/test_tablespace/test-time-daily-native-tablespace-template.sql"] = (
         "upstream scenario for PostgreSQL 11 and older; the pg12+ scenario is run"
     )
+    excluded.update(
+        {
+            p: "upstream reapply_indexes.py explicitly rejects native partition sets on PG11+"
+            for p in files
+            if p.startswith("test_reindex_native/")
+        }
+    )
     return files, excluded
 
 
@@ -28,6 +37,53 @@ def procedure_calls(source):
         call.replace("''", "'")
         for call in re.findall(r'^SELECT diag\(.*?"(CALL [^\n]+;)"', source, re.M)
     ]
+
+
+def clock_fixture(library):
+    """Run calendar-sensitive upstream fixtures on a mid-month Friday.
+
+    Keep time advancing and preserve monotonic clocks. The offset is shared by
+    every server/client process; neither host time nor installed DB code changes.
+    """
+    offset = (dt.date(2026, 5, 15) - dt.datetime.now(dt.timezone.utc).date()).days
+    data = Path("pg-maker-clock-data").resolve()
+    env = {
+        **os.environ,
+        "LD_PRELOAD": str(Path(library).resolve()),
+        "FAKETIME": str(offset) + "d",
+        "FAKETIME_DONT_FAKE_MONOTONIC": "1",
+        "PGHOST": "/tmp",
+        "PGPORT": "55432",
+        "PGUSER": "builder",
+        "PGDATABASE": "postgres",
+    }
+
+    def run(argv):
+        subprocess.run(argv, env=env, check=True)
+
+    run(["initdb", "-D", str(data), "-A", "trust", "--no-locale", "-E", "UTF8", "-U", "builder"])
+    with (data / "postgresql.conf").open("a") as stream:
+        stream.write(
+            "\nlisten_addresses = ''\nport = 55432\nunix_socket_directories = '/tmp'\n"
+            "max_locks_per_transaction = 1024\nshared_preload_libraries = 'pg_partman_bgw'\n"
+            "pg_partman_bgw.interval = 5\npg_partman_bgw.role = 'builder'\n"
+        )
+    run(["pg_ctl", "-D", str(data), "-l", str(data / "server.log"), "-w", "start"])
+    try:
+        run(
+            [
+                "psql",
+                "-X",
+                "-v",
+                "ON_ERROR_STOP=1",
+                "-c",
+                "CREATE SCHEMA partman; CREATE EXTENSION pg_partman SCHEMA partman; "
+                "CREATE EXTENSION pgtap; SELECT now() AS fixture_clock;",
+            ]
+        )
+        run([sys.executable, __file__])
+    finally:
+        run(["pg_ctl", "-D", str(data), "-m", "immediate", "-w", "stop"])
 
 
 def main():
@@ -103,7 +159,7 @@ def main():
         for key in ("PGHOST", "PGPORT", "PGUSER", "PGDATABASE")
     )
     connection = connection.replace("database=", "dbname=")
-    for directory in ("test_reindex", "test_reindex_native"):
+    for directory in ("test_reindex",):
         for path in sorted((root / directory).glob("*.sql")):
             prove(path)
             if path.name.startswith(("02-", "03-")):
@@ -142,4 +198,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) == 2:
+        clock_fixture(sys.argv[1])
+    else:
+        main()

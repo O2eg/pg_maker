@@ -30,6 +30,8 @@ spec:
     pg_stat_query_plans: '1.0'
   preload:
   - pg_stat_query_plans
+  test_settings:
+    max_prepared_transactions: '10'
   test_make_args:
   - NO_INSTALLCHECK=
   - REGRESS_OPTS=--temp-config={component}/pg_stat_query_plans.conf

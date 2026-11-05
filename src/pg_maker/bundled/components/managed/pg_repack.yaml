@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-pg-repack
-  revision: 2
+  revision: 3
 spec:
   type: pgxs
   source:
@@ -29,6 +29,23 @@ spec:
   - share/postgresql/extension/pg_repack--*.sql
   sql_extension_versions:
     pg_repack: 1.5.3
+  # Same four fixtures as upstream regress/create_tablespaces.sh, using the
+  # disposable cluster's builder role and paths inside its private workspace.
+  test_setup:
+  - [mkdir, -p, '{component}/tablespaces/ts1', '{component}/tablespaces/ts2',
+     '{component}/tablespaces/ts3', '{component}/tablespaces/ts4']
+  - - '{prefix}/bin/psql'
+    - -X
+    - -v
+    - ON_ERROR_STOP=1
+    - -c
+    - "CREATE TABLESPACE testts LOCATION '{component}/tablespaces/ts1'"
+    - -c
+    - "CREATE TABLESPACE \"1testts\" LOCATION '{component}/tablespaces/ts2'"
+    - -c
+    - "CREATE TABLESPACE \"test ts\" LOCATION '{component}/tablespaces/ts3'"
+    - -c
+    - "CREATE TABLESPACE \"test\"\"ts\" LOCATION '{component}/tablespaces/ts4'"
   test_commands:
   - id: regression
     argv:

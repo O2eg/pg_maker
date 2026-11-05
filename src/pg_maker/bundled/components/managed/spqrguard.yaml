@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-spqrguard
-  revision: 2
+  revision: 3
 spec:
   type: pgxs
   source:
@@ -18,6 +18,10 @@ spec:
   - all
   test_targets:
   - installcheck
+  # This pinned tree declares TAP_TESTS=1 but contains no t/*.pl files.
+  # Run all five regression cases and the drop_extension isolation case.
+  test_make_args:
+  - TAP_TESTS=
   install_targets:
   - install
   required_tests: []

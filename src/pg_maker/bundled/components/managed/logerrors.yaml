@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-logerrors
-  revision: 3
+  revision: 4
 spec:
   type: pgxs
   source:
@@ -11,6 +11,7 @@ spec:
     ref: 9ea8b0134ecf4217cc7e7e7abff736db779a9713
   source_patches:
   - ../../patches/logerrors-2.1-install-upgrade.patch
+  - ../../patches/logerrors-export-worker.patch
   compatible_postgresql: '>=16,<17'
   requires: []
   conflicts: []

@@ -1,0 +1,5 @@
+--- a/logerrors.c
++++ b/logerrors.c
+@@ -124 +124 @@
+-void logerrors_main(Datum) pg_attribute_noreturn();
++PGDLLEXPORT void logerrors_main(Datum) pg_attribute_noreturn();

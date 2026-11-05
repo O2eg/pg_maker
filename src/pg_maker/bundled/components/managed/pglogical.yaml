@@ -2,14 +2,18 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-pglogical
-  revision: 2
+  revision: 3
 spec:
   type: pgxs
   source:
     kind: git
     repository: https://github.com/2ndQuadrant/pglogical.git
     ref: bff71f2c6b0bd9748ecee15dcc93201cd1a145a0
-  compatible_postgresql: '>=16,<17'
+  source_patches:
+  - ../../patches/pglogical-pg16-tests.patch
+  # Upstream 7acb02405be5471d9827bd62b37c810038e262e3; preserves SQL version 2.4.4.
+  - ../../patches/pglogical-idle-sync.patch
+  compatible_postgresql: '>=16.15,<17'
   requires: []
   conflicts: []
   build_dependencies: []
@@ -42,7 +46,8 @@ spec:
     - '{jobs}'
     - USE_PGXS=1
     - PG_CONFIG={prefix}/bin/pg_config
-    - check
+    # PGXS check also prints an unsupported-target error after regresscheck passes.
+    - regresscheck
     success_pattern: All (?P<count>\d+) tests passed\.
   - id: tap
     argv:

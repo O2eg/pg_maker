@@ -223,7 +223,9 @@ class DockerRunner:
             mount = f"type=bind,src={source},dst=/work/{part}"
             command += ["--mount", mount + (",readonly" if part == "source" else "")]
         command += [environment.image, "infinity"]
-        result = self._control(command)
+        # Creating the writable layer of a large build image can exceed the
+        # short metadata-query timeout on network-backed VM disks.
+        result = self._control(command, timeout=120)
         handle = replace(handle, container_id=result.stdout_tail.strip())
         self._inspect(handle)
         self._control(["start", handle.container_id])
@@ -291,10 +293,15 @@ class DockerRunner:
         data = self._inspect(handle)
         if data is None or not data["running"]:
             return CancellationResult(False)
-        self._control(["stop", "--time", "2", data["id"]], timeout=10)
+        # Daemon teardown may outlive the requested process grace period. The
+        # inspected state decides success even if the CLI times out after stop.
+        result = self._control(["stop", "--time", "2", data["id"]], check=False, timeout=30)
         after = self._inspect(handle)
         if after and after["running"]:
-            raise CommandError("container remained running after cancellation")
+            raise CommandError(
+                "container remained running after cancellation",
+                details={"returncode": result.returncode, "timed_out": result.timed_out},
+            )
         return CancellationResult(True)
 
     def release(self, handle: EnvironmentHandle, policy: CleanupPolicy) -> None:

@@ -213,6 +213,18 @@ def schedule_tests(path: Path) -> list[str]:
 
 
 def skip_policy(path: str, source: str, config: dict) -> str | None:
+    if (
+        path == "src/test/modules/test_cloexec/t/001_cloexec.pl"
+        and config.get("PORTNAME") == "linux"
+        and "plan skip_all => 'test is Windows-specific';" in source
+    ):
+        return "test is Windows-specific"
+    if (
+        path == "src/test/recovery/t/031_recovery_conflict.pl"
+        and config.get("MAJORVERSION") == "16"
+        and re.search(r'^plan skip_all => "disabled due to instability";$', source, re.M)
+    ):
+        return "disabled due to instability"
     if path.endswith("/005_sspi.pl"):
         return "SSPI tests require Windows (without PG_TEST_USE_UNIX_SOCKETS)"
     if (

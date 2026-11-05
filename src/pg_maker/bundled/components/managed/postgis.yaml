@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-postgis
-  revision: 4
+  revision: 6
 spec:
   type: library
   source:
@@ -11,6 +11,8 @@ spec:
     sha256: sha256:aee9b60a6c884d354164b3096c4657f324454186607f859d1ce05d899798af9d
     strip_components: 1
   compatible_postgresql: '>=16,<17'
+  source_patches:
+  - ../../patches/postgis-geos313-tests.patch
   requires:
   - fuzzystrmatch
   conflicts: []
@@ -24,6 +26,8 @@ spec:
   - protobuf-c-compiler
   - libpcre2-dev
   - libxml2-dev
+  - libxml2-utils
+  - docbook-xml
   - xsltproc
   - docbook-xsl
   - libcunit1-dev
@@ -66,6 +70,8 @@ spec:
   - --with-address-standardizer
   test_commands:
   - id: unit-and-regression
+    env:
+      PGIS_REG_TMPDIR: '{component}/pg-maker-regression'
     argv:
     - make
     - --output-sync=target

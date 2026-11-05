@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: icu70
-  revision: 2
+  revision: 3
 spec:
   type: library
   build_phase: before-postgresql
@@ -12,6 +12,8 @@ spec:
     sha256: sha256:8d205428c17bf13bb535300669ed28b338a157b1c01ae66d31d0d3e2d47c3fd5
     strip_components: 1
   source_directory: source
+  source_patches:
+  - ../../patches/icu70-python313-tests.patch
   compatible_postgresql: '>=14,<20'
   requires: []
   conflicts: []

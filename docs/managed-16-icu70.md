@@ -168,7 +168,12 @@ The pgRouting 3.5.0 recipe also applies
 3.5.0, and the patch and resulting source tree are recorded in the lock.
 
 The logerrors 2.1 recipe includes its upstream `2.0--2.1` SQL upgrade script in
-the Makefile install list. PostGIS packaging requires `postgis_raster-3.so` and
+the Makefile install list. It also explicitly exports the `logerrors_main` worker
+entry point: PGXS uses hidden symbol visibility, and without the export the
+library loads but the background worker fails to start. The functional test
+checks interval error aggregation as well as the three zero-valued TOTAL rows
+retained after statistics reset. Both source patches are recorded in the lock.
+PostGIS packaging requires `postgis_raster-3.so` and
 selects contrib fuzzystrmatch so `postgis_tiger_geocoder` can be created with CASCADE.
 
 Four entries require additional inputs:
@@ -208,18 +213,60 @@ The current controller enables tests by default and adds PostgreSQL 16 regressio
 parsing, ICU make check, PGXS/TAP and explicit CMake/native component suites. The
 package goal also installs the exact DEBs in fresh offline containers. Use
 `pg-maker test-full yc16/lock.json --operations yc16/operations` to add expensive
-WAL consistency checks to the standard source suites. No DB/package build using
-this new test configuration has been started as of 2026-11-05; the historical manual
-acceptance below covers the earlier 34-extension package only. The current
-33-extension profile still needs its first complete tested build.
+WAL consistency checks to the standard source suites. Native qualification with
+this configuration started on 2026-11-05. The historical manual acceptance below
+covers the earlier 34-extension package only; it does not qualify this profile.
+A complete successful source, extension and installed-package report is required.
 
 pg_partman tests run with pinned pgTAP, including staged procedures/reindexing,
 non-superuser, tablespace and background-worker scenarios. Upstream's two
 not_working_yet scripts and its PostgreSQL <=11 tablespace variant are explicitly
-not applicable; the pg12+ tablespace scenario runs. The logerrors pin has no upstream
+not applicable; the pg12+ tablespace scenario runs. Its native-reindex scripts are
+also not applicable: `reapply_indexes.py` explicitly rejects native partition sets
+on PG11+. The legacy reindex suite runs in full. These cases are recorded separately
+from successful assertions. The logerrors pin has no upstream
 regression target, so a functional helper checks statistics, error capture and reset.
 These recipes are test definitions, not evidence of a passed run. Preparing a new
 environment is required for CUnit, pgTAP and Python test dependencies.
+
+The pg_partman helper uses a pinned, locally compiled libfaketime solely for its
+test cluster and clients. The calendar-sensitive fixtures run at a mid-month Friday;
+the shared day offset targets 2026-05-15 while time continues advancing and
+monotonic clocks remain real. This avoids the documented weekday/year-boundary
+fixture failures. A separate test-only patch fixes half-minute expectations in
+the two 30-second scenarios: they must use `floor(seconds / 30)`, not
+`floor(minutes / 30)`. Table, row-count and privilege assertions remain enabled. The native daily test
+also adds its foreign key to the partitioned parent on PG11+, after its initial
+no-FK assertions; future-child FK checks therefore exercise native inheritance. The host clock and
+delivered PostgreSQL libraries are unaffected. The test cluster also uses
+`max_locks_per_transaction=1024` for the three-level subpartition scenarios.
+
+Other test-environment adaptations are explicit: ICU's Python test loader supports
+Python 3.13; pg_repack gets the four upstream tablespace fixtures; spqrguard runs
+its five regression cases and isolation case without attempting its nonexistent
+TAP files. The pglogical recipe ports its TAP harness to PostgreSQL 16 APIs and
+allows `pglogical_output` in its disposable test clusters' `output_plugin_libraries`
+setting (PostgreSQL 16.15+). Legacy TAP clusters explicitly configure their
+socket directory and subscriber port after the modern test module resets inherited
+connection variables. `regresscheck` avoids the unrelated unsupported PGXS `check`
+target. It also backports upstream fix
+[`7acb024`](https://github.com/2ndQuadrant/pglogical/commit/7acb02405be5471d9827bd62b37c810038e262e3)
+for a table-sync worker hanging on an idle source. The upstream SQL version remains
+2.4.4; source provenance records the patch. Its regression synchronization budget
+is 180 seconds, as in current upstream. These changes do not count failed tests as successful.
+The pglogical TAP time-travel scenario retains its upstream TODO/SKIP marker.
+
+PostGIS 3.4.0's tests include upstream normalization fixes
+[`777b0f7`](https://github.com/postgis/postgis/commit/777b0f7e91f0d83254e5de77d73e73df41dfb706)
+and [`cc695fd`](https://github.com/postgis/postgis/commit/cc695fd305a9e3ec2003026d8e63d92887ab2009).
+On GEOS 3.13+, the RelateNG reference from
+[`d4e89be`](https://github.com/postgis/postgis/commit/d4e89be9cf1b857885d28e315c9d117e62f179f5)
+is selected for boundary-node tests; its first-column values also cover the four
+identical invalid-MultiPolygon inputs in `relate.sql`. Original references remain
+available for older GEOS. All SQL scenarios remain enabled, and failed diffs are
+preserved in the component workspace. These changes affect tests only, not installed
+PostGIS functions or its SQL version. The build environment includes `xmllint` and
+DocBook XML so the upstream documentation checks also run.
 
 ### Compiler version and physical replication
 

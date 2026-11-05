@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from pg_maker.builders import native_tests
-from pg_maker.builders.autotools import regression_evidence
+from pg_maker.builders.autotools import regression_evidence, skip_policy
 from pg_maker.errors import CommandError
 from pg_maker.validation.upstream.partman import procedure_calls
 
@@ -72,3 +72,15 @@ SELECT * FROM finish();"""
     assert procedure_calls(source) == [
         "CALL partman.partition_data_proc('test.data', p_wait := 0);"
     ]
+
+
+def test_pg16_upstream_disabled_tests_require_matching_source_and_platform():
+    recovery = "src/test/recovery/t/031_recovery_conflict.pl"
+    source = 'plan skip_all => "disabled due to instability";'
+    assert skip_policy(recovery, source, {"MAJORVERSION": "16"}) == "disabled due to instability"
+    assert skip_policy(recovery, "", {"MAJORVERSION": "16"}) is None
+    assert skip_policy(recovery, source, {"MAJORVERSION": "17"}) is None
+    windows = "src/test/modules/test_cloexec/t/001_cloexec.pl"
+    source = "plan skip_all => 'test is Windows-specific';"
+    assert skip_policy(windows, source, {"PORTNAME": "linux"}) == "test is Windows-specific"
+    assert skip_policy(windows, source, {"PORTNAME": "win32"}) is None
