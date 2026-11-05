@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-pg-hint-plan
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
@@ -31,5 +31,6 @@ spec:
   sql_extension_versions:
     pg_hint_plan: 1.8.0
   preload:
+  # Match upstream's regression server; pg_stat_statements enables query IDs
+  # globally and changes the expected nested PL/pgSQL hint diagnostics.
   - pg_hint_plan
-  - pg_stat_statements
