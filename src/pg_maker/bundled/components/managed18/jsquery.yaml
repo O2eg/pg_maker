@@ -2,13 +2,13 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-jsquery
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
     kind: archive
-    location: https://codeload.github.com/postgrespro/jsquery/tar.gz/fea3186d8f615aa237a6eabe6deb89aeb7106e3e
-    sha256: sha256:9320b08112e95126dd94635f98acdba6f13b2c75866711de5058cfea767452f3
+    location: https://codeload.github.com/postgrespro/jsquery/tar.gz/f43eabd5c5dad311894fb131a62999928743c726
+    sha256: sha256:6039151dac9abe2f7ee86e544aa50771f111578c529627b1494672c7c9bcdb2b
     strip_components: 1
   compatible_postgresql: '>=18.6,<19'
   requires: []

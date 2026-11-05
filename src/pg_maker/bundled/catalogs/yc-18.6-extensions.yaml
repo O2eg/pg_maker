@@ -177,8 +177,8 @@ extensions:
   recipe: ../components/managed18/jsquery.yaml
   component_id: yc18-jsquery
   source_url: https://github.com/postgrespro/jsquery
-  source_ref: fea3186d8f615aa237a6eabe6deb89aeb7106e3e
-  source_release: heads/Release1_1
+  source_ref: f43eabd5c5dad311894fb131a62999928743c726
+  source_release: PG18-compatible upstream f43eabd; SQL version remains 1.1
   status: selected-unverified
 - name: logerrors
   managed_default_version: '2.1'
