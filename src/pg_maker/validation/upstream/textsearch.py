@@ -2,13 +2,13 @@
 
 import json
 import os
+import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 
-def main():
-    root = Path.cwd()
-    scripts = root / "test/scripts"
+def run_suites(root, scripts):
     # This file defines functions sourced by the replication scripts.
     libraries = {"replication_lib.sh"}
     selected = sorted(p for p in scripts.glob("*.sh") if p.name not in libraries)
@@ -44,6 +44,22 @@ def main():
         if required and required not in text:
             raise RuntimeError(path.name + " did not execute its TimescaleDB assertions")
     print("PG_MAKER_TEXTSEARCH_SUITES_PASSED=" + str(len(outcomes)), flush=True)
+
+
+def main():
+    root = Path.cwd()
+    # Upstream places Unix sockets beside its scripts. Deep operation paths
+    # exceed Linux sockaddr_un limits, so run the unchanged suite in /tmp.
+    with tempfile.TemporaryDirectory(prefix="pts-", dir="/tmp") as short:
+        test = Path(short) / "test"
+        shutil.copytree(root / "test", test)
+        try:
+            run_suites(root, test / "scripts")
+        finally:
+            for log in test.rglob("*.log"):
+                target = root / "pg-maker-shell-artifacts" / log.relative_to(test)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(log, target)
 
 
 if __name__ == "__main__":

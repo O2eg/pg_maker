@@ -146,7 +146,9 @@ def main():
     # pgrx test installs its pg_test binary. Restore the production release.
     command(install)
     data = root / "pg-maker-python-data"
-    command(["initdb", "-D", str(data), "-A", "trust", "--no-locale", "-E", "UTF8"])
+    command(
+        ["initdb", "-D", str(data), "-U", "builder", "-A", "trust", "--no-locale", "-E", "UTF8"]
+    )
     with (data / "postgresql.conf").open("a") as f:
         f.write("\nport=55438\nlisten_addresses='127.0.0.1'\nunix_socket_directories='/tmp'\n")
     command(["pg_ctl", "-D", str(data), "-l", str(data / "server.log"), "-w", "start"])
