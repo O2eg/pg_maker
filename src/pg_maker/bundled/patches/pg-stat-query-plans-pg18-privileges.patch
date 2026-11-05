@@ -1,0 +1,122 @@
+--- a/pg_stat_query_plans.c
++++ b/pg_stat_query_plans.c
+@@ -1504,6 +1504,12 @@
+ 	HASH_SEQ_STATUS hash_seq;
+ 	pgqpPlanEntry *entry;
+ 
++#if PG_VERSION_NUM >= 140000
++	is_allowed_role = has_privs_of_role(userid, ROLE_PG_READ_ALL_STATS);
++#else
++	is_allowed_role = is_member_of_role(userid, DEFAULT_ROLE_READ_ALL_STATS);
++#endif
++
+ 	/* hash table must exist already */
+ 	if (!pgqp || !pgqp_queries || !pgqp_plans || !pgqp_texts)
+ 		ereport(ERROR, (errcode(ERRCODE_OBJECT_NOT_IN_PREREQUISITE_STATE),
+--- a/sql/privileges.sql
++++ b/sql/privileges.sql
+@@ -1,7 +1,7 @@
+ --
+ -- Only superusers and roles with privileges of the pg_read_all_stats role
+--- are allowed to see the SQL text and queryid of queries executed by
+--- other users. Other users can see the statistics.
++-- are allowed to see queries executed by other users. Ordinary users
++-- see only their own rows in both SQL-level and plan-level statistics.
+ --
+ 
+ SET pg_stat_query_plans.track_utility = FALSE;
+@@ -28,9 +28,8 @@
+   ORDER BY r.rolname, ss.query COLLATE "C", ss.calls, ss.rows;
+ 
+ --
+--- regress_stats_user1 has no privileges to read the query text or
+--- queryid of queries executed by others but can see statistics
+--- like calls and rows.
++-- regress_stats_user1 has no privileges to read queries or plans
++-- executed by others; only its own statistics are visible.
+ --
+ 
+ SET ROLE regress_stats_user1;
+@@ -49,6 +48,15 @@
+   FROM pg_stat_query_plans ss JOIN pg_roles r ON ss.userid = r.oid
+   ORDER BY r.rolname, ss.query COLLATE "C", ss.calls, ss.rows;
+ 
++SET ROLE regress_stats_user1;
++SELECT NOT EXISTS (
++  SELECT 1 FROM pg_stat_query_plans
++  WHERE userid <> (SELECT oid FROM pg_roles WHERE rolname = current_user)
++) AND NOT EXISTS (
++  SELECT 1 FROM pg_stat_query_plans_sql
++  WHERE userid <> (SELECT oid FROM pg_roles WHERE rolname = current_user)
++) AS hidden;
++
+ --
+ -- cleanup
+ --
+--- a/expected/privileges.out
++++ b/expected/privileges.out
+@@ -1,7 +1,7 @@
+ --
+ -- Only superusers and roles with privileges of the pg_read_all_stats role
+--- are allowed to see the SQL text and queryid of queries executed by
+--- other users. Other users can see the statistics.
++-- are allowed to see queries executed by other users. Ordinary users
++-- see only their own rows in both SQL-level and plan-level statistics.
+ --
+ SET pg_stat_query_plans.track_utility = FALSE;
+ CREATE ROLE regress_stats_superuser SUPERUSER;
+@@ -44,23 +44,17 @@
+ (3 rows)
+ 
+ --
+--- regress_stats_user1 has no privileges to read the query text or
+--- queryid of queries executed by others but can see statistics
+--- like calls and rows.
++-- regress_stats_user1 has no privileges to read queries or plans
++-- executed by others; only its own statistics are visible.
+ --
+ SET ROLE regress_stats_user1;
+ SELECT r.rolname, ss.queryid <> 0 AS queryid_bool, ss.query, ss.calls, ss.rows
+   FROM pg_stat_query_plans ss JOIN pg_roles r ON ss.userid = r.oid
+   ORDER BY r.rolname, ss.query COLLATE "C", ss.calls, ss.rows;
+-         rolname         | queryid_bool |                                     query                                      | calls | rows 
+--------------------------+--------------+--------------------------------------------------------------------------------+-------+------
+- regress_stats_superuser | t            | SELECT 1 AS "ONE";                                                             |     1 |    1
+- regress_stats_superuser | t            | SELECT pg_stat_query_plans_reset() IS NOT NULL AS t;                           |     1 |    1
+- regress_stats_superuser | t            | SELECT r.rolname, ss.queryid <> 0 AS queryid_bool, ss.query, ss.calls, ss.rows+|     1 |    3
+-                         |              |   FROM pg_stat_query_plans ss JOIN pg_roles r ON ss.userid = r.oid            +|       | 
+-                         |              |   ORDER BY r.rolname, ss.query COLLATE "C", ss.calls, ss.rows;                 |       | 
+- regress_stats_user1     | t            | SELECT 1+1 AS "TWO";                                                           |     1 |    1
+-(4 rows)
++       rolname       | queryid_bool |        query         | calls | rows 
++---------------------+--------------+----------------------+-------+------
++ regress_stats_user1 | t            | SELECT 1+1 AS "TWO"; |     1 |    1
++(1 row)
+ 
+ --
+ -- regress_stats_user2, with pg_read_all_stats role privileges, can
+@@ -79,10 +73,23 @@
+                          |              |   FROM pg_stat_query_plans ss JOIN pg_roles r ON ss.userid = r.oid            +|       | 
+                          |              |   ORDER BY r.rolname, ss.query COLLATE "C", ss.calls, ss.rows;                 |       | 
+  regress_stats_user1     | t            | SELECT 1+1 AS "TWO";                                                           |     1 |    1
+- regress_stats_user1     | t            | SELECT r.rolname, ss.queryid <> 0 AS queryid_bool, ss.query, ss.calls, ss.rows+|     1 |    4
++ regress_stats_user1     | t            | SELECT r.rolname, ss.queryid <> 0 AS queryid_bool, ss.query, ss.calls, ss.rows+|     1 |    1
+                          |              |   FROM pg_stat_query_plans ss JOIN pg_roles r ON ss.userid = r.oid            +|       | 
+                          |              |   ORDER BY r.rolname, ss.query COLLATE "C", ss.calls, ss.rows;                 |       | 
+ (5 rows)
++
++SET ROLE regress_stats_user1;
++SELECT NOT EXISTS (
++  SELECT 1 FROM pg_stat_query_plans
++  WHERE userid <> (SELECT oid FROM pg_roles WHERE rolname = current_user)
++) AND NOT EXISTS (
++  SELECT 1 FROM pg_stat_query_plans_sql
++  WHERE userid <> (SELECT oid FROM pg_roles WHERE rolname = current_user)
++) AS hidden;
++ hidden 
++--------
++ t
++(1 row)
+ 
+ --
+ -- cleanup

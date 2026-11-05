@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-pg-stat-query-plans
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
@@ -10,6 +10,8 @@ spec:
     location: https://codeload.github.com/postgredients/pg_stat_query_plans/tar.gz/f296839e3fd772a21b01c487e66d31e1e7b45ae0
     sha256: sha256:226c66991adc644d9c4a89ffd576928197918962fd9ddcc1e50c718e955715d0
     strip_components: 1
+  source_patches:
+  - ../../patches/pg-stat-query-plans-pg18-privileges.patch
   compatible_postgresql: '>=18.6,<19'
   requires: []
   conflicts: []
