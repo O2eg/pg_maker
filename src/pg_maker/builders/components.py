@@ -10,7 +10,7 @@ from pathlib import Path
 from pg_maker.builders.autotools import regression_evidence, schedule_tests
 from pg_maker.documents import relative_output
 from pg_maker.errors import CommandError, MakerError, PreconditionError, ValidationError
-from pg_maker.storage import read_json, write_json
+from pg_maker.storage import file_hash, read_json, write_json
 from pg_maker.yamlio import load_yaml
 
 
@@ -257,6 +257,8 @@ def build_components(branch, components, *, run_tests=True):
             reports.append(native_tests.run(branch, component, cwd))
             continue
         expected = None
+        allowed_skips = {}
+        test_evidence = []
         substitutions = native_tests.substitutions(branch, component, cwd)
         test_make = [
             *make,
@@ -295,7 +297,11 @@ def build_components(branch, components, *, run_tests=True):
                 expected["regression"].extend(schedule_tests(path))
             if not any(expected.values()):
                 raise PreconditionError("component has no declared native test inventory")
-            write_json(branch.output / "components" / identifier / "expected.json", expected)
+            allowed_skips = component_tap_skip_policy(spec, component_source, expected)
+            write_json(
+                branch.output / "components" / identifier / "expected.json",
+                {**expected, "allowed_tap_skips": list(allowed_skips.values())},
+            )
         with cluster(
             branch,
             "component-" + identifier,
@@ -353,12 +359,26 @@ def build_components(branch, components, *, run_tests=True):
                     test_command=True,
                 )
                 if expected is not None:
-                    verify_component_tests(expected, Path(result.stdout_log).read_text(), tap)
+                    evidence = verify_component_tests(
+                        expected,
+                        Path(result.stdout_log).read_text(),
+                        tap,
+                        allowed_skips=allowed_skips,
+                    )
+                    test_evidence.append({"target": target, **evidence})
+                    write_json(
+                        branch.output / "components" / identifier / "test-evidence.json",
+                        test_evidence,
+                    )
         reports.append(
             {
                 "id": identifier,
                 "built": True,
                 "native_targets": spec["test_targets"],
+                "native_test_evidence": test_evidence,
+                "test_exceptions": [
+                    item for result in test_evidence for item in result["excluded_tap_suites"]
+                ],
                 "tests": "passed",
                 "passed": True,
             }
@@ -366,7 +386,28 @@ def build_components(branch, components, *, run_tests=True):
     branch.report.setdefault("components", []).extend(reports)
 
 
-def verify_component_tests(expected, stdout, tap):
+def component_tap_skip_policy(spec, source, expected):
+    """Bind an operator exception to the exact inventoried source file."""
+    allowed = {}
+    for item in spec.get("allowed_tap_skips", []):
+        name = item["path"]
+        path = source / name
+        if (
+            not relative_output(name)
+            or name not in expected["tap"]
+            or name in allowed
+            or any(p.is_symlink() for p in (path, *path.parents))
+            or not path.is_file()
+            or file_hash(path) != item["source_sha256"]
+        ):
+            raise PreconditionError(
+                "TAP skip exception source or inventory mismatch", details={"path": name}
+            )
+        allowed[name] = dict(item)
+    return allowed
+
+
+def verify_component_tests(expected, stdout, tap, *, allowed_skips=None):
     evidence = regression_evidence(stdout)
     for kind in ("regression", "isolation"):
         values = [v for (k, _), v in evidence.items() if k == kind]
@@ -376,17 +417,37 @@ def verify_component_tests(expected, stdout, tap):
         ):
             raise CommandError("component regression inventory mismatch", details={"kind": kind})
     values = [read_json(p) for p in tap.glob("*.json")]
-    if sorted(v["path"] for v in values) != sorted(expected["tap"]) or any(
-        v["tests"] <= len(v["skipped"])
-        or v["tests"] != v["planned"]
-        or v["failed"]
-        or v["errors"]
-        or v["skip_all"]
-        or v["exit"]
-        or v["wait"]
-        for v in values
-    ):
+    if sorted(v["path"] for v in values) != sorted(expected["tap"]):
         raise CommandError("component TAP inventory mismatch")
+    allowed_skips = allowed_skips or {}
+    excluded = []
+    assertions = 0
+    for value in values:
+        if value["failed"] or value["errors"] or value["exit"] or value["wait"]:
+            raise CommandError("component TAP execution failed", details={"path": value["path"]})
+        if value["skip_all"]:
+            allowance = allowed_skips.get(value["path"])
+            if (
+                allowance is None
+                or value["skip_all"] != allowance["skip_reason"]
+                or value["tests"] != 0
+                or value["planned"] != 0
+                or value["skipped"]
+            ):
+                raise CommandError("component TAP skip is not explicitly allowed")
+            excluded.append({**allowance, "status": "excluded", "counted_as_passed": False})
+        else:
+            if value["tests"] <= len(value["skipped"]) or value["tests"] != value["planned"]:
+                raise CommandError("component TAP inventory mismatch")
+            assertions += value["tests"] - len(value["skipped"])
+    counts = {
+        "regression_tests": len(expected["regression"]),
+        "isolation_tests": len(expected["isolation"]),
+        "tap_assertions": assertions,
+    }
+    if sum(counts.values()) == 0:
+        raise CommandError("component has no executed passing tests")
+    return {**counts, "excluded_tap_suites": excluded}
 
 
 def acceptance(branch, changes):

@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-rum
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
@@ -22,6 +22,12 @@ spec:
   install_targets:
   - install
   required_tests: []
+  allowed_tap_skips:
+  - path: t/002_pglist.pl
+    source_sha256: sha256:9d0a81d66eb52fcf9ca8c91e2ea376328be722dec891ced13307a1f522e377ad
+    skip_reason: This test requires downloading a 1GB archive. The unpacked file weighs almost 3GB. Perform only if the big_values is enabled in PG_TEST_EXTRA
+    reason: The original pglist-28-04-16.dump.gz fixture is unavailable from its upstream host; SQL, isolation and WAL tests remain mandatory.
+    approval: User explicitly approved exclusion of only t/002_pglist.pl on 2026-11-05, with an explicit report entry.
   sql_extension: rum
   runtime_files:
   - lib/postgresql/rum.so

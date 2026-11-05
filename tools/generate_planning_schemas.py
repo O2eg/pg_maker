@@ -514,6 +514,17 @@ component = document(
             "make_targets": arr(),
             "test_targets": arr(),
             "test_make_args": arr(),
+            "allowed_tap_skips": arr(
+                obj(
+                    {
+                        "path": {**S, "minLength": 1},
+                        "source_sha256": HASH,
+                        "skip_reason": {**S, "minLength": 1},
+                        "reason": {**S, "minLength": 1},
+                        "approval": {**S, "minLength": 1},
+                    }
+                )
+            ),
             "test_commands": arr(
                 obj(
                     {

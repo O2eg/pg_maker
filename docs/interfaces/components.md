@@ -45,3 +45,20 @@ sql_extension_versions entry in isolated databases; installed_database handles e
 such as pg_cron that require a specific database. Existing projects are not silently changed: copy
 components/documentation from a fresh init, add feature references, then prepare
 environments and resolve. Reinitializing modified files reports a conflict.
+
+For inventoried Make-based PGXS/contrib/source-tree tests, `allowed_tap_skips`
+can declare an operator-approved upstream skip-all. Each entry requires an exact
+relative `t/*.pl` path, `source_sha256`, exact `skip_reason`, explanatory `reason`
+and `approval`. Resolve locks the declaration with the recipe. Before execution,
+the engine verifies the file hash and inventory membership. The exception only
+accepts a clean zero-test TAP skip with that exact reason; missing results,
+failures, parser errors, nonzero exit/wait or changed test files still fail.
+It never suppresses test execution. A test that actually runs must pass normally.
+
+Each Make target writes `test-evidence.json` with executed regression/isolation
+counts, executed TAP assertions and `excluded_tap_suites`. The component report
+also exposes `test_exceptions`; excluded entries have `counted_as_passed=false`.
+A passing component with declared exceptions means all remaining tests passed,
+not that excluded scenarios executed. At least one real test must pass. Custom
+`test_commands` cannot use this policy because their inventories use separate
+adapters. An ordinary build with all database tests disabled remains unverified.

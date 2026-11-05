@@ -153,6 +153,19 @@ def load_components(references: list[str], base: Path, version: str) -> tuple[li
                 not re.fullmatch(r"[a-zA-Z0-9_./-]+", x) or x.startswith("-") for x in spec[key]
             ):
                 raise ValidationError("invalid component make target")
+        allowed_skips = spec.get("allowed_tap_skips", [])
+        if allowed_skips and (
+            spec["type"] not in {"pgxs", "contrib", "source-tree"}
+            or not spec["test_targets"]
+            or spec.get("test_commands")
+        ):
+            raise ValidationError("TAP skip exceptions require inventoried Make tests")
+        skip_paths = [item["path"] for item in allowed_skips]
+        if len(skip_paths) != len(set(skip_paths)) or any(
+            not relative_output(name) or not re.fullmatch(r"t/[A-Za-z0-9_.-]+\.pl", name)
+            for name in skip_paths
+        ):
+            raise ValidationError("TAP skip exceptions require unique exact test paths")
         test_ids = set()
         for test in spec.get("test_commands", []):
             if test["id"] in test_ids:

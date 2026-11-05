@@ -166,8 +166,13 @@ was not established by the SQL-extension inventory audit.
 
 RUM's optional `t/002_pglist.pl` requires the original approximately 1 GB mailing
 list dump. At the initial native run its upstream download host was unavailable.
-Its SQL, isolation and WAL tests passed, but the missing large-data test remains
-an unresolved qualification requirement; no exception is enabled in this profile.
+On 2026-11-05 the operator explicitly approved excluding only `t/002_pglist.pl`.
+The recipe pins that file's SHA-256 and exact upstream skip-all message. The
+report lists the exclusion, its reason and approval; it does not count that
+script as passed. SQL, isolation and WAL tests remain mandatory. A changed file,
+missing TAP result, different skip reason or actual test failure still fails the
+build. This exception does not establish coverage of the unavailable large-data
+fixture.
 
 ## Full qualification and preserving previous releases
 
