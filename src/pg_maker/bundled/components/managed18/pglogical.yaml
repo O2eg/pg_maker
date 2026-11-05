@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-pglogical
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
@@ -10,6 +10,8 @@ spec:
     location: https://codeload.github.com/2ndQuadrant/pglogical/tar.gz/51a9344215ae756d6165f0bc1e5cb40289f806c6
     sha256: sha256:ee5654e1612c55949817922d45745e3437b6405acec8640d0c3278f8e5457a88
     strip_components: 1
+  source_patches:
+  - ../../patches/pglogical-pg18-tests.patch
   compatible_postgresql: '>=18.6,<19'
   requires: []
   conflicts: []
