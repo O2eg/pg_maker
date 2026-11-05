@@ -107,6 +107,16 @@ fixtures with a private process time offset. Host time and installed SQL functio
 are unchanged. Upstream's `not_working_yet` directory is inventoried as inapplicable,
 not counted as passed.
 
+The independent PG18 ICU recipe checks installed `en-US-x-icu` and `ru-RU-x-icu`
+stored/actual versions, rejects any mismatched ICU collation, and creates an
+`en-US` ICU database to check its stored/actual `153.112` version. These checks
+run against the installed DEBs in the package acceptance container.
+
+The upstream pglogical daylight-saving-time scenario `t/030` remains its original
+`TODO/SKIP`: it requires rewriting privileged host-clock changes. Core scenarios
+requiring disabled configure features, such as injection points, are likewise
+not applicable to this build. Neither category represents executed passing tests.
+
 RUM's optional `t/002_pglist.pl` requires the original approximately 1 GB mailing
 list dump. At the initial native run its upstream download host was unavailable.
 Its SQL, isolation and WAL tests passed, but the missing large-data test remains
