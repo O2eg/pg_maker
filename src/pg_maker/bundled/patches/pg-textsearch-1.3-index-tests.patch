@@ -1,0 +1,37 @@
+--- a/test/scripts/replication_lib.sh
++++ b/test/scripts/replication_lib.sh
+@@ -282,6 +282,8 @@
+     mkfifo "${LL_IN_FIFO}" "${LL_OUT_FIFO}"
+ 
+     # -tA: tuples-only, unaligned. -q: quiet (no banners between cmds).
++    # These sessions exercise index visibility, including on tiny tables.
++    PGOPTIONS="${PGOPTIONS:-} -c enable_seqscan=off" \
+     psql -p "${port}" -d "${TEST_DB}" -tAq \
+         < "${LL_IN_FIFO}" > "${LL_OUT_FIFO}" 2>&1 &
+     LL_PID=$!
+--- a/test/scripts/replication_correctness.sh
++++ b/test/scripts/replication_correctness.sh
+@@ -151,6 +151,13 @@
+     wait_for_standby_catchup
+ 
+     long_lived_open "${STANDBY_PORT}"
++    local index_plan
++    index_plan=$(long_lived_query "
++        EXPLAIN SELECT id FROM a4_docs
++            ORDER BY content <@> to_bm25query('xenon', 'a4_idx')
++            LIMIT 100;")
++    [[ "${index_plan}" == *"Index Scan using a4_idx"* ]] || \
++        error "A4 must exercise the BM25 index: ${index_plan}"
+     local xenon_before zircon_before
+     xenon_before=$(long_lived_query "
+         SELECT count(*) FROM (SELECT id FROM a4_docs
+@@ -181,7 +188,8 @@
+     log "xenon: before=${xenon_before} (expect 20), after=${xenon_after} (expect 10)"
+     log "zircon: before=${zircon_before} (expect 0), after=${zircon_after} (expect 10)"
+ 
+-    if [ "${xenon_after}" != "10" ] || [ "${zircon_after}" != "10" ]; then
++    if [ "${xenon_before}" != "20" ] || [ "${zircon_before}" != "0" ] || \
++       [ "${xenon_after}" != "10" ] || [ "${zircon_after}" != "10" ]; then
+         error "A4 BUG (expected): standby long-lived backend missed \
+ UPDATEs (xenon=${xenon_after}/expected 10, zircon=${zircon_after}/expected 10)"
+     fi

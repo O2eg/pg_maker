@@ -1,0 +1,28 @@
+--- a/pg_stat_query_plans.c
++++ b/pg_stat_query_plans.c
+@@ -1572,11 +1572,7 @@
+ 		/* Don't show anything if not have rights */
+ 		if (!is_allowed_role && entry->key.userid != userid)
+ 		{
+-#if PG_VERSION_NUM < 180000
+-			elog(DEBUG1, "Do not have rights to view %lu", entry->key.queryid);
+-#else
+-			elog(DEBUG1, "Do not have rights to view %llu", entry->key.queryid);
+-#endif
++			elog(DEBUG1, "Do not have rights to view " UINT64_FORMAT, entry->key.queryid);
+ 			continue;
+ 		}
+ 
+@@ -1760,11 +1756,7 @@
+ 		/* Don't show anything if not have rights */
+ 		if (!is_allowed_role && entry->key.userid != userid)
+ 		{
+-#if PG_VERSION_NUM < 180000
+-			elog(DEBUG1, "Do not have rights to view %lu", entry->key.queryid);
+-#else
+-			elog(DEBUG1, "Do not have rights to view %llu", entry->key.queryid);
+-#endif
++			elog(DEBUG1, "Do not have rights to view " UINT64_FORMAT, entry->key.queryid);
+ 			continue;
+ 		}
+ 
