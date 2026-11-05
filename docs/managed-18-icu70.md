@@ -123,6 +123,15 @@ or writers and server ERROR/PANIC records, and preserves logs before cleanup.
 The backport changes locking, not the SQL version or index disk format.
 Qualification still requires the full native suites to pass.
 
+This backport does not address every upstream 1.3.0 replication issue. Upstream
+[PR #406](https://github.com/timescale/pg_textsearch/pull/406) addresses reuse of
+segment pages still read by a hot standby, but introduces a v8 metapage and
+requires a standby-feedback horizon. It is not included in this profile: the
+managed extension's actual index format and vendor patches have not been
+established. Passing the bundled replication scenarios does not establish that
+broader compatibility. Qualify existing managed BM25 indexes separately before
+using this package as their physical standby.
+
 The pg_partman helper follows emitted pgTAP procedure instructions, creates a
 separate database for its mixed-case extension schema, and runs clock-sensitive
 fixtures with a private process time offset. Host time and installed SQL functions
