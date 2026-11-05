@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-vector
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
@@ -50,3 +50,5 @@ spec:
     - PG_CONFIG={prefix}/bin/pg_config
     - prove_installcheck
     success_pattern: Files=\d+, Tests=(?P<count>\d+)
+  source_patches:
+  - ../../patches/pgvector-0.8.2-portable-cpu.patch

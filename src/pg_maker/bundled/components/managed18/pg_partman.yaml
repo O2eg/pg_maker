@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-pg-partman
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
@@ -62,3 +62,5 @@ spec:
     success_pattern: ^PG_MAKER_PARTMAN_TESTS_PASSED=(?P<count>\d+)$
   preload:
   - pg_partman_bgw
+  source_patches:
+  - ../../patches/pg-partman-5.4-30sec-tests.patch
