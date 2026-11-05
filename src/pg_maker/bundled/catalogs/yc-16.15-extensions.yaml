@@ -352,7 +352,7 @@ extensions:
   component_id: yc-pglogical
   source_ref: bff71f2c6b0bd9748ecee15dcc93201cd1a145a0
   source_url: https://github.com/2ndQuadrant/pglogical.git
-  source_release: REL2_4_4 + upstream idle-sync fix 7acb024 and PG16 test harness
+  source_release: REL2_4_4 + upstream idle-sync fix 7acb024 + local resync-cache fix and PG16 tests
   status: selected-unverified
 - name: pglogical_origin
   managed_default_version: 1.0.0
@@ -363,7 +363,7 @@ extensions:
   component_id: yc-pglogical
   source_ref: bff71f2c6b0bd9748ecee15dcc93201cd1a145a0
   source_url: https://github.com/2ndQuadrant/pglogical.git
-  source_release: REL2_4_4 + upstream idle-sync fix 7acb024 and PG16 test harness
+  source_release: REL2_4_4 + upstream idle-sync fix 7acb024 + local resync-cache fix and PG16 tests
   status: selected-unverified
 - name: pgrouting
   managed_default_version: 3.5.0

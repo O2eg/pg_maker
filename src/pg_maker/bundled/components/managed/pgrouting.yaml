@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-pgrouting
-  revision: 3
+  revision: 4
 spec:
   type: library
   source:
@@ -11,6 +11,7 @@ spec:
     ref: 55c68b0a2417d2ca5d6145fca5389763c67b0760
   source_patches:
   - ../../patches/pgrouting-3.5.0-gcc14.patch
+  - ../../patches/pgrouting-3.5-tests.patch
   compatible_postgresql: '>=16,<17'
   requires:
   - yc-postgis
@@ -57,5 +58,6 @@ spec:
     - ./tools/testers/pg_prove_tests.sh
     - '{user}'
     - '{port}'
-    - Release
     success_pattern: Files=\d+, Tests=(?P<count>\d+)
+  # The upstream script installs fixtures into this existing database.
+  test_database: ___pgr___test___

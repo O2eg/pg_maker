@@ -1,0 +1,27 @@
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -73,6 +73,9 @@
+     ${CMAKE_COMMAND} "-DGIT_FOUND=${GIT_FOUND}"
+     "-DSOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+     "-DGIT_EXECUTABLE=${GIT_EXECUTABLE}"
++    "-DEXT_GIT_COMMIT_TAG=${EXT_GIT_COMMIT_TAG}"
++    "-DEXT_GIT_COMMIT_HASH=${EXT_GIT_COMMIT_HASH}"
++    "-DEXT_GIT_COMMIT_TIME=${EXT_GIT_COMMIT_TIME}"
+     "-DINPUT_FILE=${CMAKE_CURRENT_SOURCE_DIR}/gitcommit.h.in"
+     "-DOUTPUT_FILE=${GITREV_TMP}" -P ${CMAKE_CURRENT_SOURCE_DIR}/gitcommit.cmake
+   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${GITREV_TMP} ${GITREV_FILE})
+--- a/src/gitcommit.cmake
++++ b/src/gitcommit.cmake
+@@ -2,7 +2,11 @@
+ # and not on cmake run to detect branch switches, commit changes or local
+ # modifications.
+ 
+-if(GIT_FOUND)
++# A content-addressed source archive has no .git directory. Its recipe may
++# provide the pinned upstream commit metadata explicitly.
++if(EXT_GIT_COMMIT_TAG AND EXT_GIT_COMMIT_HASH AND EXT_GIT_COMMIT_TIME)
++  message(STATUS "Using explicit Git commit information for source archive")
++elseif(GIT_FOUND)
+   # We use "git describe" to generate the tag. It will find the latest tag and
+   # also add some additional information if we are not on the tag.
+   execute_process(

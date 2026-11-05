@@ -248,13 +248,26 @@ TAP files. The pglogical recipe ports its TAP harness to PostgreSQL 16 APIs and
 allows `pglogical_output` in its disposable test clusters' `output_plugin_libraries`
 setting (PostgreSQL 16.15+). Legacy TAP clusters explicitly configure their
 socket directory and subscriber port after the modern test module resets inherited
-connection variables. `regresscheck` avoids the unrelated unsupported PGXS `check`
+connection variables. The subscriber TAP test explicitly uses the installed tool
+next to `pg_basebackup`, independent of PGXS's source-first PATH. Its basic SQL
+uses PG16 WAL function/column names, a 180-second statement timeout and
+`ON_ERROR_STOP` so SQL failures cannot pass unnoticed. `regresscheck` avoids the unrelated unsupported PGXS `check`
 target. It also backports upstream fix
 [`7acb024`](https://github.com/2ndQuadrant/pglogical/commit/7acb02405be5471d9827bd62b37c810038e262e3)
 for a table-sync worker hanging on an idle source. The upstream SQL version remains
 2.4.4; source provenance records the patch. Its regression synchronization budget
 is 180 seconds, as in current upstream. These changes do not count failed tests as successful.
 The pglogical TAP time-travel scenario retains its upstream TODO/SKIP marker.
+
+The recipe also fixes a reproduced resynchronization race in pglogical: an apply
+worker waiting behind the resync's TRUNCATE lock could use a stale table-sync cache
+and insert a row that COPY would insert again. The local runtime patch refreshes
+pending sync state after acquiring the target relation lock. Its deterministic
+TAP scenario queues a provider insert behind that lock: the unpatched version
+failed all three row-count/data comparisons; the patched version passed all nine
+assertions. This is a local source modification, not a claim of vendor-binary identity.
+The load test explicitly names its pgbench connections so resync continues throughout
+the load, and compares full table contents after catch-up in addition to row counts.
 
 PostGIS 3.4.0's tests include upstream normalization fixes
 [`777b0f7`](https://github.com/postgis/postgis/commit/777b0f7e91f0d83254e5de77d73e73df41dfb706)
@@ -267,6 +280,37 @@ available for older GEOS. All SQL scenarios remain enabled, and failed diffs are
 preserved in the component workspace. These changes affect tests only, not installed
 PostGIS functions or its SQL version. The build environment includes `xmllint` and
 DocBook XML so the upstream documentation checks also run.
+
+pgRouting's pgTAP database is created before invoking its upstream fixture script.
+Its test-only patch follows upstream
+[`074647e7`](https://github.com/pgRouting/pgrouting/commit/074647e7e9fc8a8b8082e8049ba9710a05c474d7)
+and [`97c1ae53`](https://github.com/pgRouting/pgrouting/commit/97c1ae530353943795934ff61b8b7c75eccc850e)
+for the mincut selected by Boost >=1.80. The withPointsDD fixture permits either of
+two equal-cost incoming edges to node 12 and separately verifies both edges and
+their predecessor distances; node, edge-cost and total-distance assertions remain.
+No routing algorithm changes or failed-case exclusions are involved.
+
+TimescaleDB's test targets run serially because they share `testcluster/data`;
+compilation still uses the configured job count and regression schedules retain
+internal parallelism. Test sessions use upstream's `US/Pacific` timezone and UTF-8
+encoding, including non-ASCII collation tests. A test-only PG16.15 reference patch
+expects the ACL error to name a `view` instead of a `materialized view`; the denied
+access assertion is retained. This changes neither the database package's timezone
+nor the installed TimescaleDB code.
+
+TimescaleDB source archives also receive the pinned upstream commit hash and
+commit timestamp through explicit CMake metadata. The tag has a `-pg-maker`
+suffix to identify the patched source. This preserves the build-info tests
+without fabricating a Git repository or weakening their assertions.
+
+Its PG16 fixtures backport upstream fixes
+[`dedb1c7`](https://github.com/timescale/timescaledb/commit/dedb1c70ac88e037b9a74aa77c33c02ea3e07933)
+for COPY end markers after errors and
+[`8064415`](https://github.com/timescale/timescaledb/commit/8064415d552a481cbc7077eb9f462a88b43fcd51)
+for deterministic ordering in the ChunkAppend projection case. That case locally
+disables index scans to preserve its sequential-scan reference plan; subsequent
+index tests retain their original settings. All RLS and optimized/unoptimized
+result comparisons remain enabled.
 
 ### Compiler version and physical replication
 

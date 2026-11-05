@@ -1,0 +1,150 @@
+--- a/test/sql/rowsecurity.sql.in
++++ b/test/sql/rowsecurity.sql.in
+@@ -1340,8 +1340,10 @@
+ SET SESSION AUTHORIZATION regress_rls_bob;
+ SET row_security TO OFF;
+ COPY copy_t FROM STDIN; --fail - would be affected by RLS.
++\.
+ SET row_security TO ON;
+ COPY copy_t FROM STDIN; --fail - COPY FROM not supported by RLS.
++\.
+ 
+ -- Check COPY FROM as user with permissions and BYPASSRLS
+ SET SESSION AUTHORIZATION regress_rls_exempt_user;
+@@ -1357,8 +1359,10 @@
+ SET SESSION AUTHORIZATION regress_rls_carol;
+ SET row_security TO OFF;
+ COPY copy_t FROM STDIN; --fail - permission denied.
++\.
+ SET row_security TO ON;
+ COPY copy_t FROM STDIN; --fail - permission denied.
++\.
+ 
+ RESET SESSION AUTHORIZATION;
+ DROP TABLE copy_t;
+--- a/test/sql/include/append_query.sql
++++ b/test/sql/include/append_query.sql
+@@ -335,6 +335,7 @@
+ DROP TABLE join_limit;
+ 
+ -- test ChunkAppend projection #2661
++SET enable_indexscan TO FALSE;
+ :PREFIX SELECT ts.timestamp, ht.timestamp
+ FROM (
+   SELECT generate_series(
+@@ -345,7 +346,9 @@
+ ) ts
+ LEFT JOIN i2661 ht ON
+   (FLOOR(EXTRACT (EPOCH FROM ht."timestamp") / 300) * 300 = EXTRACT (EPOCH FROM ts.timestamp))
+-  AND ht.timestamp > '2019-12-30T00:00:00Z'::timestamp;
++  AND ht.timestamp > '2019-12-30T00:00:00Z'::timestamp
++ORDER BY ts.timestamp, ht.timestamp;
++RESET enable_indexscan;
+ 
+ -- #3030 test chunkappend keeps pathkeys when subpath is append
+ -- on PG11 this will not use ChunkAppend but MergeAppend
+--- a/test/expected/append-16.out
++++ b/test/expected/append-16.out
+@@ -1990,6 +1990,7 @@
+ 
+ DROP TABLE join_limit;
+ -- test ChunkAppend projection #2661
++SET enable_indexscan TO FALSE;
+ :PREFIX SELECT ts.timestamp, ht.timestamp
+ FROM (
+   SELECT generate_series(
+@@ -2000,31 +2001,36 @@
+ ) ts
+ LEFT JOIN i2661 ht ON
+   (FLOOR(EXTRACT (EPOCH FROM ht."timestamp") / 300) * 300 = EXTRACT (EPOCH FROM ts.timestamp))
+-  AND ht.timestamp > '2019-12-30T00:00:00Z'::timestamp;
+-                                                                QUERY PLAN                                                                
+-------------------------------------------------------------------------------------------------------------------------------------------
+- Merge Left Join (actual rows=33 loops=1)
+-   Merge Cond: ((EXTRACT(epoch FROM ts."timestamp")) = ((floor((EXTRACT(epoch FROM ht."timestamp") / '300'::numeric)) * '300'::numeric)))
+-   ->  Sort (actual rows=13 loops=1)
+-         Sort Key: (EXTRACT(epoch FROM ts."timestamp"))
+-         Sort Method: quicksort 
+-         ->  Subquery Scan on ts (actual rows=13 loops=1)
+-               ->  ProjectSet (actual rows=13 loops=1)
+-                     ->  Result (actual rows=1 loops=1)
+-   ->  Sort (actual rows=514 loops=1)
+-         Sort Key: ((floor((EXTRACT(epoch FROM ht."timestamp") / '300'::numeric)) * '300'::numeric))
+-         Sort Method: quicksort 
+-         ->  Result (actual rows=7201 loops=1)
+-               ->  Custom Scan (ChunkAppend) on i2661 ht (actual rows=7201 loops=1)
+-                     Chunks excluded during startup: 0
+-                     ->  Seq Scan on _hyper_7_31_chunk ht_1 (actual rows=1200 loops=1)
+-                           Filter: ("timestamp" > 'Mon Dec 30 00:00:00 2019'::timestamp without time zone)
+-                     ->  Seq Scan on _hyper_7_32_chunk ht_2 (actual rows=5040 loops=1)
+-                           Filter: ("timestamp" > 'Mon Dec 30 00:00:00 2019'::timestamp without time zone)
+-                     ->  Seq Scan on _hyper_7_33_chunk ht_3 (actual rows=961 loops=1)
+-                           Filter: ("timestamp" > 'Mon Dec 30 00:00:00 2019'::timestamp without time zone)
+-(20 rows)
+-
++  AND ht.timestamp > '2019-12-30T00:00:00Z'::timestamp
++ORDER BY ts.timestamp, ht.timestamp;
++                                                                   QUERY PLAN                                                                   
++------------------------------------------------------------------------------------------------------------------------------------------------
++ Sort (actual rows=33 loops=1)
++   Sort Key: ts."timestamp", ht."timestamp"
++   Sort Method: quicksort 
++   ->  Merge Left Join (actual rows=33 loops=1)
++         Merge Cond: ((EXTRACT(epoch FROM ts."timestamp")) = ((floor((EXTRACT(epoch FROM ht."timestamp") / '300'::numeric)) * '300'::numeric)))
++         ->  Sort (actual rows=13 loops=1)
++               Sort Key: (EXTRACT(epoch FROM ts."timestamp"))
++               Sort Method: quicksort 
++               ->  Subquery Scan on ts (actual rows=13 loops=1)
++                     ->  ProjectSet (actual rows=13 loops=1)
++                           ->  Result (actual rows=1 loops=1)
++         ->  Sort (actual rows=514 loops=1)
++               Sort Key: ((floor((EXTRACT(epoch FROM ht."timestamp") / '300'::numeric)) * '300'::numeric))
++               Sort Method: quicksort 
++               ->  Result (actual rows=7201 loops=1)
++                     ->  Custom Scan (ChunkAppend) on i2661 ht (actual rows=7201 loops=1)
++                           Chunks excluded during startup: 0
++                           ->  Seq Scan on _hyper_7_31_chunk ht_1 (actual rows=1200 loops=1)
++                                 Filter: ("timestamp" > 'Mon Dec 30 00:00:00 2019'::timestamp without time zone)
++                           ->  Seq Scan on _hyper_7_32_chunk ht_2 (actual rows=5040 loops=1)
++                                 Filter: ("timestamp" > 'Mon Dec 30 00:00:00 2019'::timestamp without time zone)
++                           ->  Seq Scan on _hyper_7_33_chunk ht_3 (actual rows=961 loops=1)
++                                 Filter: ("timestamp" > 'Mon Dec 30 00:00:00 2019'::timestamp without time zone)
++(23 rows)
++
++RESET enable_indexscan;
+ -- #3030 test chunkappend keeps pathkeys when subpath is append
+ -- on PG11 this will not use ChunkAppend but MergeAppend
+ SET enable_seqscan TO FALSE;
+@@ -2176,19 +2182,19 @@
+ select time, avg(temp), colorid from append_test
+ where time > now_s() - interval '3 months 20 days'
+ group by time, colorid;
+-psql:include/append_query.sql:414: NOTICE:  Stable function now_s() called!
+-psql:include/append_query.sql:414: NOTICE:  Stable function now_s() called!
+-psql:include/append_query.sql:414: NOTICE:  Stable function now_s() called!
+-psql:include/append_query.sql:414: NOTICE:  Stable function now_s() called!
+-psql:include/append_query.sql:414: NOTICE:  Stable function now_s() called!
+-psql:include/append_query.sql:414: NOTICE:  Stable function now_s() called!
+-psql:include/append_query.sql:414: NOTICE:  Stable function now_s() called!
+-psql:include/append_query.sql:414: NOTICE:  Stable function now_s() called!
+-psql:include/append_query.sql:414: NOTICE:  Stable function now_s() called!
+-psql:include/append_query.sql:414: NOTICE:  Stable function now_s() called!
+-psql:include/append_query.sql:414: NOTICE:  Stable function now_s() called!
+-psql:include/append_query.sql:414: NOTICE:  Stable function now_s() called!
+-psql:include/append_query.sql:414: NOTICE:  Stable function now_s() called!
++psql:include/append_query.sql:417: NOTICE:  Stable function now_s() called!
++psql:include/append_query.sql:417: NOTICE:  Stable function now_s() called!
++psql:include/append_query.sql:417: NOTICE:  Stable function now_s() called!
++psql:include/append_query.sql:417: NOTICE:  Stable function now_s() called!
++psql:include/append_query.sql:417: NOTICE:  Stable function now_s() called!
++psql:include/append_query.sql:417: NOTICE:  Stable function now_s() called!
++psql:include/append_query.sql:417: NOTICE:  Stable function now_s() called!
++psql:include/append_query.sql:417: NOTICE:  Stable function now_s() called!
++psql:include/append_query.sql:417: NOTICE:  Stable function now_s() called!
++psql:include/append_query.sql:417: NOTICE:  Stable function now_s() called!
++psql:include/append_query.sql:417: NOTICE:  Stable function now_s() called!
++psql:include/append_query.sql:417: NOTICE:  Stable function now_s() called!
++psql:include/append_query.sql:417: NOTICE:  Stable function now_s() called!
+                                       QUERY PLAN                                       
+ ---------------------------------------------------------------------------------------
+  Gather (actual rows=3 loops=1)

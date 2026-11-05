@@ -1,0 +1,56 @@
+--- a/pgtap/mincut/stoerWagner/compare_components.pg
++++ b/pgtap/mincut/stoerWagner/compare_components.pg
+@@ -94,7 +94,12 @@
+ );
+ 
+ SELECT set_eq('stoerWagner5', 'stoerWagner6', '5: Mincut of edge 17');
+-SELECT set_eq('stoerWagner7', 'VALUES (1, 1, 1, 1)', '6: Compare the mincut of subgraph with actual result');
++-- Upstream 074647e7 / 97c1ae53: Boost >=1.80 selects another equal mincut.
++SELECT CASE WHEN (SELECT boost FROM pgr_full_version()) < '1.80' THEN
++  collect_tap(set_eq('stoerWagner7', 'VALUES (1, 1, 1, 1)', '6: Compare the mincut of subgraph with actual result'))
++ELSE
++  collect_tap(set_eq('stoerWagner7', 'VALUES (1, 14, 1, 1)', '6: Compare the mincut of subgraph with actual result'))
++END;
+ 
+ SELECT * FROM finish();
+ ROLLBACK;
+--- a/pgtap/withPoints/withPointsDD/edge_cases/issue_979.pg
++++ b/pgtap/withPoints/withPointsDD/edge_cases/issue_979.pg
+@@ -20,7 +20,7 @@
+ 
+ BEGIN;
+ 
+-SELECT PLAN(6);
++SELECT PLAN(7);
+ 
+ 
+ ---
+@@ -101,8 +101,12 @@
+ 
+ -------- left driving side
+ 
++-- Node 12 has two equally short paths via edges 13 and 15. Their incoming
++-- cost is 1 and both predecessors have distance 3.6; check that fixture below.
++-- Canonicalize only this tied edge, retaining all node/cost/distance checks.
+ PREPARE q3 AS
+-SELECT node, edge, round(cost::numeric, 12) AS cost, round(agg_cost::numeric, 12) AS agg_cost FROM pgr_withPointsDD(
++SELECT node, CASE WHEN node = 12 AND edge IN (13, 15) THEN 15 ELSE edge END AS edge,
++round(cost::numeric, 12) AS cost, round(agg_cost::numeric, 12) AS agg_cost FROM pgr_withPointsDD(
+     'SELECT id, source, target, cost, reverse_cost FROM edge_table ORDER BY id',
+     'SELECT pid, edge_id, fraction, side from pointsOfInterest',
+     -1, 6.8, driving_side := 'l', details := false)
+@@ -131,6 +135,14 @@
+ ) AS t (node, edge, cost, agg_cost);
+ 
+ 
++SELECT results_eq(
++    $$SELECT e.id, e.target, e.cost::numeric, t.agg_cost::numeric
++      FROM edge_table e JOIN test3 t ON t.node = e.source
++      WHERE e.id IN (13, 15) ORDER BY e.id$$,
++    $$VALUES (13::bigint, 12::bigint, 1::numeric, 3.6::numeric),
++             (15::bigint, 12::bigint, 1::numeric, 3.6::numeric)$$,
++    'Both tied incoming edges to node 12 are valid paths of total cost 4.6');
++
+ SELECT set_eq('q3',
+     $$SELECT node, edge, round(cost::numeric, 12) AS cost, round(agg_cost::numeric, 12) AS agg_cost FROM test3$$,
+     'Should be aggregating individual costs: left driving side, DIR');

@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-pglogical
-  revision: 3
+  revision: 5
 spec:
   type: pgxs
   source:
@@ -13,6 +13,8 @@ spec:
   - ../../patches/pglogical-pg16-tests.patch
   # Upstream 7acb02405be5471d9827bd62b37c810038e262e3; preserves SQL version 2.4.4.
   - ../../patches/pglogical-idle-sync.patch
+  # Local fix with a deterministic blocked-apply regression test.
+  - ../../patches/pglogical-resync-cache.patch
   compatible_postgresql: '>=16.15,<17'
   requires: []
   conflicts: []

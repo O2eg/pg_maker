@@ -2,14 +2,19 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-timescaledb
-  revision: 2
+  revision: 5
 spec:
   type: library
   source:
     kind: git
     repository: https://github.com/timescale/timescaledb.git
     ref: 7b30533d4d9b6ce1353b8bac0ba6215be20f2633
-  compatible_postgresql: '>=16,<17'
+  source_patches:
+  # PG16.15 identifies the continuous aggregate's ACL object as a view.
+  - ../../patches/timescaledb-pg16-tests.patch
+  - ../../patches/timescaledb-archive-metadata.patch
+  - ../../patches/timescaledb-pg16-fixtures.patch
+  compatible_postgresql: '>=16.15,<17'
   requires: []
   conflicts: []
   build_dependencies:
@@ -34,6 +39,10 @@ spec:
     timescaledb: 2.20.3
   build_system: cmake
   configure_args:
+  # Metadata of the pinned source; the suffix identifies our patched archive.
+  - -DEXT_GIT_COMMIT_TAG=2.20.3-pg-maker
+  - -DEXT_GIT_COMMIT_HASH=7b30533d4d9b6ce1353b8bac0ba6215be20f2633
+  - -DEXT_GIT_COMMIT_TIME=2025-06-11T08:38:01Z
   - -DPG_CONFIG={prefix}/bin/pg_config
   - -DREGRESS_CHECKS=ON
   - -DTAP_CHECKS=ON
@@ -46,6 +55,14 @@ spec:
   test_cluster: false
   test_commands:
   - id: upstream-installcheck
+    # Matches upstream test/postgresql.conf.in, including logical WAL fixtures.
+    env:
+      PGTZ: US/Pacific
+      PG_REGRESS_OPTS: --encoding=UTF8
+      # Timescale's launcher creates per-case databases from template1; pg_regress
+      # --encoding changes only its own database, so initdb must also use UTF-8.
+      LANG: C.UTF-8
+      LC_CTYPE: C.UTF-8
     argv:
     - cmake
     - --build
@@ -53,5 +70,7 @@ spec:
     - --target
     - installcheck
     - --parallel
-    - '{jobs}'
+    # Upstream targets share testcluster/data; run targets serially. PostgreSQL's
+    # regression schedules still control parallelism inside each suite.
+    - '1'
     success_pattern: All (?P<count>\d+) tests passed\.
