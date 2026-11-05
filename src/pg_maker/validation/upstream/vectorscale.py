@@ -89,13 +89,16 @@ def main():
         "CARGO_PROFILE_DEV_DEBUG": "0",
         "PGRX_HOME": str(root / "pg-maker-pgrx"),
         "PGRX_PG_CONFIG_PATH": prefix + "/bin/pg_config",
-        # Override upstream's unconditional AVX2/FMA flags for the x86-64 profile.
+        # Keep build tools on the baseline; the extension requires AVX2/FMA.
         "RUSTFLAGS": "-Ctarget-cpu=x86-64",
     }
     crate = root / "pgvectorscale"
 
-    def command(argv, log=None, cwd=crate):
-        return run(argv, env=env, cwd=cwd, log=root / log if log else None)
+    def command(argv, log=None, cwd=crate, *, extension=False):
+        command_env = env
+        if extension:
+            command_env = {**env, "RUSTFLAGS": env["RUSTFLAGS"] + " -Ctarget-feature=+avx2,+fma"}
+        return run(argv, env=command_env, cwd=cwd, log=root / log if log else None)
 
     install = [
         "cargo",
@@ -123,7 +126,7 @@ def main():
             cwd=root,
         )
         command(["cargo", "pgrx", "init", "--pg18=" + prefix + "/bin/pg_config"])
-        command(install)
+        command(install, extension=True)
         return
     if action != "test":
         raise ValueError("unknown action")
@@ -139,12 +142,13 @@ def main():
             "pg18,build_parallel",
         ],
         "pg-maker-pgrx-tests.log",
+        extension=True,
     )
     counts = [int(n) for n in re.findall(r"test result: ok\. (\d+) passed; 0 failed", text)]
     if not counts or sum(counts) == 0:
         raise RuntimeError("pgrx did not report nonempty passing tests")
     # pgrx test installs its pg_test binary. Restore the production release.
-    command(install)
+    command(install, extension=True)
     data = root / "pg-maker-python-data"
     command(
         ["initdb", "-D", str(data), "-U", "builder", "-A", "trust", "--no-locale", "-E", "UTF8"]

@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-vectorscale
-  revision: 2
+  revision: 3
 spec:
   type: utility
   source:

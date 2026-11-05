@@ -727,6 +727,7 @@ extensions:
   source_url: https://github.com/timescale/pgvectorscale
   source_ref: c66cae4b621664b68546587da9fafd80b791e643
   source_release: tags/0.9.0
+  notes: On x86-64, requires AVX2 and FMA CPU features; upstream has no baseline-only implementation.
   status: selected-unverified
 additional_modules:
 - name: repl_mon

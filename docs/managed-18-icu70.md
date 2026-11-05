@@ -33,7 +33,7 @@ LZ4 and Zstandard are enabled, including support for the source's LZ4 TOAST/WAL.
 | Input | Managed observation | Profile |
 | --- | --- | --- |
 | PostgreSQL | `18.6-201-yandex.62650.c500aa0389` | Community 18.6 |
-| Architecture | x86_64 | x86-64 baseline, amd64 packages |
+| Architecture | x86_64 | x86-64 baseline for core; vectorscale additionally requires AVX2/FMA; amd64 packages |
 | Database ICU locale | `en-US`, UTF-8 | Private ICU 70.1 |
 | en-US stored / actual collation | `153.112` / `153.112` | Expected `153.112` |
 | ru-RU actual collation | `153.112.40` | Expected `153.112.40` |
@@ -70,11 +70,18 @@ files for `lwaldump`, `smlar` and `spqrguard`; TimescaleDB includes TSL code.
 ## Frozen Rust inputs and test fixtures
 
 `vectorscale` 0.9.0 uses Rust 1.91.1 and cargo-pgrx 0.16.1. The recipe pins the
-toolchain archives (including rustfmt, required by pgrx bindgen) and a generated Cargo.lock patch. A separate YAML catalog
+toolchain archives (including rustfmt, required by pgrx bindgen) and a generated
+Cargo.lock patch. A separate YAML catalog
 pins 621 crate archives with their Cargo checksums. `extra_source_catalogs`
 merges these into ordinary `extra_sources` before locking; duplicate keys fail
 validation. The build runs Cargo offline against these inputs. Rust tools and
 crate sources are build inputs and are not copied into the database packages.
+
+On x86-64, upstream vectorscale requires AVX2 and FMA at compile time and checks
+those CPU features when loaded. Its library and native tests use explicit
+`-Ctarget-cpu=x86-64 -Ctarget-feature=+avx2,+fma`; build tools and PostgreSQL core
+retain the baseline. The build VM exposes both features. Deployment CPUs must
+also expose them to use vectorscale.
 
 Explicit `build_commands` support the pgrx build/install steps. They are argv
 arrays, are included in reuse identity, and cannot be combined with Make or
