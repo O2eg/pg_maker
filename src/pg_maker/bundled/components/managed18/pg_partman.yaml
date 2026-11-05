@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-pg-partman
-  revision: 2
+  revision: 3
 spec:
   type: pgxs
   source:
@@ -64,3 +64,4 @@ spec:
   - pg_partman_bgw
   source_patches:
   - ../../patches/pg-partman-5.4-30sec-tests.patch
+  - ../../patches/pg-partman-5.4-calendar-tests.patch
