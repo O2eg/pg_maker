@@ -1,0 +1,82 @@
+--- a/test/scripts/segment.sh
++++ b/test/scripts/segment.sh
+@@ -106,7 +106,7 @@
+         {
+             for q in $(seq 1 20); do
+                 psql -h "${DATA_DIR}" -p "${TEST_PORT}" -d "${TEST_DB}" -tAc \
+-                    "SELECT COUNT(*) FROM seg_docs WHERE content <@> to_bm25query('alpha', 'seg_idx') < -0.01;"
++                    "SELECT COUNT(*) FROM seg_docs WHERE content <@> to_bm25query('alpha', 'seg_idx') < 0;"
+             done
+         } > "$output" 2>&1 &
+         pids+=($!)
+@@ -166,24 +166,24 @@
+     {
+         for q in $(seq 1 30); do
+             psql -h "${DATA_DIR}" -p "${TEST_PORT}" -d "${TEST_DB}" -tAc \
+-                "SELECT COUNT(*) FROM mixed_docs WHERE content <@> to_bm25query('delta', 'mixed_idx') < -0.01;"
++                "SELECT COUNT(*) FROM mixed_docs WHERE content <@> to_bm25query('delta', 'mixed_idx') < 0;"
+             sleep 0.02
+         done
+     } > "$reader_output" 2>&1 &
+     local reader_pid=$!
+ 
+     # Wait for both
+-    wait $writer_pid 2>/dev/null || warn "Writer had issues"
++    wait $writer_pid 2>/dev/null || error "Writer had issues"
+     wait $reader_pid 2>/dev/null || error "Reader crashed"
+ 
+     # Verify final count is correct
+-    local final_count=$(run_sql_value "SELECT COUNT(*) FROM mixed_docs WHERE content <@> to_bm25query('delta', 'mixed_idx') < -0.01;")
++    local final_count=$(run_sql_value "SELECT COUNT(*) FROM mixed_docs WHERE content <@> to_bm25query('delta', 'mixed_idx') < 0;")
+     info "Final count: $final_count"
+ 
+-    if [ "$final_count" -ge 30 ]; then
++    if [ "$final_count" -eq 80 ]; then
+         log "✅ Test 2 passed: Reader and writer completed ($final_count docs with 'delta')"
+     else
+-        warn "Final count lower than expected: $final_count"
++        error "Expected all 80 matching documents, got $final_count"
+     fi
+ 
+     rm -f "$writer_output" "$reader_output"
+@@ -215,7 +215,7 @@
+         {
+             for q in $(seq 1 15); do
+                 psql -h "${DATA_DIR}" -p "${TEST_PORT}" -d "${TEST_DB}" -tAc \
+-                    "SELECT COUNT(*) FROM multi_spill WHERE content <@> to_bm25query('zeta', 'multi_idx') < -0.01;"
++                    "SELECT COUNT(*) FROM multi_spill WHERE content <@> to_bm25query('zeta', 'multi_idx') < 0;"
+                 sleep 0.03
+             done
+         } > "$output" 2>&1 &
+@@ -240,11 +240,11 @@
+ 
+     # Final count should be 80 (use simple COUNT first to verify data)
+     local table_count=$(run_sql_value "SELECT COUNT(*) FROM multi_spill;")
+-    local final_count=$(run_sql_value "SELECT COUNT(*) FROM multi_spill WHERE content <@> to_bm25query('zeta', 'multi_idx') < -0.01;")
++    local final_count=$(run_sql_value "SELECT COUNT(*) FROM multi_spill WHERE content <@> to_bm25query('zeta', 'multi_idx') < 0;")
+ 
+     info "Table has $table_count rows, query found $final_count"
+ 
+-    if [ "$failures" -eq 0 ] && [ "$table_count" -eq 80 ]; then
++    if [ "$failures" -eq 0 ] && [ "$table_count" -eq 80 ] && [ "$final_count" -eq 80 ]; then
+         log "✅ Test 3 passed: Multiple spills handled correctly ($table_count docs)"
+     else
+         error "❌ Test 3 failed: failures=$failures table_count=$table_count final_count=$final_count"
+@@ -345,7 +345,7 @@
+     run_sql_quiet "INSERT INTO doclen_test (content) VALUES ('and a longer one with more words to test');"
+ 
+     # Query should use document lengths from both segment and memtable
+-    local results=$(run_sql_value "SELECT COUNT(*) FROM doclen_test WHERE content <@> to_bm25query('document', 'doclen_idx') < -0.01;")
++    local results=$(run_sql_value "SELECT COUNT(*) FROM doclen_test WHERE content <@> to_bm25query('document', 'doclen_idx') < 0;")
+ 
+     # Should find 2 documents containing 'document'
+     if [ "$results" -eq 2 ]; then
+@@ -377,7 +377,7 @@
+     {
+         for q in $(seq 1 50); do
+             psql -h "${DATA_DIR}" -p "${TEST_PORT}" -d "${TEST_DB}" -tAc \
+-                "SELECT COUNT(*) FROM spill_race WHERE content <@> to_bm25query('theta', 'spill_idx') < -0.01;"
++                "SELECT COUNT(*) FROM spill_race WHERE content <@> to_bm25query('theta', 'spill_idx') < 0;"
+             sleep 0.01
+         done
+     } > "$reader_output" 2>&1 &

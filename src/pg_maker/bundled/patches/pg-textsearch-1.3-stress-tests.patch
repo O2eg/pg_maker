@@ -1,0 +1,10 @@
+--- a/test/scripts/stress.sh
++++ b/test/scripts/stress.sh
+@@ -88,6 +88,7 @@
+ listen_addresses = 'localhost'
+ log_min_messages = warning
+ log_statement = 'none'
++shared_preload_libraries = 'pg_textsearch'
+ EOF
+ 
+     pg_ctl start -D "${DATA_DIR}" -l "${LOGFILE}" -w || error "Failed to start PostgreSQL"

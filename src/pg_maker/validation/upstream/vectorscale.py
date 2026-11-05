@@ -35,7 +35,7 @@ def run(argv, *, env, cwd, log=None):
 
 
 def prepare(root, extra, toolchain):
-    for name in ("rustc", "rust-std", "cargo"):
+    for name in ("rustc", "rust-std", "cargo", "rustfmt"):
         run(
             ["sh", "install.sh", "--prefix=" + str(toolchain), "--disable-ldconfig"],
             cwd=extra / name,
