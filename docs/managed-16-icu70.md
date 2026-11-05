@@ -85,6 +85,11 @@ See [PGDG Debian packages](https://www.postgresql.org/download/linux/debian/) an
 ## Pinned library mechanism
 
 `components/libraries/icu70.yaml` pins the upstream ICU 70.1 source archive by SHA256.
+It also backports upstream
+[ICU-22779 / 45a8a28](https://github.com/unicode-org/icu/commit/45a8a28de6fa28af8e03c9c88473500dc51ca498),
+which initializes the collation builder's unused trie pointer without reading an
+uninitialized member. The patch changes two C++ files, not ICU's Unicode/collation
+data or its version. GCC 14 diagnosed the original initialization-order defect.
 The recipe is part of the selected feature and is resolved into the immutable lock.
 
 ```yaml

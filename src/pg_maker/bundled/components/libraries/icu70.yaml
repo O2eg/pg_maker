@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: icu70
-  revision: 3
+  revision: 4
 spec:
   type: library
   build_phase: before-postgresql
@@ -14,6 +14,8 @@ spec:
   source_directory: source
   source_patches:
   - ../../patches/icu70-python313-tests.patch
+  # Upstream ICU-22779: initialize the builder's unused trie pointer explicitly.
+  - ../../patches/icu70-collation-builder-init.patch
   compatible_postgresql: '>=14,<20'
   requires: []
   conflicts: []
