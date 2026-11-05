@@ -1,0 +1,22 @@
+--- a/smlar.c
++++ b/smlar.c
+@@ -113,8 +113,8 @@
+ 
+ 		for (i = 0; i < catlist->n_members; i++)
+ 		{
+-			HeapTuple		tuple = &catlist->members[i]->tuple;
+-			Form_pg_cast	castForm = (Form_pg_cast)GETSTRUCT(tuple);
++			HeapTuple		castTuple = &catlist->members[i]->tuple;
++			Form_pg_cast	castForm = (Form_pg_cast)GETSTRUCT(castTuple);
+ 
+ 			if ( castForm->castfunc == InvalidOid && castForm->castcontext == COERCION_CODE_IMPLICIT )
+ 			{
+@@ -187,7 +187,7 @@
+ static ProcTypeInfo *cacheProcs = NULL;
+ static int nCacheProcs = 0;
+ 
+-#ifndef TupleDescAttr
++#if PG_VERSION_NUM < 180000 && !defined(TupleDescAttr)
+ #define TupleDescAttr(tupdesc, i)	((tupdesc)->attrs[(i)])
+ #endif
+ 

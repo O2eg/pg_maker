@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-smlar
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
@@ -10,6 +10,8 @@ spec:
     location: https://codeload.github.com/jirutka/smlar/tar.gz/6259352edd179544c6f0e7c81bb68dcb81317f8c
     sha256: sha256:419dfa34123364ace0765e2fe8a3188d4b5f00cc8d0fee9012efb569f63184cf
     strip_components: 1
+  source_patches:
+  - ../../patches/smlar-pg18-tupledesc.patch
   compatible_postgresql: '>=18.6,<19'
   requires: []
   conflicts: []
