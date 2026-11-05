@@ -223,6 +223,12 @@ this configuration started on 2026-11-05. The historical manual acceptance below
 covers the earlier 34-extension package only; it does not qualify this profile.
 A complete successful source, extension and installed-package report is required.
 
+Installed-package checks preserve the PostgreSQL startup and collector logs before
+removing their containers, including failed startups, and apply the configured
+generated-log diagnostic policy to them. The pg_hint_plan recipe preloads only
+pg_hint_plan and pg_stat_statements. Its upstream FDW test creates file_fdw when
+needed; file_fdw is not a required preload or a delivered component of this profile.
+
 pg_partman tests run with pinned pgTAP, including staged procedures/reindexing,
 non-superuser, tablespace and background-worker scenarios. Upstream's two
 not_working_yet scripts and its PostgreSQL <=11 tablespace variant are explicitly

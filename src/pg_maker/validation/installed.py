@@ -83,6 +83,19 @@ class Harness:
             )
         )
 
+    def preserve_server_logs(self):
+        """Retain startup and collector logs before the disposable container is removed."""
+        paths = [self.data / "server.log"]
+        directory = self.data / "log"
+        if directory.is_dir() and not directory.is_symlink():
+            paths.extend(directory.glob("*.log"))
+        for path in paths:
+            if path.is_symlink() or not path.is_file():
+                continue
+            target = self.output / "server-logs" / path.relative_to(self.data)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(path, target)
+
     def sql(self, query, *, database="postgres", tcp=False):
         return self.run(
             [
@@ -762,6 +775,8 @@ def main():
     except Exception as exc:
         harness.save(False, type(exc).__name__ + ": " + str(exc))
         raise
+    finally:
+        harness.preserve_server_logs()
 
 
 if __name__ == "__main__":

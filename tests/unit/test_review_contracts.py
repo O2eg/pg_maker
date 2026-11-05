@@ -80,3 +80,34 @@ def test_default_socket_probe_has_no_host_override_and_recreates_directory(tmp_p
     monkeypatch.setattr(installed, "Path", lambda path: directory)
     harness.default_socket()
     assert actions == ["stop", "start"]
+
+
+def test_failed_package_start_preserves_server_logs_before_container_cleanup(tmp_path, monkeypatch):
+    import json
+
+    from pg_maker.validation import installed
+
+    data = tmp_path / "data"
+    (data / "log").mkdir(parents=True)
+    (data / "server.log").write_text('FATAL: could not access file "missing"\n')
+    (data / "log/postgresql.log").write_text("LOG: startup\n")
+    (data / "log/ignored.txt").write_text("not a server log")
+    secret = tmp_path / "unrelated"
+    secret.write_text("unrelated content")
+    (data / "log/external.log").symlink_to(secret)
+    config = tmp_path / "config.json"
+    config.write_text(json.dumps({"service": {"data": str(data), "prefix": "/opt/test"}}))
+    output = tmp_path / "result"
+    monkeypatch.setattr(installed.sys, "argv", ["installed.py", str(config), str(output)])
+
+    def fail(self):
+        raise RuntimeError("startup failed")
+
+    monkeypatch.setattr(installed.Harness, "execute", fail)
+    with pytest.raises(RuntimeError, match="startup failed"):
+        installed.main()
+    assert not json.loads((output / "result.json").read_text())["passed"]
+    assert (output / "server-logs/server.log").read_text() == (data / "server.log").read_text()
+    assert (output / "server-logs/log/postgresql.log").is_file()
+    assert not (output / "server-logs/log/ignored.txt").exists()
+    assert not (output / "server-logs/log/external.log").exists()

@@ -255,6 +255,19 @@ def validate_packages(branch, *, run_database=True):
                         log_root=branch.output,
                     )
                     findings.append({"receipt": command_log.name, **analysis})
+                for server_log in sorted((output / "server-logs").rglob("*.log")):
+                    analysis = classify(
+                        server_log,
+                        None,
+                        test_command=True,
+                        generated_log=True,
+                        policy=policy_from_config(branch.config),
+                        stage=branch.step["kind"],
+                        log_root=branch.output,
+                    )
+                    findings.append(
+                        {"server_log": server_log.relative_to(output).as_posix(), **analysis}
+                    )
                 write_json(output / "diagnostics.json", findings)
                 if any(not finding["passed"] for finding in findings):
                     raise CommandError(
