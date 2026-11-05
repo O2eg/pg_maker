@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-timescaledb
-  revision: 3
+  revision: 4
 spec:
   type: library
   source:
@@ -68,6 +68,7 @@ spec:
   source_patches:
   - ../../patches/timescaledb-2.23-archive-metadata.patch
   - ../../patches/timescaledb-2.23-pg18-output-plugin.patch
+  - ../../patches/timescaledb-2.23-pg18-copy-tests.patch
   installed_checks:
   - argv:
     - '{prefix}/bin/psql'
