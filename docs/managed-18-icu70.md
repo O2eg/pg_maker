@@ -84,6 +84,34 @@ apply. The production release library is restored after pgrx's test build.
 The profile also exercises pg_partman's role/procedure/BGW fixtures and checks
 `lwaldump` on a temporary physical standby, including an abrupt restart.
 
+## Compatibility changes found during native testing
+
+The source hashes and patch files are part of the resolved build inputs. An
+extension's SQL version alone does not identify the compiled implementation.
+
+| Component | Adjustment |
+| --- | --- |
+| `jsquery` 1.1 | Pin public revision `f43eabd5c5dad311894fb131a62999928743c726` with PostgreSQL 18 API support |
+| `logerrors` 2.1 | Pin public `fix_pg_18` revision `c72bbe833c216814495cd9b4d32270dd18dd253b`; run its regression and error-capture checks |
+| `pg_stat_query_plans` 1.0 | Restore privileged access to other users' plans; also test that ordinary users cannot read those plans |
+| `vector` 0.8.2 | Remove the upstream `-march=native` override so binaries retain the profile's x86-64 baseline |
+| `pg_hint_plan` 1.8.0 | Run native expected-output tests with the upstream preload configuration; combined preloads are checked separately during package acceptance |
+| `pglogical` 2.4.6 | Port test fixtures to current PostgreSQL Perl/WAL APIs and explicit output-plugin policy; compare replicated table contents |
+| `pg_partman` 5.4.3 | Correct 30-second calendar fixtures and derive monthly undo counts from generated input; compare all copied payloads |
+| `pg_textsearch` 1.3.0 | Require positive evidence that TimescaleDB integration scenarios executed rather than silently skipped |
+| `timescaledb` 2.23.0 | Provide pinned commit metadata when building a source archive without Git metadata |
+
+The pg_partman helper follows emitted pgTAP procedure instructions, creates a
+separate database for its mixed-case extension schema, and runs clock-sensitive
+fixtures with a private process time offset. Host time and installed SQL functions
+are unchanged. Upstream's `not_working_yet` directory is inventoried as inapplicable,
+not counted as passed.
+
+RUM's optional `t/002_pglist.pl` requires the original approximately 1 GB mailing
+list dump. At the initial native run its upstream download host was unavailable.
+Its SQL, isolation and WAL tests passed, but the missing large-data test remains
+an unresolved qualification requirement; no exception is enabled in this profile.
+
 ## Full qualification and preserving previous releases
 
 Standard source and extension tests are enabled by default. For a package run
