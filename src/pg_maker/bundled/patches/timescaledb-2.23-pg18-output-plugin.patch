@@ -1,0 +1,27 @@
+--- a/test/postgresql.conf.in
++++ b/test/postgresql.conf.in
+@@ -12,6 +12,7 @@
+ max_worker_processes=24
+ random_page_cost=1.0
+ shared_preload_libraries=timescaledb
++output_plugin_libraries='pgoutput, test_decoding, timescaledb-invalidations-2.23.0'
+ timescaledb.last_tuned='1971-02-03 04:05:06.789012 -0300'
+ timescaledb.last_tuned_version='0.0.1'
+ timescaledb.passfile='@TEST_PASSFILE@'
+--- a/tsl/test/postgresql.conf.in
++++ b/tsl/test/postgresql.conf.in
+@@ -12,6 +12,7 @@
+ max_worker_processes=24
+ random_page_cost=1.0
+ shared_preload_libraries=timescaledb
++output_plugin_libraries='pgoutput, test_decoding, timescaledb-invalidations-2.23.0'
+ timescaledb.last_tuned='1971-02-03 04:05:06.789012 -0300'
+ timescaledb.last_tuned_version='0.0.1'
+ timescaledb.passfile='@TEST_PASSFILE@'
+--- a/test/pgtest.conf.in
++++ b/test/pgtest.conf.in
+@@ -1,3 +1,4 @@
+ # postgresql.conf settings for PostgreSQL test suite
+ shared_preload_libraries=timescaledb
++output_plugin_libraries='pgoutput, test_decoding, timescaledb-invalidations-2.23.0'
+ @TELEMETRY_DEFAULT_SETTING@

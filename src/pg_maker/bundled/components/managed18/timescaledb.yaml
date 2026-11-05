@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-timescaledb
-  revision: 2
+  revision: 3
 spec:
   type: library
   source:
@@ -29,6 +29,7 @@ spec:
   - lib/postgresql/timescaledb.so
   - lib/postgresql/timescaledb-2.23.0.so
   - lib/postgresql/timescaledb-tsl-2.23.0.so
+  - lib/postgresql/timescaledb-invalidations-2.23.0.so
   - share/postgresql/extension/timescaledb.control
   - share/postgresql/extension/timescaledb--*.sql
   sql_extension_versions:
@@ -66,3 +67,14 @@ spec:
     success_pattern: All (?P<count>\d+) tests passed\.
   source_patches:
   - ../../patches/timescaledb-2.23-archive-metadata.patch
+  - ../../patches/timescaledb-2.23-pg18-output-plugin.patch
+  installed_checks:
+  - argv:
+    - '{prefix}/bin/psql'
+    - -X
+    - -v
+    - ON_ERROR_STOP=1
+    - -Atqc
+    - LOAD 'timescaledb-invalidations-2.23.0'; SELECT 'timescale-invalidation-plugin-loaded'
+    timeout_seconds: 60
+    stdout_contains: timescale-invalidation-plugin-loaded

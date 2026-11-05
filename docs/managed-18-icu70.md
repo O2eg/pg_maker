@@ -95,11 +95,12 @@ extension's SQL version alone does not identify the compiled implementation.
 | `logerrors` 2.1 | Pin public `fix_pg_18` revision `c72bbe833c216814495cd9b4d32270dd18dd253b`; run its regression and error-capture checks |
 | `pg_stat_query_plans` 1.0 | Restore privileged access to other users' plans; also test that ordinary users cannot read those plans |
 | `vector` 0.8.2 | Remove the upstream `-march=native` override so binaries retain the profile's x86-64 baseline |
+| `smlar` 1.0 | Use PostgreSQL 18's inline `TupleDescAttr` accessor instead of shadowing it with the legacy compatibility macro |
 | `pg_hint_plan` 1.8.0 | Run native expected-output tests with the upstream preload configuration; combined preloads are checked separately during package acceptance |
 | `pglogical` 2.4.6 | Port test fixtures to current PostgreSQL Perl/WAL APIs and explicit output-plugin policy; finish idle tablesync after received WAL progress and refresh the resync cache after waiting for a relation lock; compare replicated table contents and test the lock race |
 | `pg_partman` 5.4.3 | Correct 30-second calendar fixtures and derive monthly undo counts from generated input; compare all copied payloads |
 | `pg_textsearch` 1.3.0 | Require positive evidence that TimescaleDB integration scenarios executed rather than silently skipped |
-| `timescaledb` 2.23.0 | Provide pinned commit metadata when building a source archive without Git metadata |
+| `timescaledb` 2.23.0 | Provide pinned archive commit metadata, allow the invalidation output plugin in test clusters, and include/check that plugin in the installed package |
 
 The pg_partman helper follows emitted pgTAP procedure instructions, creates a
 separate database for its mixed-case extension schema, and runs clock-sensitive
@@ -116,6 +117,22 @@ The upstream pglogical daylight-saving-time scenario `t/030` remains its origina
 `TODO/SKIP`: it requires rewriting privileged host-clock changes. Core scenarios
 requiring disabled configure features, such as injection points, are likewise
 not applicable to this build. Neither category represents executed passing tests.
+
+PostgreSQL 18.6 restricts logical decoding plugins through `output_plugin_libraries`.
+To use pglogical or TimescaleDB's WAL invalidation mode, a deployment needs
+`wal_level = logical` and an appropriate allowlist, for example:
+
+```conf
+output_plugin_libraries = 'pgoutput, test_decoding, pglogical_output, timescaledb-invalidations-2.23.0'
+```
+
+The package includes `timescaledb-invalidations-2.23.0.so` and checks that it can
+load in the fresh package-test container. Native continuous-aggregate tests verify
+its WAL behavior with the required settings.
+
+PostGIS uses Debian 13's GEOS 3.13.1, GDAL 3.10.3, SFCGAL 2.0.0 and PROJ 9.6.0.
+GEOS 3.14-specific features are not available; the managed instance's GEOS version
+was not established by the SQL-extension inventory audit.
 
 RUM's optional `t/002_pglist.pl` requires the original approximately 1 GB mailing
 list dump. At the initial native run its upstream download host was unavailable.
