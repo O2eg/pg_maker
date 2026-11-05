@@ -610,12 +610,12 @@ extensions:
   managed_catalog_versions:
   - 1.2.0
   source_audit_status: source-available
-  license: "BSD/PostgreSQL grant \u0432 debian/copyright"
+  license: PostgreSQL License (LICENSE)
   recipe: ../components/managed18/prefix.yaml
   component_id: yc18-prefix
   source_url: https://github.com/dimitri/prefix
-  source_ref: 0a83cb186adad73059f9f67a3e025a4bdda2e6ec
-  source_release: tags/v1.2.0
+  source_ref: 413f00607c3c3446e4f804ef1874a98caefabd4d
+  source_release: public master pinned for PG18 support; SQL version remains 1.2.0
   status: selected-unverified
 - name: rum
   managed_default_version: '1.3'

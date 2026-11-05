@@ -95,11 +95,12 @@ extension's SQL version alone does not identify the compiled implementation.
 | `logerrors` 2.1 | Pin public `fix_pg_18` revision `c72bbe833c216814495cd9b4d32270dd18dd253b`; run its regression and error-capture checks |
 | `pg_stat_query_plans` 1.0 | Restore privileged access to other users' plans; also test that ordinary users cannot read those plans; use PostgreSQL's portable uint64 log format |
 | `vector` 0.8.2 | Remove the upstream `-march=native` override so binaries retain the profile's x86-64 baseline |
+| `prefix` 1.2.0 | Pin public revision `413f00607c3c3446e4f804ef1874a98caefabd4d` with current PostgreSQL APIs; the old 1.2.0 tag only supported PG8/9 |
 | `smlar` 1.0 | Use PostgreSQL 18's inline `TupleDescAttr` accessor instead of shadowing it with the legacy compatibility macro |
 | `pg_hint_plan` 1.8.0 | Run native expected-output tests with the upstream preload configuration; combined preloads are checked separately during package acceptance |
 | `pglogical` 2.4.6 | Port test fixtures to current PostgreSQL Perl/WAL APIs and explicit output-plugin policy; finish idle tablesync after received WAL progress and refresh the resync cache after waiting for a relation lock; compare replicated table contents and test the lock race |
 | `pg_partman` 5.4.3 | Correct 30-second calendar fixtures and derive monthly undo counts from generated input; compare all copied payloads |
-| `pg_textsearch` 1.3.0 | Run shell suites from a short temporary path and set writable test socket directories; force persistent replication-test sessions to exercise BM25 indexes and assert the UPDATE query plan; require positive evidence that TimescaleDB integration scenarios executed rather than silently skipped |
+| `pg_textsearch` 1.3.0 | Run shell suites from a short temporary path and set writable test socket directories; force replication search/count sessions to exercise BM25 indexes, assert the UPDATE query plan, and count matching fixture documents; require positive evidence that TimescaleDB integration scenarios executed rather than silently skipped |
 | `timescaledb` 2.23.0 | Provide pinned archive commit metadata, allow the invalidation output plugin in test clusters, and include/check that plugin in the installed package |
 
 The pg_partman helper follows emitted pgTAP procedure instructions, creates a

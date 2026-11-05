@@ -1,0 +1,33 @@
+--- a/test/scripts/replication_lib.sh
++++ b/test/scripts/replication_lib.sh
+@@ -123,6 +123,7 @@
+     local query=$4
+     local index=$5
+     local limit=${6:-10000}
++    PGOPTIONS="${PGOPTIONS:-} -c enable_seqscan=off" \
+     psql -p "${port}" -d "${TEST_DB}" -tA -c "
+         SELECT count(*) FROM (
+             SELECT id FROM ${table}
+--- a/test/scripts/replication.sh
++++ b/test/scripts/replication.sh
+@@ -297,8 +297,9 @@
+     log "Initial standby count: ${LL_BEFORE}"
+     log "Standby count after primary insert: ${LL_AFTER}"
+ 
+-    if [ "${LL_BEFORE}" != "2" ]; then
+-        error "Expected initial count=2, got '${LL_BEFORE}'"
++    # Only the quantum document matches; the relativity document does not.
++    if [ "${LL_BEFORE}" != "1" ]; then
++        error "Expected initial matching count=1, got '${LL_BEFORE}'"
+     fi
+ 
+     # The bug manifests in two ways:
+@@ -308,7 +309,7 @@
+     # Once fixed, LL_AFTER should be LL_BEFORE + 1 (the new doc is visible).
+     if [[ "${LL_AFTER}" == *ERROR* ]] || \
+        ! [[ "${LL_AFTER}" =~ ^[0-9]+$ ]] || \
+-       [ "${LL_AFTER}" -le "${LL_BEFORE}" ]; then
++       [ "${LL_AFTER}" != "2" ]; then
+         error "BUG (expected): long-lived standby backend did not see \
+ new primary insert (before=${LL_BEFORE}, after=${LL_AFTER})"
+     fi
