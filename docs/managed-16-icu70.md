@@ -312,6 +312,27 @@ disables index scans to preserve its sequential-scan reference plan; subsequent
 index tests retain their original settings. All RLS and optimized/unoptimized
 result comparisons remain enabled.
 
+The public pg_stat_query_plans pin needs explicit PG16 runtime fixes: the plan
+reader now uses the same `pg_read_all_stats` privilege check as the SQL reader;
+PG16 uses the pin's newer utility hook, which preserves nesting depth even when
+utility tracking is off and saves statement metadata before transaction cleanup.
+Analyzed cursor, CTAS and EXPLAIN child queries receive IDs during parse analysis
+on PG16. Materialized-view rewrites remain untracked, and the planner does not
+override deliberately cleared IDs. These are local modifications; SQL version
+1.0 alone does not identify the patched implementation.
+
+All twelve upstream regression scenarios run. PG16's EXPLAIN row-count formatting
+and retained leading comments have explicit references. The privilege reference
+requires ordinary users to see only their own rows, matching the implementation's
+restriction, and adds an explicit negative check for both statistics views.
+Because PG16 lacks `MERGE RETURNING`, that fixture executes MERGE and COPY
+separately while checking both data and tracking levels. A test-only libpq client
+performs the same seven named/unnamed protocol executions and validates every
+returned value; the original statistics counters are still checked. This replaces
+newer psql's `\parse`/`\bind_named` commands without dropping protocol coverage.
+The helper is not installed. Upstream `TAP_TESTS=0` is overridden to empty because
+make treats `0` as enabled although this pin has no TAP files.
+
 ### Compiler version and physical replication
 
 | Build | Compiler |

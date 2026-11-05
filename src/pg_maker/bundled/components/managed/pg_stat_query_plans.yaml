@@ -2,14 +2,17 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc-pg-stat-query-plans
-  revision: 2
+  revision: 3
 spec:
   type: pgxs
   source:
     kind: git
     repository: https://github.com/postgredients/pg_stat_query_plans.git
     ref: f296839e3fd772a21b01c487e66d31e1e7b45ae0
-  compatible_postgresql: '>=16,<17'
+  source_patches:
+  - ../../patches/pg-stat-query-plans-pg16-runtime.patch
+  - ../../patches/pg-stat-query-plans-pg16-tests.patch
+  compatible_postgresql: '>=16.15,<17'
   requires: []
   conflicts: []
   build_dependencies: []
@@ -34,4 +37,6 @@ spec:
     max_prepared_transactions: '10'
   test_make_args:
   - NO_INSTALLCHECK=
+  # Upstream sets TAP_TESTS=0 (nonempty to make) but ships no t/*.pl files.
+  - TAP_TESTS=
   - REGRESS_OPTS=--temp-config={component}/pg_stat_query_plans.conf

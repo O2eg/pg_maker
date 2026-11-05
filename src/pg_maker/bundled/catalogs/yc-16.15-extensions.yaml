@@ -282,7 +282,7 @@ extensions:
   component_id: yc-pg-stat-query-plans
   source_ref: f296839e3fd772a21b01c487e66d31e1e7b45ae0
   source_url: https://github.com/postgredients/pg_stat_query_plans.git
-  source_release: null
+  source_release: f296839 + local PG16 utility tracking and monitoring-role fixes
   status: selected-unverified
 - name: pg_tm_aux
   managed_default_version: 1.1.1
