@@ -3,6 +3,7 @@
 import hashlib
 import json
 import os
+import pwd
 import re
 import shutil
 import subprocess
@@ -84,6 +85,8 @@ def main():
         **os.environ,
         "PATH": f"{toolchain}/bin:{prefix}/bin:/usr/local/bin:/usr/bin:/bin",
         "CARGO_HOME": str(root / "pg-maker-cargo"),
+        # pgrx connects as the OS role created by its own initdb.
+        "USER": pwd.getpwuid(os.getuid()).pw_name,
         "CARGO_NET_OFFLINE": "true",
         "CARGO_BUILD_JOBS": jobs,
         "CARGO_PROFILE_DEV_DEBUG": "0",
@@ -143,6 +146,35 @@ def main():
         ],
         "pg-maker-pgrx-tests.log",
         extension=True,
+    )
+    ignored = re.findall(r"^test (\S+) \.\.\. ignored$", text, re.M)
+    expected_ignored = {
+        "access_method::upgrade_test::tests::test_upgrade_from_" + version
+        for version in (
+            "0_0_2",
+            "0_2_0",
+            "0_3_0",
+            "0_4_0",
+            "0_5_0",
+            "0_5_1",
+            "0_6_0",
+            "0_7_0",
+            "0_7_1",
+            "0_8_0",
+        )
+    }
+    if set(ignored) != expected_ignored:
+        raise RuntimeError("unexpected pgrx ignored-test inventory: " + repr(ignored))
+    (root / "pg-maker-inapplicable-tests.log").write_text(
+        json.dumps(
+            {
+                "status": "not-applicable; not counted as passed",
+                "reason": "Pinned upstream upgrade_test.rs returns before testing on pg18: "
+                "the historical releases have no PostgreSQL 18 build",
+                "tests": ignored,
+            },
+            indent=2,
+        )
     )
     counts = [int(n) for n in re.findall(r"test result: ok\. (\d+) passed; 0 failed", text)]
     if not counts or sum(counts) == 0:

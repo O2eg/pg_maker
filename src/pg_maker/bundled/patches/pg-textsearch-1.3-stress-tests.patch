@@ -1,6 +1,20 @@
 --- a/test/scripts/stress.sh
 +++ b/test/scripts/stress.sh
-@@ -88,6 +88,7 @@
+@@ -66,6 +66,13 @@
+         pg_ctl stop -D "${DATA_DIR}" -m fast &>/dev/null ||
+             pg_ctl stop -D "${DATA_DIR}" -m immediate &>/dev/null || true
+     fi
++    if [ -f "${LOGFILE}" ]; then
++        cp "${LOGFILE}" "${SCRIPT_DIR}/../stress-postgres.log"
++        if grep -E '(ERROR|PANIC):' "${LOGFILE}"; then
++            warn "Unexpected server errors during stress test"
++            exit_code=1
++        fi
++    fi
+     rm -rf "${DATA_DIR}"
+     exit $exit_code
+ }
+@@ -88,6 +95,7 @@
  listen_addresses = 'localhost'
  log_min_messages = warning
  log_statement = 'none'
@@ -8,3 +22,70 @@
  EOF
  
      pg_ctl start -D "${DATA_DIR}" -l "${LOGFILE}" -w || error "Failed to start PostgreSQL"
+@@ -315,14 +323,14 @@
+             while [ $(date +%s) -lt $end_time ]; do
+                 local term="${search_terms[$((RANDOM % ${#search_terms[@]}))]}"
+                 # Heavy query: fetch actual rows with scores
+-                local result=$(psql -h "${DATA_DIR}" -p "${TEST_PORT}" -d "${TEST_DB}" -tAc "
++                local result
++                if result=$(psql -v ON_ERROR_STOP=1 -h "${DATA_DIR}" -p "${TEST_PORT}" -d "${TEST_DB}" -tAc "
+                     SELECT COUNT(*) FROM (
+                         SELECT id, content, content <@> to_bm25query('${term}', 'conc_idx') as score
+                         FROM conc_docs
+                         ORDER BY content <@> to_bm25query('${term}', 'conc_idx')
+                         LIMIT 100
+-                    ) t;" 2>/dev/null)
+-                if [ -n "$result" ]; then
++                    ) t;") && [[ "$result" =~ ^[0-9]+$ ]]; then
+                     rows_fetched=$((rows_fetched + result))
+                 else
+                     errors=$((errors + 1))
+@@ -331,6 +339,7 @@
+                 sleep 0.03
+             done
+             echo "Reader $r: $queries queries, $rows_fetched rows, $errors errors" >&2
++            [ "$errors" -eq 0 ]
+         } &
+         reader_pids+=($!)
+     done
+@@ -355,7 +364,7 @@
+                         insert_sql="${insert_sql}, ('${content}')"
+                     fi
+                 done
+-                if psql -h "${DATA_DIR}" -p "${TEST_PORT}" -d "${TEST_DB}" -c "${insert_sql};" >/dev/null 2>&1; then
++                if psql -v ON_ERROR_STOP=1 -h "${DATA_DIR}" -p "${TEST_PORT}" -d "${TEST_DB}" -c "${insert_sql};" >/dev/null; then
+                     docs=$((docs + 20))
+                 else
+                     errors=$((errors + 1))
+@@ -363,13 +372,17 @@
+ 
+                 # Periodic spill from this writer
+                 if [ $((docs % 500)) -eq 0 ] && [ $docs -gt 0 ]; then
+-                    psql -h "${DATA_DIR}" -p "${TEST_PORT}" -d "${TEST_DB}" -c "SELECT bm25_spill_index('conc_idx');" >/dev/null 2>&1
+-                    spills=$((spills + 1))
++                    if psql -v ON_ERROR_STOP=1 -h "${DATA_DIR}" -p "${TEST_PORT}" -d "${TEST_DB}" -c "SELECT bm25_spill_index('conc_idx');" >/dev/null; then
++                        spills=$((spills + 1))
++                    else
++                        errors=$((errors + 1))
++                    fi
+                 fi
+ 
+                 sleep 0.02
+             done
+             echo "Writer $w: $docs docs, $spills spills, $errors errors" >&2
++            [ "$errors" -eq 0 ]
+         } &
+         writer_pids+=($!)
+     done
+--- a/test/scripts/partial_concurrent_read.sh
++++ b/test/scripts/partial_concurrent_read.sh
+@@ -35,6 +35,9 @@
+     if [ -f "${DATA_DIR}/postmaster.pid" ]; then
+         pg_ctl stop -D "${DATA_DIR}" -m immediate &>/dev/null || true
+     fi
++    mkdir -p "${SCRIPT_DIR}/../partial-concurrent-logs"
++    cp "${LOGFILE}" "${SCRIPT_DIR}/../partial-concurrent-logs/postgres.log"
++    cp "${ERR_DIR}"/*.log "${SCRIPT_DIR}/../partial-concurrent-logs/"
+     rm -rf "${DATA_DIR}"
+     exit $exit_code
+ }

@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-pg-textsearch
-  revision: 7
+  revision: 8
 spec:
   type: pgxs
   source:
@@ -16,6 +16,7 @@ spec:
   - ../../patches/pg-textsearch-1.3-index-tests.patch
   - ../../patches/pg-textsearch-1.3-search-count-tests.patch
   - ../../patches/pg-textsearch-1.3-segment-tests.patch
+  - ../../patches/pg-textsearch-1.3-concurrent-score.patch
   - ../../patches/pg-textsearch-1.3-stress-tests.patch
   compatible_postgresql: '>=18.6,<19'
   requires:
