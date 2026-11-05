@@ -1,0 +1,101 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: icu70
+  revision: 5
+spec:
+  type: library
+  build_phase: before-postgresql
+  source:
+    kind: archive
+    location: https://github.com/unicode-org/icu/releases/download/release-70-1/icu4c-70_1-src.tgz
+    sha256: sha256:8d205428c17bf13bb535300669ed28b338a157b1c01ae66d31d0d3e2d47c3fd5
+    strip_components: 1
+  source_directory: source
+  source_patches:
+  - ../../patches/icu70-python313-tests.patch
+  # Upstream ICU-22779: initialize the builder's unused trie pointer explicitly.
+  - ../../patches/icu70-collation-builder-init.patch
+  compatible_postgresql: '>=18.6,<19'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  configure_args:
+  - --libdir={prefix}/lib
+  - --enable-shared
+  - --disable-static
+  - --with-data-packaging=library
+  make_targets:
+  - all
+  test_targets:
+  - check
+  install_targets:
+  - install
+  required_tests: []
+  runtime_files:
+  - lib/libicudata.so.70*
+  - lib/libicui18n.so.70*
+  - lib/libicuuc.so.70*
+  pkg_config_versions:
+    icu-i18n: '70.1'
+    icu-uc: '70.1'
+  provides_options:
+  - icu
+  test_cluster: false
+  test_commands:
+  - id: icu-check
+    argv:
+    - make
+    - --output-sync=target
+    - -j
+    - '{jobs}'
+    - check
+    success_pattern: 'OK: All tests passed without error\.'
+  installed_checks:
+  - argv:
+    - '{prefix}/bin/psql'
+    - -X
+    - -v
+    - ON_ERROR_STOP=1
+    - -Atqc
+    - >-
+      SELECT CASE WHEN
+      (SELECT collversion = '153.112' AND pg_collation_actual_version(oid) = '153.112'
+       FROM pg_collation WHERE collname = 'en-US-x-icu')
+      AND (SELECT collversion = '153.112.40' AND pg_collation_actual_version(oid) = '153.112.40'
+       FROM pg_collation WHERE collname = 'ru-RU-x-icu')
+      AND NOT EXISTS (SELECT FROM pg_collation WHERE collprovider = 'i'
+       AND collversion IS DISTINCT FROM pg_collation_actual_version(oid))
+      THEN 'managed-icu-collations-match' ELSE 'collation-mismatch' END
+    timeout_seconds: 60
+    stdout_contains: managed-icu-collations-match
+  - argv:
+    - '{prefix}/bin/createdb'
+    - --template=template0
+    - --encoding=UTF8
+    - --locale-provider=icu
+    - --icu-locale=en-US
+    - --locale=C
+    - pg_maker_icu_probe
+    timeout_seconds: 60
+    stdout_contains: ''
+  - argv:
+    - '{prefix}/bin/psql'
+    - -X
+    - -v
+    - ON_ERROR_STOP=1
+    - --dbname=pg_maker_icu_probe
+    - -Atqc
+    - >-
+      SELECT CASE WHEN datlocprovider = 'i' AND datlocale = 'en-US'
+       AND datcollversion = '153.112' AND pg_database_collation_actual_version(oid) = '153.112'
+      THEN 'managed-icu-database-match' ELSE 'database-collation-mismatch' END
+      FROM pg_database WHERE datname = current_database()
+    timeout_seconds: 60
+    stdout_contains: managed-icu-database-match
+  - argv:
+    - '{prefix}/bin/dropdb'
+    - pg_maker_icu_probe
+    timeout_seconds: 60
+    stdout_contains: ''

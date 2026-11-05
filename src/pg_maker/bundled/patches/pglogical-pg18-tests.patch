@@ -1,3 +1,14 @@
+--- a/Makefile
++++ b/Makefile
+@@ -204,7 +204,7 @@
+ 
+ define prove_check
+ rm -rf $(CURDIR)/tmp_check/log
+-cd $(srcdir) && TESTDIR='$(CURDIR)' $(with_temp_install) PGPORT='6$(DEF_PGPORT)' PG_REGRESS='$(top_builddir)/src/test/regress/pg_regress' $(PROVE) --verbose $(PG_PROVE_FLAGS) $(PROVE_FLAGS) $(or $(PROVE_TESTS),t/*.pl)
++cd $(srcdir) && TESTDIR='$(CURDIR)' $(with_temp_install) PGPORT='6$(DEF_PGPORT)' PG_REGRESS='$(top_builddir)/src/test/regress/pg_regress' env -u INITDB_TEMPLATE $(PROVE) --verbose $(PG_PROVE_FLAGS) $(PROVE_FLAGS) $(or $(PROVE_TESTS),t/*.pl)
+ endef
+ 
+ check_prove:
 --- a/regress-postgresql.conf
 +++ b/regress-postgresql.conf
 @@ -1,5 +1,6 @@
@@ -14,8 +25,9 @@
  use Cwd;
  use Config;
 -use TestLib;
+-use Test::More tests => 11;
 +use PostgreSQL::Test::Utils;
- use Test::More tests => 11;
++use Test::More tests => 12;
  
 -my $PGPORT=$ENV{'PGPORT'};
 +$ENV{'PGHOST'} = 'localhost';
