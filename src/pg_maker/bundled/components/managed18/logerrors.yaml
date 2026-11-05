@@ -2,17 +2,14 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-logerrors
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
     kind: archive
-    location: https://codeload.github.com/munakoiso/logerrors/tar.gz/9ea8b0134ecf4217cc7e7e7abff736db779a9713
-    sha256: sha256:fb78c9e399962de92332286c713d438d2d2f15b962c3848a97a9288c62f22677
+    location: https://codeload.github.com/munakoiso/logerrors/tar.gz/c72bbe833c216814495cd9b4d32270dd18dd253b
+    sha256: sha256:f3a51309b110a6e7f47db1e3d7130875358c5e005287bd07b0925a6a3cb71a2a
     strip_components: 1
-  source_patches:
-  - ../../patches/logerrors-2.1-install-upgrade.patch
-  - ../../patches/logerrors-export-worker.patch
   compatible_postgresql: '>=18.6,<19'
   requires: []
   conflicts: []
@@ -34,6 +31,13 @@ spec:
   preload:
   - logerrors
   test_commands:
+  - id: upstream-regression
+    argv:
+    - make
+    - USE_PGXS=1
+    - PG_CONFIG={prefix}/bin/pg_config
+    - installcheck
+    success_pattern: All (?P<count>\d+) tests passed\.
   - id: error-log-functions
     argv:
     - python3

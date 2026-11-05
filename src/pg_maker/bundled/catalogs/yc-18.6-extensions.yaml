@@ -193,8 +193,8 @@ extensions:
   recipe: ../components/managed18/logerrors.yaml
   component_id: yc18-logerrors
   source_url: https://github.com/munakoiso/logerrors
-  source_ref: 9ea8b0134ecf4217cc7e7e7abff736db779a9713
-  source_release: tags/v2.1
+  source_ref: c72bbe833c216814495cd9b4d32270dd18dd253b
+  source_release: upstream fix_pg_18; SQL version remains 2.1
   status: selected-unverified
 - name: lwaldump
   managed_default_version: '1.0'
