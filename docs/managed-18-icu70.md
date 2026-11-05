@@ -96,7 +96,7 @@ extension's SQL version alone does not identify the compiled implementation.
 | `pg_stat_query_plans` 1.0 | Restore privileged access to other users' plans; also test that ordinary users cannot read those plans |
 | `vector` 0.8.2 | Remove the upstream `-march=native` override so binaries retain the profile's x86-64 baseline |
 | `pg_hint_plan` 1.8.0 | Run native expected-output tests with the upstream preload configuration; combined preloads are checked separately during package acceptance |
-| `pglogical` 2.4.6 | Port test fixtures to current PostgreSQL Perl/WAL APIs and explicit output-plugin policy; compare replicated table contents |
+| `pglogical` 2.4.6 | Port test fixtures to current PostgreSQL Perl/WAL APIs and explicit output-plugin policy; finish idle tablesync after received WAL progress and refresh the resync cache after waiting for a relation lock; compare replicated table contents and test the lock race |
 | `pg_partman` 5.4.3 | Correct 30-second calendar fixtures and derive monthly undo counts from generated input; compare all copied payloads |
 | `pg_textsearch` 1.3.0 | Require positive evidence that TimescaleDB integration scenarios executed rather than silently skipped |
 | `timescaledb` 2.23.0 | Provide pinned commit metadata when building a source archive without Git metadata |
