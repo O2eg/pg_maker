@@ -22,10 +22,14 @@ project files remain editable. The standard `init` still creates the 18.1 profil
 Reserve substantially more than the configured 20 GiB minimum for the complete
 extension set, especially PostGIS/GDAL, inputs and checkpoints. Enabling the optional
 PLV8/V8 recipe adds substantial build time and disk usage.
-Native amd64 packages have passed the installed-package acceptance recorded below.
-Those 2026-11-03 packages include PLV8. Since 2026-11-05, PLV8 is commented out in
-the profile for future builds; the existing packages and their evidence are unchanged.
-The catalog retains `selected-unverified` pending full upstream regression qualification.
+The current profile passed native amd64 source, extension and installed-package
+qualification on 2026-11-05, including the full test profile. See the
+[qualification record](managed-16-icu70-qualification-20261105.md) for exact package
+hashes, test coverage, warning review and limitations. PLV8 is disabled in this
+build. The historical 2026-11-03 acceptance below covers earlier packages with PLV8.
+The catalog retains `selected-unverified` for newly initialized projects:
+qualification belongs to a specific operation and its immutable artifacts, not
+to future builds merely selecting the same recipes.
 
 ## Version policy
 
@@ -218,16 +222,25 @@ The current controller enables tests by default and adds PostgreSQL 16 regressio
 parsing, ICU make check, PGXS/TAP and explicit CMake/native component suites. The
 package goal also installs the exact DEBs in fresh offline containers. Use
 `pg-maker test-full yc16/lock.json --operations yc16/operations` to add expensive
-WAL consistency checks to the standard source suites. Native qualification with
-this configuration started on 2026-11-05. The historical manual acceptance below
-covers the earlier 34-extension package only; it does not qualify this profile.
-A complete successful source, extension and installed-package report is required.
+WAL consistency checks to the standard source suites. The
+[2026-11-05 qualification](managed-16-icu70-qualification-20261105.md) passed with
+standard and full suites enabled in the package build. The historical manual
+acceptance below covers the earlier 34-extension package only. Every new build
+still requires its own successful source, extension and installed-package report.
 
 Installed-package checks preserve the PostgreSQL startup and collector logs before
 removing their containers, including failed startups, and apply the configured
 generated-log diagnostic policy to them. The pg_hint_plan recipe preloads only
 pg_hint_plan and pg_stat_statements. Its upstream FDW test creates file_fdw when
 needed; file_fdw is not a required preload or a delivered component of this profile.
+
+When enabling many preloaded extensions together, size `max_worker_processes` for
+their workers and parallel queries. The all-preload package test recorded a
+TimescaleDB job-registration warning at the upstream default of 8. A supplementary
+fresh-container check of the same DEBs with `max_worker_processes=32` executed a
+scheduled TimescaleDB job twice, with zero failures. This is a tested configuration
+example, not an automatic change to the PostgreSQL default or a universal capacity
+recommendation.
 
 pg_partman tests run with pinned pgTAP, including staged procedures/reindexing,
 non-superuser, tablespace and background-worker scenarios. Upstream's two
