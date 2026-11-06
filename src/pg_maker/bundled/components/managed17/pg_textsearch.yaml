@@ -1,0 +1,59 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc17-pg-textsearch
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: archive
+    location: https://codeload.github.com/timescale/pg_textsearch/tar.gz/f50e9831edffd97f4f1977448fe708c4575f7ebb
+    sha256: sha256:648fdd4b3d8ed09b150f095e5afd642e7c90ab13bcccc93c7fd231c215e5d52d
+    strip_components: 1
+  source_patches:
+  - ../../patches/pg-textsearch-1.3-timescale-tests.patch
+  - ../../patches/pg-textsearch-1.3-socket-tests.patch
+  - ../../patches/pg-textsearch-1.3-index-tests.patch
+  - ../../patches/pg-textsearch-1.3-search-count-tests.patch
+  - ../../patches/pg-textsearch-1.3-segment-tests.patch
+  - ../../patches/pg-textsearch-1.3-concurrent-score.patch
+  - ../../patches/pg-textsearch-1.3-stress-tests.patch
+  compatible_postgresql: '>=17.11,<18'
+  requires:
+  - yc17-timescaledb
+  conflicts: []
+  build_dependencies:
+  - bc
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: pg_textsearch
+  runtime_files:
+  - lib/postgresql/pg_textsearch*.so
+  - share/postgresql/extension/pg_textsearch.control
+  - share/postgresql/extension/pg_textsearch--*.sql
+  sql_extension_versions:
+    pg_textsearch: 1.3.0
+  preload:
+  - timescaledb
+  - pg_textsearch
+  test_commands:
+  - id: regression
+    argv:
+    - make
+    - --output-sync=target
+    - -j
+    - '{jobs}'
+    - USE_PGXS=1
+    - PG_CONFIG={prefix}/bin/pg_config
+    - installcheck
+    success_pattern: All (?P<count>\d+) tests passed\.
+  - id: shell-recovery-replication
+    argv:
+    - python3
+    - '{test_helpers}/textsearch.py'
+    success_pattern: ^PG_MAKER_TEXTSEARCH_SUITES_PASSED=(?P<count>\d+)$

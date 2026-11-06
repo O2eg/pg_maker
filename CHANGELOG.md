@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Add the Debian 13 amd64 `yc-17.11-icu70` profile with private ICU 70.1,
+  the audited PG17 extension catalog and explicit blocked/disabled entries.
+  Keep PLV8 commented out; native database/package qualification is pending.
+- Select the actual PostgreSQL 17/18 major in the offline vectorscale helper
+  and report upstream-disabled PG17 upgrade tests without counting them as passed.
+
 ## 0.3.0 — 2026-11-05
 
 - Add scoped, ordered diagnostic rules with recorded exceptions and standalone

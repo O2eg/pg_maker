@@ -1,0 +1,699 @@
+source_host: rc1a-j8rnpvd41jpbqmrb.mdb.yandexcloud.net
+database: db1
+observed_at: '2026-11-06'
+coverage: Available non-contrib SQL extensions; matching public versions do not establish vendor binary
+  or physical replication equivalence.
+icu:
+  private_version: '70.1'
+  managed_exact_library_version: unconfirmed
+  en_US_stored: '153.112'
+  en_US_actual: '153.112'
+  ru_RU_actual: 153.112.40
+extensions:
+- name: address_standardizer
+  managed_default_version: 3.4.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.4.3
+  - ANY
+  source_audit_status: source-available
+  license: GPLv2 + component-specific notices
+  recipe: ../components/managed17/postgis.yaml
+  component_id: yc17-postgis
+  source_url: https://github.com/postgis/postgis
+  source_ref: e36594574671877ca6178c944e6d430f87f310bf
+  source_release: 3.4.3
+  status: selected-unverified
+- name: address_standardizer_data_us
+  managed_default_version: 3.4.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.4.3
+  - 3.4.3next
+  - ANY
+  source_audit_status: source-available
+  license: GPLv2 + component-specific notices
+  recipe: ../components/managed17/postgis.yaml
+  component_id: yc17-postgis
+  source_url: https://github.com/postgis/postgis
+  source_ref: e36594574671877ca6178c944e6d430f87f310bf
+  source_release: 3.4.3
+  status: selected-unverified
+- name: age
+  managed_default_version: 1.5.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.5.0
+  source_audit_status: source-available
+  license: Apache-2.0
+  recipe: ../components/managed17/age.yaml
+  component_id: yc17-age
+  source_url: https://github.com/apache/age
+  source_ref: dfd1e1bc7c98b76b646837496f3762a6bc4d5184
+  source_release: PG17 branch immediately before the 1.6.0 version bump
+  status: selected-unverified
+  source_note: Public PG17 branch revision before the 1.6.0 version bump; SQL version 1.5.0. No matching
+    PG17 release tag; vendor patch parity is unconfirmed.
+- name: anon
+  managed_default_version: 1.3.2.1
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.3.2.1
+  source_audit_status: exact-version-unconfirmed
+  license: PostgreSQL
+  status: blocked
+  reason: Exact managed SQL version 1.3.2.1 is not present in the confirmed public upstream 1.3.2 source.
+- name: h3
+  managed_default_version: 4.1.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 0.1.0
+  - 0.2.0
+  - 0.3.0
+  - 0.3.1
+  - 0.3.2
+  - 0.4.0
+  - 1.0.0
+  - 1.0.1
+  - 1.0.2
+  - 1.0.3
+  - 1.0.4
+  - 1.0.5
+  - 1.0.6
+  - 3.4.0
+  - 3.4.1
+  - 3.5.0
+  - 3.6.0
+  - 3.6.1
+  - 3.6.2
+  - 3.6.3
+  - 3.6.4
+  - 3.6.5
+  - 3.7.0
+  - 3.7.1
+  - 3.7.2
+  - 4.0.0
+  - 4.0.1
+  - 4.0.2
+  - 4.0.3
+  - 4.1.0
+  - 4.1.1
+  - 4.1.2
+  - 4.1.3
+  source_audit_status: source-available
+  license: Apache-2.0
+  recipe: ../components/managed17/h3.yaml
+  component_id: yc17-h3
+  source_url: https://github.com/postgis/h3-pg
+  source_ref: a6d98a41ebf9cb3b0c91dedfa6e248e72b27aed3
+  source_release: v4.1.3
+  status: selected-unverified
+- name: h3_postgis
+  managed_default_version: 4.1.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 4.0.0
+  - 4.0.1
+  - 4.0.2
+  - 4.0.3
+  - 4.1.0
+  - 4.1.1
+  - 4.1.2
+  - 4.1.3
+  source_audit_status: source-available
+  license: Apache-2.0
+  recipe: ../components/managed17/h3.yaml
+  component_id: yc17-h3
+  source_url: https://github.com/postgis/h3-pg
+  source_ref: a6d98a41ebf9cb3b0c91dedfa6e248e72b27aed3
+  source_release: v4.1.3
+  status: selected-unverified
+- name: hypopg
+  managed_default_version: 1.4.1
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.3.1
+  - 1.4.0
+  - 1.4.1
+  source_audit_status: source-available
+  license: PostgreSQL
+  recipe: ../components/managed17/hypopg.yaml
+  component_id: yc17-hypopg
+  source_url: https://github.com/HypoPG/hypopg
+  source_ref: 97026c0bff16b905c555acdd82e15979fa6b9781
+  source_release: 1.4.1
+  status: selected-unverified
+- name: ip4r
+  managed_default_version: '2.4'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '2.4'
+  source_audit_status: source-available
+  license: PostgreSQL
+  recipe: ../components/managed17/ip4r.yaml
+  component_id: yc17-ip4r
+  source_url: https://github.com/RhodiumToad/ip4r
+  source_ref: 261341b1a4119226d22c2758f38bf63ac9e3a446
+  status: selected-unverified
+- name: jsquery
+  managed_default_version: '1.1'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.1'
+  source_audit_status: source-available
+  license: PostgreSQL (указана в README)
+  recipe: ../components/managed17/jsquery.yaml
+  component_id: yc17-jsquery
+  source_url: https://github.com/postgrespro/jsquery
+  source_ref: f43eabd5c5dad311894fb131a62999928743c726
+  status: selected-unverified
+- name: logerrors
+  managed_default_version: '2.1'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '1.1'
+  - '2.0'
+  - '2.1'
+  source_audit_status: source-available
+  license: PostgreSQL
+  recipe: ../components/managed17/logerrors.yaml
+  component_id: yc17-logerrors
+  source_url: https://github.com/munakoiso/logerrors
+  source_ref: c72bbe833c216814495cd9b4d32270dd18dd253b
+  status: selected-unverified
+- name: lwaldump
+  managed_default_version: '1.0'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  source_audit_status: license-unconfirmed
+  license: Нет явного текста лицензии; есть PGDG copyright header
+  recipe: ../components/managed17/lwaldump.yaml
+  component_id: yc17-lwaldump
+  source_url: https://github.com/munakoiso/lwaldump
+  source_ref: 91d7a88e35fc75b5e04b68cc34d2b9a56ca7b34e
+  status: selected-unverified
+- name: oracle_fdw
+  managed_default_version: '1.2'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.2'
+  source_audit_status: external-proprietary-dependency
+  license: PostgreSQL; Oracle Client отдельно
+  status: blocked
+  reason: Requires an explicitly provisioned proprietary Oracle Instant Client SDK and runtime.
+- name: orafce
+  managed_default_version: '4.15'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '4.15'
+  source_audit_status: source-available
+  license: 0BSD + notices
+  recipe: ../components/managed17/orafce.yaml
+  component_id: yc17-orafce
+  source_url: https://github.com/orafce/orafce
+  source_ref: 2b21feead86de9d26f21becff2daf4fdafd9f3bf
+  source_release: VERSION_4_14_6
+  status: selected-unverified
+  source_note: Release tag VERSION_4_14_6 declares SQL extension version 4.15.
+- name: pg_clickhouse
+  managed_default_version: '0.3'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '0.3'
+  source_audit_status: source-available
+  license: Apache-2.0
+  recipe: ../components/managed17/pg_clickhouse.yaml
+  component_id: yc17-pg-clickhouse
+  source_url: https://github.com/ClickHouse/pg_clickhouse
+  source_ref: 4e05bffcae7db4a2a73eca0ca7d95e6c55ddd5c4
+  status: selected-unverified
+- name: pg_cron
+  managed_default_version: '1.6'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '1.1'
+  - '1.2'
+  - '1.3'
+  - '1.4'
+  - 1.4-1
+  - '1.5'
+  - '1.6'
+  source_audit_status: source-available
+  license: PostgreSQL
+  recipe: ../components/managed17/pg_cron.yaml
+  component_id: yc17-pg-cron
+  source_url: https://github.com/citusdata/pg_cron
+  source_ref: 5cedfa472ccc83567aa23ec645925ed8489a7797
+  status: selected-unverified
+- name: pg_hint_plan
+  managed_default_version: 1.7.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.3.0
+  - 1.3.1
+  - 1.3.10
+  - 1.3.2
+  - 1.3.3
+  - 1.3.4
+  - 1.3.5
+  - 1.3.6
+  - 1.3.7
+  - 1.3.8
+  - 1.3.9
+  - '1.4'
+  - 1.4.1
+  - 1.4.2
+  - 1.4.3
+  - '1.5'
+  - 1.5.1
+  - 1.5.2
+  - 1.6.0
+  - 1.6.1
+  - 1.7.0
+  source_audit_status: source-available
+  license: BSD + PostgreSQL notices
+  recipe: ../components/managed17/pg_hint_plan.yaml
+  component_id: yc17-pg-hint-plan
+  source_url: https://github.com/ossc-db/pg_hint_plan
+  source_ref: 85e07af6ca4675a26fa2281370c37371b883b2a9
+  source_release: REL17_1_7_0
+  status: selected-unverified
+- name: pg_partman
+  managed_default_version: 5.4.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 5.4.3
+  source_audit_status: source-available
+  license: PostgreSQL
+  recipe: ../components/managed17/pg_partman.yaml
+  component_id: yc17-pg-partman
+  source_url: https://github.com/pgpartman/pg_partman
+  source_ref: a12b23ee6615d179dfaa38cc6fed8ed44cd61ba2
+  status: selected-unverified
+- name: pg_qualstats
+  managed_default_version: 2.1.1
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 2.0.4
+  - 2.1.0
+  - 2.1.1
+  source_audit_status: source-available
+  license: PostgreSQL
+  recipe: ../components/managed17/pg_qualstats.yaml
+  component_id: yc17-pg-qualstats
+  source_url: https://github.com/powa-team/pg_qualstats
+  source_ref: 97cc5976f2afedfd1fcd7071833b0a6f5ddffee9
+  source_release: 2.1.1
+  status: selected-unverified
+- name: pg_repack
+  managed_default_version: 1.5.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.5.3
+  source_audit_status: source-available
+  license: BSD
+  recipe: ../components/managed17/pg_repack.yaml
+  component_id: yc17-pg-repack
+  source_url: https://github.com/reorg/pg_repack
+  source_ref: 6902ab313aeb49227867087dca99cf107f7be23b
+  status: selected-unverified
+- name: pg_stat_kcache
+  managed_default_version: 2.3.1
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 2.1.0
+  - 2.1.1
+  - 2.1.2
+  - 2.1.3
+  - 2.2.0
+  - 2.2.1
+  - 2.2.2
+  - 2.2.3
+  - 2.3.0
+  - 2.3.1
+  source_audit_status: source-available
+  license: PostgreSQL
+  recipe: ../components/managed17/pg_stat_kcache.yaml
+  component_id: yc17-pg-stat-kcache
+  source_url: https://github.com/powa-team/pg_stat_kcache
+  source_ref: 2f1a1f53f1bf50452afae8450f99839e01eb6617
+  status: selected-unverified
+- name: pg_stat_query_plans
+  managed_default_version: '1.0'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  source_audit_status: source-available
+  license: Apache-2.0; Debian metadata также содержит PostgreSQL notice
+  recipe: ../components/managed17/pg_stat_query_plans.yaml
+  component_id: yc17-pg-stat-query-plans
+  source_url: https://github.com/postgredients/pg_stat_query_plans
+  source_ref: f296839e3fd772a21b01c487e66d31e1e7b45ae0
+  status: selected-unverified
+- name: pg_textsearch
+  managed_default_version: 1.3.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.3.0
+  source_audit_status: source-available
+  license: PostgreSQL
+  recipe: ../components/managed17/pg_textsearch.yaml
+  component_id: yc17-pg-textsearch
+  source_url: https://github.com/timescale/pg_textsearch
+  source_ref: f50e9831edffd97f4f1977448fe708c4575f7ebb
+  status: selected-unverified
+- name: pg_tm_aux
+  managed_default_version: 1.1.1
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '1.1'
+  - 1.1.1
+  source_audit_status: source-available
+  license: PostgreSQL
+  recipe: ../components/managed17/pg_tm_aux.yaml
+  component_id: yc17-pg-tm-aux
+  source_url: https://github.com/x4m/pg_tm_aux
+  source_ref: 857b9173069068741a52e8343bc532bd094fa2b9
+  status: selected-unverified
+- name: pg_uuidv7
+  managed_default_version: '1.5'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.5'
+  source_audit_status: source-available
+  license: MPL-2.0
+  recipe: ../components/managed17/pg_uuidv7.yaml
+  component_id: yc17-pg-uuidv7
+  source_url: https://github.com/fboulnois/pg_uuidv7
+  source_ref: 0396caaa8269a899826a9195f72c42a845d656a7
+  source_release: v1.5.0
+  status: selected-unverified
+- name: pgaudit
+  managed_default_version: '17.0'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '17.0'
+  source_audit_status: source-available
+  license: PostgreSQL
+  recipe: ../components/managed17/pgaudit.yaml
+  component_id: yc17-pgaudit
+  source_url: https://github.com/pgaudit/pgaudit
+  source_ref: 72dda46d61ba90e2f4bf5be495157b0ed73b56e9
+  source_release: '17.0'
+  status: selected-unverified
+- name: pglogical
+  managed_default_version: 2.4.5
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.0.0
+  - 1.0.1
+  - 1.1.0
+  - 1.1.1
+  - 1.1.2
+  - 1.2.0
+  - 1.2.1
+  - 1.2.2
+  - 2.0.0
+  - 2.0.1
+  - 2.1.0
+  - 2.1.1
+  - 2.2.0
+  - 2.2.1
+  - 2.2.2
+  - 2.3.0
+  - 2.3.1
+  - 2.3.2
+  - 2.3.3
+  - 2.3.4
+  - 2.4.0
+  - 2.4.1
+  - 2.4.2
+  - 2.4.3
+  - 2.4.4
+  - 2.4.5
+  source_audit_status: source-available
+  license: PostgreSQL
+  recipe: ../components/managed17/pglogical.yaml
+  component_id: yc17-pglogical
+  source_url: https://github.com/2ndQuadrant/pglogical
+  source_ref: 8579de3b2557355008ddac13ce05663942eedddf
+  source_release: REL2_4_5
+  status: selected-unverified
+- name: pglogical_origin
+  managed_default_version: 1.0.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.0.0
+  source_audit_status: source-available
+  license: PostgreSQL
+  recipe: ../components/managed17/pglogical.yaml
+  component_id: yc17-pglogical
+  source_url: https://github.com/2ndQuadrant/pglogical
+  source_ref: 8579de3b2557355008ddac13ce05663942eedddf
+  source_release: REL2_4_5
+  status: selected-unverified
+- name: pgrouting
+  managed_default_version: 3.6.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.6.2
+  source_audit_status: source-available
+  license: GPLv2
+  recipe: ../components/managed17/pgrouting.yaml
+  component_id: yc17-pgrouting
+  source_url: https://github.com/pgRouting/pgrouting
+  source_ref: 24d25b3e2ebfb1780d9fe92baff446e64fddc8b3
+  source_release: v3.6.2
+  status: selected-unverified
+- name: pgvector
+  managed_default_version: 0.8.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 0.8.2
+  source_audit_status: managed-alias-unconfirmed
+  license: PostgreSQL
+  status: blocked
+  reason: Unconfirmed managed alias; upstream v0.8.2 provides vector.control only.
+- name: plv8
+  managed_default_version: 3.2.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.2.3
+  source_audit_status: source-available
+  license: PostgreSQL; зависимости имеют свои лицензии
+  recipe: ../components/managed17/plv8.yaml
+  component_id: yc17-plv8
+  source_url: https://github.com/plv8/plv8
+  source_ref: eef5d3a3b9235f947eb729b3d12a2dd148f6eba9
+  source_release: v3.2.3
+  status: disabled
+  reason: Disabled by user request; leave the feature entry commented out.
+- name: postgis
+  managed_default_version: 3.4.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.4.3
+  - ANY
+  - unpackaged
+  source_audit_status: source-available
+  license: GPLv2 + component-specific notices
+  recipe: ../components/managed17/postgis.yaml
+  component_id: yc17-postgis
+  source_url: https://github.com/postgis/postgis
+  source_ref: e36594574671877ca6178c944e6d430f87f310bf
+  source_release: 3.4.3
+  status: selected-unverified
+- name: postgis_raster
+  managed_default_version: 3.4.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.4.3
+  - ANY
+  - unpackaged
+  source_audit_status: source-available
+  license: GPLv2 + component-specific notices
+  recipe: ../components/managed17/postgis.yaml
+  component_id: yc17-postgis
+  source_url: https://github.com/postgis/postgis
+  source_ref: e36594574671877ca6178c944e6d430f87f310bf
+  source_release: 3.4.3
+  status: selected-unverified
+- name: postgis_sfcgal
+  managed_default_version: 3.4.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.4.3
+  - ANY
+  - unpackaged
+  source_audit_status: source-available
+  license: GPLv2 + component-specific notices
+  recipe: ../components/managed17/postgis.yaml
+  component_id: yc17-postgis
+  source_url: https://github.com/postgis/postgis
+  source_ref: e36594574671877ca6178c944e6d430f87f310bf
+  source_release: 3.4.3
+  status: selected-unverified
+- name: postgis_tiger_geocoder
+  managed_default_version: 3.4.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.4.3
+  - ANY
+  source_audit_status: source-available
+  license: GPLv2 + component-specific notices
+  recipe: ../components/managed17/postgis.yaml
+  component_id: yc17-postgis
+  source_url: https://github.com/postgis/postgis
+  source_ref: e36594574671877ca6178c944e6d430f87f310bf
+  source_release: 3.4.3
+  status: selected-unverified
+- name: postgis_topology
+  managed_default_version: 3.4.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.4.3
+  - ANY
+  - unpackaged
+  source_audit_status: source-available
+  license: GPLv2 + component-specific notices
+  recipe: ../components/managed17/postgis.yaml
+  component_id: yc17-postgis
+  source_url: https://github.com/postgis/postgis
+  source_ref: e36594574671877ca6178c944e6d430f87f310bf
+  source_release: 3.4.3
+  status: selected-unverified
+- name: prefix
+  managed_default_version: 1.2.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.2.0
+  source_audit_status: source-available
+  license: PostgreSQL License (LICENSE)
+  recipe: ../components/managed17/prefix.yaml
+  component_id: yc17-prefix
+  source_url: https://github.com/dimitri/prefix
+  source_ref: 413f00607c3c3446e4f804ef1874a98caefabd4d
+  status: selected-unverified
+- name: rum
+  managed_default_version: '1.3'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '1.1'
+  - '1.2'
+  - '1.3'
+  source_audit_status: source-available
+  license: PostgreSQL
+  recipe: ../components/managed17/rum.yaml
+  component_id: yc17-rum
+  source_url: https://github.com/postgrespro/rum
+  source_ref: d66640112d88572d21dc93ff873cafe3b11c9521
+  status: selected-unverified
+- name: sa_mon
+  managed_default_version: '1.0'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  source_audit_status: source-not-found
+  license: Not confirmed
+  status: blocked
+  reason: No matching public source found in the source audit.
+- name: smlar
+  managed_default_version: '1.0'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  source_audit_status: license-unconfirmed
+  license: Не найдена в проверенном snapshot
+  recipe: ../components/managed17/smlar.yaml
+  component_id: yc17-smlar
+  source_url: https://github.com/jirutka/smlar
+  source_ref: 6259352edd179544c6f0e7c81bb68dcb81317f8c
+  status: selected-unverified
+- name: spqrguard
+  managed_default_version: 2.4.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '2.0'
+  - '2.1'
+  - '2.2'
+  - '2.3'
+  - '2.4'
+  - 2.4.1
+  - 2.4.2
+  source_audit_status: license-unconfirmed
+  license: Не найдена в проверенном snapshot
+  recipe: ../components/managed17/spqrguard.yaml
+  component_id: yc17-spqrguard
+  source_url: https://github.com/pg-sharding/spqrguard
+  source_ref: 207d46c91141c0e67bcf09432fbd9c760bd6b57f
+  status: selected-unverified
+- name: spqrhash
+  managed_default_version: '1.2'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '1.1'
+  - '1.2'
+  source_audit_status: source-available
+  license: PostgreSQL + public domain Murmur3
+  recipe: ../components/managed17/spqrhash.yaml
+  component_id: yc17-spqrhash
+  source_url: https://github.com/pg-sharding/spqrhash
+  source_ref: 3f4d326c88a69a4330c8399b4d3c833f25a6cf36
+  status: selected-unverified
+- name: timescaledb
+  managed_default_version: 2.23.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 2.16.1
+  - 2.20.3
+  - 2.23.0
+  source_audit_status: mixed-license
+  license: Apache-2.0 + Timescale License
+  recipe: ../components/managed17/timescaledb.yaml
+  component_id: yc17-timescaledb
+  source_url: https://github.com/timescale/timescaledb
+  source_ref: ba5dcfd1c69f3529d0cc9de3028e1a12a36042ba
+  status: selected-unverified
+- name: vector
+  managed_default_version: 0.8.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 0.8.2
+  source_audit_status: source-available
+  license: PostgreSQL
+  recipe: ../components/managed17/vector.yaml
+  component_id: yc17-vector
+  source_url: https://github.com/pgvector/pgvector
+  source_ref: cab9da72c04353f143bb06b42ab70a403daac64a
+  status: selected-unverified
+- name: vectorscale
+  managed_default_version: 0.9.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 0.9.0
+  source_audit_status: source-available
+  license: PostgreSQL
+  recipe: ../components/managed17/vectorscale.yaml
+  component_id: yc17-vectorscale
+  source_url: https://github.com/timescale/pgvectorscale
+  source_ref: c66cae4b621664b68546587da9fafd80b791e643
+  notes: On x86-64, requires AVX2 and FMA CPU features; upstream has no baseline-only implementation.
+  status: selected-unverified
+additional_modules:
+- name: repl_mon
+  recipe: ../components/managed17/repl_mon.yaml
+  source_ref: d90081773b5809f4138157e40f722a511cedb4e1
+  managed_version: null
+  status: selected-unverified
+source_address: 10.237.32.28
+postgresql_version: 17.11-201-yandex.60286.5a0f49380c
+unobserved_preload_modules:
+  repl_mon: 'Not selected: shared_preload_libraries and pg_config are inaccessible to the audit role;
+    module presence/version could not be confirmed.'

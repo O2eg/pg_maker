@@ -1,0 +1,51 @@
+api_version: pg_maker/feature/v1
+kind: FeatureProfile
+metadata:
+  id: yc17-icu70
+  revision: 1
+spec:
+  description: PostgreSQL 17.11 with private ICU 70.1 and the managed PG17 extension inventory
+  numeric_id: null
+  changes: []
+  components:
+  - ../../components/managed17/icu70.yaml
+  - ../../components/pg-stat-statements.yaml
+  - ../../components/fuzzystrmatch.yaml
+  - ../../components/managed17/age.yaml
+  - ../../components/managed17/hypopg.yaml
+  - ../../components/managed17/jsquery.yaml
+  - ../../components/managed17/logerrors.yaml
+  - ../../components/managed17/orafce.yaml
+  - ../../components/managed17/pg_cron.yaml
+  - ../../components/managed17/pg_hint_plan.yaml
+  - ../../components/managed17/pg_qualstats.yaml
+  - ../../components/managed17/pg_stat_query_plans.yaml
+  - ../../components/managed17/pg_tm_aux.yaml
+  - ../../components/managed17/pg_uuidv7.yaml
+  - ../../components/managed17/pgaudit.yaml
+  - ../../components/managed17/rum.yaml
+  - ../../components/managed17/spqrguard.yaml
+  - ../../components/managed17/spqrhash.yaml
+  - ../../components/managed17/pg_stat_kcache.yaml
+  - ../../components/managed17/pg_partman.yaml
+  - ../../components/managed17/pg_repack.yaml
+  - ../../components/managed17/pglogical.yaml
+  - ../../components/managed17/vector.yaml
+  - ../../components/managed17/smlar.yaml
+  - ../../components/managed17/postgis.yaml
+  - ../../components/managed17/pgrouting.yaml
+  - ../../components/managed17/timescaledb.yaml
+  - ../../components/managed17/h3.yaml
+  - ../../components/managed17/ip4r.yaml
+  - ../../components/managed17/pg_clickhouse.yaml
+  - ../../components/managed17/pg_textsearch.yaml
+  - ../../components/managed17/prefix.yaml
+  - ../../components/managed17/vectorscale.yaml
+  - ../../components/managed17/lwaldump.yaml
+  # PLV8 remains disabled by request; this entry is opt-in only.
+  # - ../../components/managed17/plv8.yaml
+  build_options: {}
+  documentation:
+    rules: []
+  required_tests: []
+  compatible_postgresql: ==17.11

@@ -1,0 +1,31 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc17-prefix
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: archive
+    location: https://codeload.github.com/dimitri/prefix/tar.gz/413f00607c3c3446e4f804ef1874a98caefabd4d
+    sha256: sha256:1d15ec941015b28c3b65b99e0affff6abeb2379cfb079b6f442ad39d7c98a564
+    strip_components: 1
+  compatible_postgresql: '>=17.11,<18'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets:
+  - installcheck
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: prefix
+  runtime_files:
+  - lib/postgresql/prefix*.so
+  - share/postgresql/extension/prefix.control
+  - share/postgresql/extension/prefix--*.sql
+  sql_extension_versions:
+    prefix: 1.2.0

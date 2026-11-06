@@ -1,0 +1,32 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc17-spqrhash
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: archive
+    location: https://codeload.github.com/pg-sharding/spqrhash/tar.gz/3f4d326c88a69a4330c8399b4d3c833f25a6cf36
+    sha256: sha256:38c2b53670aa23fdf78e357a51224c8f35459d4d8eba4c1cce77cca79667f2a6
+    strip_components: 1
+  compatible_postgresql: '>=17.11,<18'
+  requires: []
+  conflicts: []
+  build_dependencies:
+  - python3-docutils
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets:
+  - installcheck
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: spqrhash
+  runtime_files:
+  - lib/postgresql/spqrhash.so
+  - share/postgresql/extension/spqrhash.control
+  - share/postgresql/extension/spqrhash--*.sql
+  sql_extension_versions:
+    spqrhash: '1.2'

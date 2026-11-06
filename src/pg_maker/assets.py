@@ -6,7 +6,7 @@ from pathlib import Path
 from pg_maker.errors import OwnershipError, ValidationError
 from pg_maker.storage import ensure_directory, write_text
 
-BUILD_PROFILES = ("yc-16.15-icu70", "yc-18.6-icu70")
+BUILD_PROFILES = ("yc-16.15-icu70", "yc-17.11-icu70", "yc-18.6-icu70")
 
 
 def initialize_project(

@@ -74,8 +74,53 @@ def prepare(root, extra, toolchain):
     )
 
 
+def postgresql_feature(prefix):
+    version = subprocess.check_output([prefix + "/bin/pg_config", "--version"], text=True)
+    match = re.fullmatch(r"PostgreSQL (17|18)\.\d+[^\n]*\n?", version)
+    if not match:
+        raise ValueError("pinned vectorscale recipe requires PostgreSQL 17 or 18")
+    return "pg" + match[1]
+
+
+def upgrade_test_report(feature, ignored):
+    expected = {
+        "access_method::upgrade_test::tests::test_upgrade_from_" + version
+        for version in (
+            "0_0_2",
+            "0_2_0",
+            "0_3_0",
+            "0_4_0",
+            "0_5_0",
+            "0_5_1",
+            "0_6_0",
+            "0_7_0",
+            "0_7_1",
+            "0_8_0",
+        )
+    }
+    if set(ignored) != expected or len(ignored) != len(expected):
+        raise RuntimeError("unexpected pgrx ignored-test inventory: " + repr(ignored))
+    if feature == "pg18":
+        status = "not-applicable; not counted as passed"
+        reason = (
+            "Pinned upstream upgrade_test.rs returns before testing on pg18: "
+            "the historical releases have no PostgreSQL 18 build"
+        )
+    elif feature == "pg17":
+        status = "upstream-disabled; not executed or counted as passed"
+        reason = (
+            "Pinned upstream upgrade_test.rs ignores these tests and its pg17 "
+            "guard returns before exercising upgrades. Historical PG17 upgrade "
+            "coverage is not established by this suite."
+        )
+    else:
+        raise ValueError("unsupported PostgreSQL feature")
+    return {"status": status, "reason": reason, "tests": ignored}
+
+
 def main():
     action, prefix, jobs, pgrx_source = sys.argv[1:]
+    feature = postgresql_feature(prefix)
     root = Path.cwd()
     extra = Path(pgrx_source).parent
     toolchain = root / "pg-maker-toolchain"
@@ -110,7 +155,7 @@ def main():
         "--release",
         "--no-default-features",
         "--features",
-        "pg18,build_parallel",
+        feature + ",build_parallel",
         "--pg-config",
         prefix + "/bin/pg_config",
     ]
@@ -128,7 +173,7 @@ def main():
             ],
             cwd=root,
         )
-        command(["cargo", "pgrx", "init", "--pg18=" + prefix + "/bin/pg_config"])
+        command(["cargo", "pgrx", "init", "--" + feature + "=" + prefix + "/bin/pg_config"])
         command(install, extension=True)
         return
     if action != "test":
@@ -138,43 +183,18 @@ def main():
             "cargo",
             "pgrx",
             "test",
-            "pg18",
+            feature,
             "--release",
             "--no-default-features",
             "--features",
-            "pg18,build_parallel",
+            feature + ",build_parallel",
         ],
         "pg-maker-pgrx-tests.log",
         extension=True,
     )
     ignored = re.findall(r"^test (\S+) \.\.\. ignored$", text, re.M)
-    expected_ignored = {
-        "access_method::upgrade_test::tests::test_upgrade_from_" + version
-        for version in (
-            "0_0_2",
-            "0_2_0",
-            "0_3_0",
-            "0_4_0",
-            "0_5_0",
-            "0_5_1",
-            "0_6_0",
-            "0_7_0",
-            "0_7_1",
-            "0_8_0",
-        )
-    }
-    if set(ignored) != expected_ignored:
-        raise RuntimeError("unexpected pgrx ignored-test inventory: " + repr(ignored))
     (root / "pg-maker-inapplicable-tests.log").write_text(
-        json.dumps(
-            {
-                "status": "not-applicable; not counted as passed",
-                "reason": "Pinned upstream upgrade_test.rs returns before testing on pg18: "
-                "the historical releases have no PostgreSQL 18 build",
-                "tests": ignored,
-            },
-            indent=2,
-        )
+        json.dumps(upgrade_test_report(feature, ignored), indent=2)
     )
     counts = [int(n) for n in re.findall(r"test result: ok\. (\d+) passed; 0 failed", text)]
     if not counts or sum(counts) == 0:

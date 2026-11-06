@@ -1,0 +1,35 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc17-pg-stat-kcache
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: archive
+    location: https://codeload.github.com/powa-team/pg_stat_kcache/tar.gz/2f1a1f53f1bf50452afae8450f99839e01eb6617
+    sha256: sha256:920480541ca0a7f75519822da3a7acb6fb38e3aa58fe895ba834862394071d33
+    strip_components: 1
+  compatible_postgresql: '>=17.11,<18'
+  requires:
+  - pg-stat-statements
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets:
+  - installcheck
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: pg_stat_kcache
+  runtime_files:
+  - lib/postgresql/pg_stat_kcache.so
+  - share/postgresql/extension/pg_stat_kcache.control
+  - share/postgresql/extension/pg_stat_kcache--*.sql
+  sql_extension_versions:
+    pg_stat_kcache: 2.3.1
+  preload:
+  - pg_stat_statements
+  - pg_stat_kcache

@@ -87,38 +87,43 @@ print('OK: installed managed profile: PostgreSQL 16.15, Debian 13 amd64, '
       'ICU 70.1, 33 selected extensions; PLV8 disabled')
 """
         print(run([binaries / "python", "-c", profile_check, managed]).strip())
-        managed18 = directory / "yc18"
-        run([binaries / "pg-maker", "init", managed18, "--profile", "yc-18.6-icu70"])
-        run([binaries / "pg-maker", "validate", managed18 / "build.yaml"])
-        print(
-            run(
-                [
-                    binaries / "python",
-                    "-c",
-                    """
+        for version in ("17.11", "18.6"):
+            managed = directory / ("yc" + version.split(".")[0])
+            run([binaries / "pg-maker", "init", managed, "--profile", "yc-" + version + "-icu70"])
+            run([binaries / "pg-maker", "validate", managed / "build.yaml"])
+            print(
+                run(
+                    [
+                        binaries / "python",
+                        "-c",
+                        """
 import sys
 from pathlib import Path
 from pg_maker.config import load_config, resource_path
 from pg_maker.yamlio import load_yaml
 root = Path(sys.argv[1])
 c = load_config(root / 'build.yaml').data
-assert c['postgresql']['version'] == '18.6'
-assert c['postgresql_recipe']['db_test_adapter'] == 'pg18'
+version = sys.argv[2]
+major = version.split('.')[0]
+assert c['postgresql']['version'] == version
+assert c['postgresql_recipe']['db_test_adapter'] == 'pg' + major
 components = {x['metadata']['id']: x['spec'] for x in c['features'][0]['spec']['components']}
-assert 'yc18-plv8' not in components and 'yc18-repl-mon' in components
-rust_inputs = components['yc18-vectorscale']['extra_sources']
+assert 'yc' + major + '-plv8' not in components
+assert ('yc' + major + '-repl-mon' in components) == (major == '18')
+rust_inputs = components['yc' + major + '-vectorscale']['extra_sources']
 assert len(rust_inputs) == 626 and 'rustfmt' in rust_inputs
 assert len([name for name in rust_inputs if name.startswith('crate-')]) == 621
 assert sum(len(x.get('sql_extension_versions', {})) for x in components.values()) == 39
-assert len(load_yaml(root / 'catalogs/yc-18.6-extensions.yaml')['extensions']) == 44
+assert len(load_yaml(root / ('catalogs/yc-' + version + '-extensions.yaml'))['extensions']) == 44
 for helper in ('vectorscale', 'partman5', 'lwaldump'):
     assert resource_path('validation', 'upstream', helper + '.py').is_file()
-print('OK: installed PG18 profile, private ICU70.1, frozen Cargo inputs, PLV8 disabled')
-""",
-                    managed18,
-                ]
-            ).strip()
-        )
+print('OK: installed PG' + major + ' profile, ICU70.1, frozen Cargo inputs, PLV8 disabled')
+    """,
+                        managed,
+                        version,
+                    ]
+                ).strip()
+            )
         run([binaries / "pg-maker", "dev", "--help"])
         run([binaries / "pg-maker", "test-full", "--help"])
         run([binaries / "pg-maker", "logs", "verify", "--help"])
@@ -128,6 +133,7 @@ print('OK: installed PG18 profile, private ICU70.1, frozen Cargo inputs, PLV8 di
         assert (manuals / "README.md").is_file()
         assert (manuals / "docs/interfaces/development.md").is_file()
         assert (manuals / "docs/managed-16-icu70.md").is_file()
+        assert (manuals / "docs/managed-17-icu70.md").is_file()
     print("OK: isolated wheel install, dependencies, CLI, init/validate and installed manuals")
 
 
