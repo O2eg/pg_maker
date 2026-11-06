@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.1 — 2026-11-06
+
+- Fix the offline package-install integration fixture: supply the required
+  diagnostic stage and read only numbered command receipts. Verify diagnostic
+  coverage for each installed package set.
+
 ## 0.4.0 — 2026-11-06
 
 - Fix Python 3.10 imports in the vectorscale helper; install the conditional

@@ -302,6 +302,7 @@ def validate_installation(tmp_path, output, lock, environments, inputs):
         id=variant["id"] + ".candidate",
         handle=None,
         step={
+            "kind": "test_installed_packages",
             "image_id": images["test"]["image_id"],
             "resources": {"memory_bytes": 1024**3, "cpu_jobs": 2},
             "timeout_seconds": 180,
@@ -325,10 +326,22 @@ def validate_installation(tmp_path, output, lock, environments, inputs):
         assert report["passed"] and report["run_database"] is False
         assert {s["set"] for s in report["sets"]} == {"server", "client", "libpq"}
         assert not state["resources"]
+        for scenario in report["sets"]:
+            logs = output / "package-tests" / scenario["set"]
+            diagnostics = read_json(logs / "diagnostics.json")
+            receipts = {p.name for p in logs.glob("*.json") if p.stem.isdigit()}
+            assert receipts
+            assert {item["receipt"] for item in diagnostics} == receipts
+            assert all(
+                item["passed"]
+                and item["stage"] == "test_installed_packages"
+                and item["context"] == "test"
+                for item in diagnostics
+            )
         commands = [
             read_json(p)["argv"]
             for p in (output / "package-tests").glob("*/*.json")
-            if p.name != "result.json"
+            if p.stem.isdigit()
         ]
         executables = [
             argv[argv.index("--") + 1] if argv[0] == "runuser" else argv[0] for argv in commands
