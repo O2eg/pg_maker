@@ -1,0 +1,144 @@
+--- a/pglogical_apply.c
++++ b/pglogical_apply.c
+@@ -161,6 +161,7 @@
+ static void handle_startup_param(const char *key, const char *value);
+ static bool parse_bool_param(const char *key, const char *value);
+ static void process_syncing_tables(XLogRecPtr end_lsn);
++static void reread_unsynced_tables(Oid subid);
+ static void start_sync_worker(Name nspname, Name relname);
+ 
+ /*
+@@ -171,6 +172,18 @@
+ static bool
+ should_apply_changes_for_rel(const char *nspname, const char *relname)
+ {
++	/*
++	 * A resync may commit while the apply worker waits for the target
++	 * relation lock. Refresh the cache after acquiring that lock, before
++	 * applying a change that the resync snapshot will already contain.
++	 */
++	if (MyPGLogicalWorker->worker_type == PGLOGICAL_WORKER_APPLY &&
++		MyApplyWorker->sync_pending)
++	{
++		MyApplyWorker->sync_pending = false;
++		reread_unsynced_tables(MyApplyWorker->subid);
++	}
++
+ 	if (list_length(SyncingTables) > 0)
+ 	{
+ 		ListCell	   *lc;
+@@ -1481,6 +1494,30 @@
+ 			Assert(CurrentMemoryContext == MessageContext);
+ 		}
+ 
++		/*
++		 * A filtered/idle stream can reach the tablesync target through a
++		 * keepalive without delivering another COMMIT. All buffered messages
++		 * have been consumed here. Never finish in the middle of a remote
++		 * transaction, even when its wire position has reached the target.
++		 */
++		if (MyPGLogicalWorker->worker_type == PGLOGICAL_WORKER_SYNC &&
++			!in_remote_transaction &&
++			MyApplyWorker->replay_stop_lsn != InvalidXLogRecPtr &&
++			last_received != InvalidXLogRecPtr &&
++			last_received >= MyApplyWorker->replay_stop_lsn)
++		{
++			StartTransactionCommand();
++			set_table_sync_status(MyApplyWorker->subid,
++								  NameStr(MyPGLogicalWorker->worker.sync.nspname),
++								  NameStr(MyPGLogicalWorker->worker.sync.relname),
++								  SYNC_STATUS_SYNCDONE, last_received);
++			CommitTransactionCommand();
++			XLogFlush(GetXLogWriteRecPtr());
++			PQfinish(applyconn);
++			pglogical_sync_worker_finish();
++			proc_exit(0);
++		}
++
+ 		/* confirm all writes at once */
+ 		send_feedback(applyconn, last_received, GetCurrentTimestamp(), false);
+ 
+--- /dev/null
++++ b/t/041_resync_lock_race.pl
+@@ -0,0 +1,81 @@
++use strict;
++use warnings;
++use PostgreSQL::Test::Cluster;
++use PostgreSQL::Test::Utils;
++use Test::More;
++
++my $provider = PostgreSQL::Test::Cluster->new('race_provider');
++my $subscriber = PostgreSQL::Test::Cluster->new('race_subscriber');
++for my $node ($provider, $subscriber)
++{
++    $node->init();
++    $node->append_conf('postgresql.conf', qq[
++shared_preload_libraries = 'pglogical'
++output_plugin_libraries = 'pgoutput, test_decoding, pglogical_output'
++wal_level = logical
++max_wal_senders = 10
++max_replication_slots = 10
++track_commit_timestamp = on
++pglogical.synchronous_commit = true
++log_min_messages = debug1
++]);
++    $node->start();
++    my $dsn = $node->connstr('postgres');
++    $dsn =~ s/'/''/g;
++    my $name = $node->name;
++    $node->safe_psql('postgres', qq[
++CREATE EXTENSION pglogical;
++CREATE TABLE race_rows (id integer, payload text);
++SELECT pglogical.create_node(node_name := '$name', dsn := '$dsn');
++]);
++}
++$provider->safe_psql('postgres', q[
++SELECT pglogical.replication_set_add_table('default_insert_only', 'race_rows', false);
++]);
++my $dsn = $provider->connstr('postgres');
++$dsn =~ s/'/''/g;
++$subscriber->safe_psql('postgres', qq[
++SELECT pglogical.create_subscription(subscription_name := 'race_sub',
++    provider_dsn := '$dsn', replication_sets := '{default_insert_only}',
++    synchronize_structure := false, synchronize_data := false);
++]);
++$subscriber->poll_query_until('postgres', q[
++SELECT EXISTS (SELECT 1 FROM pglogical.show_subscription_status()
++               WHERE subscription_name = 'race_sub' AND status = 'replicating');
++]) or BAIL_OUT('subscription did not start');
++$provider->safe_psql('postgres', q[INSERT INTO race_rows VALUES (0, 'initial');]);
++$subscriber->poll_query_until('postgres', q[SELECT count(*) = 1 FROM race_rows;])
++    or BAIL_OUT('initial row did not replicate');
++
++for my $i (1..3)
++{
++    my $session = $subscriber->background_psql('postgres');
++    $session->query_safe(q[
++BEGIN;
++SELECT pglogical.alter_subscription_resynchronize_table('race_sub', 'race_rows');
++]);
++    $provider->safe_psql('postgres', qq[INSERT INTO race_rows VALUES ($i, 'queued-$i');]);
++    ok($subscriber->poll_query_until('postgres', q[
++SELECT EXISTS (SELECT 1 FROM pg_locks
++               WHERE relation = 'race_rows'::regclass AND NOT granted
++                 AND mode = 'RowExclusiveLock');
++]), "apply waits behind the resync truncate in iteration $i");
++    $session->query_safe('COMMIT;');
++    $session->quit();
++    $subscriber->safe_psql('postgres', q[
++SET statement_timeout = '180s';
++SELECT pglogical.wait_for_table_sync_complete('race_sub', 'race_rows');
++]);
++    $provider->safe_psql('postgres', q[
++SET statement_timeout = '180s';
++SELECT pglogical.wait_slot_confirm_lsn(NULL, NULL);
++]);
++    is($subscriber->safe_psql('postgres', qq[SELECT count(*) FROM race_rows WHERE id = $i;]),
++       '1', "queued change appears exactly once in iteration $i");
++    is($subscriber->safe_psql('postgres', q[SELECT id, payload FROM race_rows ORDER BY id, payload;]),
++       $provider->safe_psql('postgres', q[SELECT id, payload FROM race_rows ORDER BY id, payload;]),
++       "complete table matches in iteration $i");
++}
++$subscriber->stop();
++$provider->stop();
++done_testing();

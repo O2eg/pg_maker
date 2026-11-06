@@ -1,5 +1,8 @@
 # PostgreSQL 14–19 catalog and boundary validation
 
+Historical evidence for the recorded run/version. Defaults, paths and limitations
+may differ today; use the [current documentation index](../README.md) for new builds.
+
 Date: 2026-10-17. Contract: [PostgreSQLCatalog](../interfaces/postgresql.md).
 The minimum supported major is 14; lower versions fail before execution. Catalog
 coverage does not mean every minor/toolchain combination has been tested.

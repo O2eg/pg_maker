@@ -46,6 +46,16 @@ named placeholders, with no Python evaluation, conversions or recursive expansio
 Feature numeric IDs are unique. Features on the same target cannot share package
 names, service names or paths. Coinstallation with the same port is rejected.
 
+`init --profile yc-16.15-icu70`, `yc-17.11-icu70` and `yc-18.6-icu70` merge the
+bundled `config/yc-clone/{vendor,defaults}.yaml` overlays into the project's editable
+`config/vendor.yaml` and `config/defaults.yaml`. Their prefix is
+`/opt/postgresql-yc-clone/{postgresql.major}{build.mode_suffix}`, PGDATA is
+`/var/lib/postgresql-yc-clone/{postgresql.major}{build.mode_suffix}/data`, and the
+service template is `postgresql-yc-clone-{postgresql.major}{build.mode_suffix}`.
+The feature ID still selects components, but does not appear in these paths.
+Generic projects retain feature-specific directories and services. Existing copied
+configuration is not migrated by upgrading pip; edit it and resolve/build again.
+
 Flags compose as defaults, mode, feature additions and manifest extra arguments.
 CPU flags come from the platform recipe. Extra/feature arguments cannot override
 prefix, debug, LLVM, CPU or optimization policy. Release enables FORTIFY; debug

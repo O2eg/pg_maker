@@ -1,31 +1,8 @@
 # Publishing the Python utility
 
 This procedure publishes pg-maker itself. It does not publish PostgreSQL DEBs,
-repositories or documentation websites built by the utility. The package is currently
-an alpha; version anchors are pyproject.toml and src/pg_maker/__init__.py.
-
-## Repository preparation
-
-The intended repository metadata uses https://github.com/O2eg/pg_maker, following
-pg_diag conventions. Before the first push, create or confirm that repository and
-check that its name matches pyproject URLs. A local main branch can be initialized
-without configuring a remote or creating a release tag. Review the initial file set
-and commit it when ready:
-
-```bash
-git status --short
-git diff --check
-# After reviewing the files to publish:
-git add .
-git diff --cached --check
-git diff --cached --stat
-git commit -m "Initial pg_maker alpha"
-```
-
-The ignore file excludes environments, Python outputs/caches, local secrets and
-conventional run/input/development directories. It cannot recognize arbitrary custom
-output locations: inspect the staged paths and contents before publication.
-Preserve the MIT License and upstream fixture copyright files.
+repositories or documentation websites built by the utility. Version anchors are
+`pyproject.toml` and `src/pg_maker/__init__.py`.
 
 ## Validate exact release contents
 
@@ -38,11 +15,11 @@ ruff check .
 ruff format --check .
 python tools/generate_planning_schemas.py
 git diff --exit-code -- src/pg_maker/schemas
-python tools/check_release.py --tag v0.3.0
+python tools/check_release.py --tag v0.4.0
 python -m pytest -q tests/unit tests/contracts
 python -m build
 python -m twine check --strict dist/*
-python tools/check_release.py --dist dist --tag v0.3.0
+python tools/check_release.py --dist dist --tag v0.4.0
 python tools/smoke_wheel.py dist/*.whl
 ```
 
@@ -53,9 +30,11 @@ The isolated wheel check exercises all three entry points, capabilities, init/va
 and installed manuals outside the source tree. These checks do not start PostgreSQL.
 
 Tests workflow runs Python 3.10/3.12 unit/contracts, schema/lint/docs checks, distribution
-validation and small Docker integration fixtures. Full PostgreSQL compilation is a
-manual workflow-dispatch job; database tests require an explicit true input. A Python
-release does not change PostgreSQL package qualification.
+validation and isolated wheel installation on both Python versions, plus small Docker
+integration fixtures. Only the Python 3.12 job uploads release artifacts. Full
+PostgreSQL compilation is a manual workflow-dispatch job; database tests default to
+true and require an explicit false input to skip them. A Python release does not
+change PostgreSQL package qualification.
 
 ## Configure Trusted Publishing once
 
@@ -81,15 +60,15 @@ Only when publication is intended, push the reviewed main branch, then an annota
 version tag matching the package:
 
 ```bash
-git remote add origin git@github.com:O2eg/pg_maker.git  # Only if origin is not configured.
-git push -u origin main
-git tag -a v0.3.0 -m "pg_maker 0.3.0"
-git push origin v0.3.0
+git push origin main
+git tag -a v0.4.0 -m "pg-maker 0.4.0"
+git push origin v0.4.0
 ```
 
-publish.yml calls the same tests workflow on the tag. The distribution job validates
-tag/version equality, builds wheel/sdist once and uploads them. Only after verification
-succeeds does the publishing job download those exact artifacts and use PyPI Trusted
+publish.yml calls the same tests workflow on the tag. Both Python jobs validate
+tag/version equality and build/check distributions; the Python 3.12 job uploads the
+release wheel/sdist. Only after verification succeeds does the publishing job download
+those exact artifacts and use PyPI Trusted
 Publishing. It does not rebuild them and does not enable long database tests.
 
 Afterward, check remote Actions, the exact PyPI version and installation from the index

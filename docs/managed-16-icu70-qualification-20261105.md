@@ -7,7 +7,7 @@ it does not grant qualification to subsequent builds.
 
 | Item | Value |
 | --- | --- |
-| pg_maker | 0.3.0, commit `dfa21c80f23fc0a36f4d794aa88ba0554f6f2132` |
+| pg-maker | 0.3.0, commit `dfa21c80f23fc0a36f4d794aa88ba0554f6f2132` |
 | Operation | `op-1236bcc287b347b888863370a3ecb13e` |
 | Target | Debian 13 (trixie), native amd64 |
 | Resources | 8 jobs, 30 GiB memory limit, 5 GiB free-disk reserve |

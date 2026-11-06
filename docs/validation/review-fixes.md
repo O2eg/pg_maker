@@ -1,5 +1,8 @@
 # Review findings checked — 2026-10-17
 
+Historical evidence for the recorded run/version. Defaults, paths and limitations
+may differ today; use the [current documentation index](../README.md) for new builds.
+
 The workspace review was compared with implementation and specification. All four
 P0 findings were reproduced and fixed. This report supplements [integration evidence](integration.md).
 It records the review's historical status; later capabilities appear in the roadmap.

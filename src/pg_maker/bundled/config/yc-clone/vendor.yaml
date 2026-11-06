@@ -1,0 +1,13 @@
+api_version: pg_maker/vendor/v1
+kind: VendorConfig
+metadata:
+  id: postgresql-yc-clone
+spec:
+  company: PostgreSQL YC Clone
+  brand: PostgreSQL YC Clone
+  product_name: PostgreSQL YC Clone
+  description: PostgreSQL YC Clone
+  slug: postgresql-yc-clone
+  homepage: null
+  documentation_url: null
+  contact_email: test@example.invalid

@@ -1,0 +1,41 @@
+# Minimal PostgreSQL directory rules, evaluated by GNU Make in layout tests.
+prefix = /opt/postgresql-yc-clone/18
+datadir = $(prefix)/share
+sysconfdir = $(prefix)/etc
+pkglibdir = $(prefix)/lib
+pkgincludedir = $(prefix)/include
+docdir = $(prefix)/share/doc
+
+ifeq "$(findstring pgsql, $(datadir))" ""
+ifeq "$(findstring postgres, $(datadir))" ""
+override datadir := $(datadir)/postgresql
+endif
+endif
+
+ifeq "$(findstring pgsql, $(sysconfdir))" ""
+ifeq "$(findstring postgres, $(sysconfdir))" ""
+override sysconfdir := $(sysconfdir)/postgresql
+endif
+endif
+
+ifeq "$(findstring pgsql, $(pkglibdir))" ""
+ifeq "$(findstring postgres, $(pkglibdir))" ""
+override pkglibdir := $(pkglibdir)/postgresql
+endif
+endif
+
+ifeq "$(findstring pgsql, $(pkgincludedir))" ""
+ifeq "$(findstring postgres, $(pkgincludedir))" ""
+override pkgincludedir := $(pkgincludedir)/postgresql
+endif
+endif
+
+ifeq "$(findstring pgsql, $(docdir))" ""
+ifeq "$(findstring postgres, $(docdir))" ""
+override docdir := $(docdir)/postgresql
+endif
+endif
+
+.PHONY: show
+show:
+	@echo $(datadir) $(sysconfdir) $(pkglibdir) $(pkgincludedir) $(docdir)

@@ -1,6 +1,6 @@
 # Architecture
 
-`pg_maker` is an independent Python controller. The CLI parses input and displays
+`pg-maker` is an independent Python controller. The CLI parses input and displays
 results; `MakerService` owns application operations; workers execute durable jobs.
 The pg_play MCP adapter uses the same service contract through the machine CLI.
 There are no runtime imports from sibling projects.

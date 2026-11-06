@@ -1,0 +1,8 @@
+# Overlay for all bundled yc-clone profiles; generic feature defaults stay separate.
+spec:
+  paths:
+    runtime_prefix: /opt/{vendor.slug}/{postgresql.major}{build.mode_suffix}
+    data_directory: /var/lib/{vendor.slug}/{postgresql.major}{build.mode_suffix}/data
+    documentation_directory: /opt/{vendor.slug}/{postgresql.major}{build.mode_suffix}/share/doc/{product.version}
+  naming:
+    service: '{vendor.slug}-{postgresql.major}{build.mode_suffix}'

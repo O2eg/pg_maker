@@ -217,11 +217,15 @@ class BuildBranch:
             self.inputs.tree(self.config["source"]["source_hash"])
         elif kind == "materialize_source":
             from pg_maker.execution.incremental import seed_core
+            from pg_maker.packaging.layout import normalize_install_layout
             from pg_maker.sources.store import materialize
 
             source = self.inputs.tree(self.config["source"]["source_hash"])
             if not seed_core(self, source):
                 materialize(source, self.source)
+            self.report["installation_layout"] = normalize_install_layout(
+                self.source, self.output / "install-layout.patch"
+            )
         elif kind == "apply_changes":
             receipts = apply_changes(
                 self.source,

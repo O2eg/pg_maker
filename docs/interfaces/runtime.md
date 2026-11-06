@@ -5,7 +5,7 @@ verifies artifact/evidence manifests, exactly three runtime DEBs from one varian
 its prefix and required diagnostic extensions. The initial adapter is Debian 13 /
 x86_64. Profiles supply a pinned base image, files with hashes, entrypoint filename,
 extension/library lists and disk/memory limits. These choices belong to pg_play's
-profile, not hardcoded pg_maker names. pg_play supplies pg_stand files; maker has no
+profile, not hardcoded pg-maker names. pg_play supplies pg_stand files; maker has no
 runtime dependency on either sibling package.
 
 `pg-maker runtime plan DIR --profile FILE --out PLAN` creates

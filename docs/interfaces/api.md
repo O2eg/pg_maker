@@ -15,7 +15,7 @@ Python API does not read argparse state or change the working directory.
 | prepare_environments / resolve | Manifest and operation options | Durable operation producing EnvironmentManifest or BuildLock |
 | plan | Lock, goal, input store and test override | BuildPlan without downloads, Docker or compilation |
 | build | Lock or saved plan and execution options | Durable build operation |
-| resume / export / artifacts | Operation/result references | Verified retry or portable output references |
+| resume / export | Operation/result references | Verified retry or portable output export |
 | dev_open / dev_status / dev_patch | Session and patch inputs | Owned Git session and patch stack operations |
 | dev_build / dev_explain / dev_execute | Session and iteration/selection options | New iteration, reuse reasons or durable debug operation |
 | dev_pin / dev_prune | Session, iteration or retention plan | Preserve checkpoints or clean old scratch |
@@ -47,19 +47,25 @@ writes JSON; otherwise it returns the document.
 
 `build(lock, goal=None, plan=None, plan_hash=None, run_db_tests=None,
 input_store=None, cache_store=None, use_cache=True, operation_id=None,
-request_id=None, components=None, reuse_from=None)` validates and starts BuildRequest.
+request_id=None, with_doc=None, doc_languages=None, features=None, build_mode=None,
+components=None, reuse_from=None)` validates and starts BuildRequest.
 A supplied plan determines the default goal; otherwise it is build. The plan must
 match the reconstructed DAG and requested plan hash. Plan
 creation timestamps do not change request idempotency. The plan or lock controls
 the default test mode; explicit overrides must agree with a supplied plan. Changing
 that mode changes plan/input identity.
 
-Goals include source/build/package/verified and doc-source/translations/
+Goals include source/build/package/verified/test-full and doc-source/translations/
 translated-docs/docs. Documentation commands use the same build service. Build-time
 feature/mode/documentation flags validate the lock instead of modifying it. Resolve
 again to change the locked configuration; development sessions create new locks for
 code edits. Results record reports, hashes, qualification, database tests, failures
 and publication eligibility. Only full successful qualification can grant eligibility.
+
+`pg-maker artifacts DIRECTORY` reads verified output references through
+`artifacts.catalog.operation_artifacts(directory, state)`; there is no
+`MakerService.artifacts` method. Runtime image and standalone diagnostic commands
+similarly use their dedicated adapters with the shared operation service.
 
 `runner check` exercises infrastructure commands using an existing immutable image;
 it is not a PostgreSQL build. `--detach` returns after worker startup; otherwise the

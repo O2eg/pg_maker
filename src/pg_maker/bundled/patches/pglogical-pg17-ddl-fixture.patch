@@ -1,0 +1,34 @@
+--- a/sql/add_table.sql
++++ b/sql/add_table.sql
+@@ -236,6 +236,12 @@
+ 	CREATE TABLE public.synctest(a int primary key, b text);
+ $$);
+ 
++-- Wait for the replicated CREATE before resolving synctest as regclass.
++BEGIN;
++SET LOCAL statement_timeout = '20s';
++SELECT pglogical.wait_slot_confirm_lsn(NULL, NULL);
++COMMIT;
++
+ SELECT * FROM pglogical.replication_set_add_table('repset_test', 'synctest', synchronize_data := false);
+ 
+ INSERT INTO synctest VALUES (1, '1');
+--- a/expected/add_table.out
++++ b/expected/add_table.out
+@@ -479,6 +479,16 @@
+  t
+ (1 row)
+ 
++-- Wait for the replicated CREATE before resolving synctest as regclass.
++BEGIN;
++SET LOCAL statement_timeout = '20s';
++SELECT pglogical.wait_slot_confirm_lsn(NULL, NULL);
++ wait_slot_confirm_lsn 
++-----------------------
++ 
++(1 row)
++
++COMMIT;
+ SELECT * FROM pglogical.replication_set_add_table('repset_test', 'synctest', synchronize_data := false);
+  replication_set_add_table 
+ ---------------------------

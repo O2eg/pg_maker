@@ -1,183 +1,247 @@
-# pg_maker
+# pg-maker
 
-A Python controller for building PostgreSQL distributions, packages and documentation
-in isolated Docker environments. It also provides Git development sessions for
-editing patches, recovering failed builds and rebuilding individual extensions.
+Build PostgreSQL, extensions, DEB packages and documentation in isolated Docker
+containers. pg-maker manages source versions, prepared build images, build plans,
+tests, recovery and reusable compilation results. Git development sessions support
+editing core/extension code and maintaining patch series.
 
-The current package is an **alpha**. The implemented platform is Debian 13 / x86_64,
-with release/debug builds and DEB packages. The PostgreSQL catalog covers majors
-14–19, including beta/RC identities; versions below 14 are unsupported. Catalog
-coverage is distinct from validation coverage: see the [major-version report](docs/validation/postgresql-majors.md).
-RPM, other platforms and distribution repository publishing remain on the
-[roadmap](docs/roadmap.md).
+The bundled platform is **Debian 13 / amd64** with Autotools and release/debug builds.
+The PostgreSQL catalog covers **14–19**; database-test evidence adapters support
+**16, 17 and 18**. Catalog support does not establish qualification of every build.
+ARM64 requires additional platform/component adaptations; RPM, remote execution and
+built-in APT/Nexus publication are not implemented. See [implementation limits](docs/roadmap.md).
 
-## Installation
+## Install
 
-Requires Linux and Python 3.10+. Container operations require a local Docker daemon;
-Git development sessions also require Git. Installing the Python package and reading
-capabilities do not require Docker.
+Requires Linux and Python 3.10+. Builds require access to a local Linux Docker daemon;
+Git sources and development sessions also require Git. Run the controller as the
+non-root owner of the project workspace. Reading help/capabilities does not need Docker.
 
-From PyPI:
-
-```bash
-python3 -m venv .venv
-.venv/bin/python -m pip install pg-maker
-.venv/bin/pg-maker --help
-```
-
-For development, from a source checkout:
+Install a published version from PyPI:
 
 ```bash
 python3 -m venv .venv
-.venv/bin/python -m pip install -e '.[dev]'
-.venv/bin/pg-maker --help
-.venv/bin/pg-maker --component-capabilities
-.venv/bin/pg-maker doctor --machine
+source .venv/bin/activate
+python -m pip install pg-maker
+pg-maker --version
+pg-maker --help
 ```
 
-A built wheel can be installed with `python -m pip install /path/to/pg_maker-VERSION-py3-none-any.whl`.
-
-## Build a distribution
-
-For PostgreSQL 16.15 with private ICU 70.1 and the managed extension catalog, use
-`pg-maker init example --profile yc-16.15-icu70`.
-See the [profile and version policy](docs/managed-16-icu70.md) for included recipes,
-explicit exclusions and qualification limits. The default init profile is unchanged.
-
-For PostgreSQL 17.11, use `pg-maker init example --profile yc-17.11-icu70`.
-The [PG17 profile](docs/managed-17-icu70.md) matches the audited SQL extension
-versions and checks private ICU 70.1 collations; native qualification is pending.
-
-For PostgreSQL 18.6, use `pg-maker init example --profile yc-18.6-icu70`.
-The [PG18 profile](docs/managed-18-icu70.md) pins its own extension versions and
-Rust dependencies; PLV8 remains disabled in both managed profiles.
+Or install the current source, including unreleased changes:
 
 ```bash
-pg-maker init example
+git clone https://github.com/O2eg/pg_maker.git
+cd pg_maker
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e '.[dev]'
+pg-maker --version
+pg-maker --component-capabilities
+pg-maker doctor --machine
+```
+
+A wheel can be installed with `python -m pip install /path/to/pg_maker-VERSION-py3-none-any.whl`.
+The product and CLI name is `pg-maker`; `pg_maker` is the repository/Python module name
+and the normalized wheel filename. Pip supplies the TOML reader needed by Python 3.10.
+
+## Choose and configure a profile
+
+`init` writes editable configuration into a new project directory. Choose one profile:
+
+| `init` option | PostgreSQL | Contents |
+| --- | --- | --- |
+| No `--profile` | 18.1 | `my-feature`, system ICU, pg_stat_statements, pg_stat_kcache 2.3.2 and pg_wait_sampling 1.1.11 |
+| `--profile yc-16.15-icu70` | 16.15 | Private ICU 70.1 and the [PG16 extension catalog](docs/managed-16-icu70.md) |
+| `--profile yc-17.11-icu70` | 17.11 | Private ICU 70.1 and the [PG17 extension catalog](docs/managed-17-icu70.md) |
+| `--profile yc-18.6-icu70` | 18.6 | Private ICU 70.1 and the [PG18 extension catalog](docs/managed-18-icu70.md) |
+
+All bundled profiles target amd64. PLV8 is disabled in all three YC profiles. Their
+catalogs record unavailable extensions and qualification limits; matching SQL extension
+versions does not establish managed-vendor binary or physical-replication compatibility.
+The [package walkthrough](docs/yc-clone-packages.md) also describes the ARM64 boundary.
+
+The following example builds the PG18 YC profile. Use a separate directory for each
+profile; repeated `init` accepts identical files but refuses to overwrite edited ones.
+
+```bash
+pg-maker init example --profile yc-18.6-icu70
+```
+
+Review configuration before preparing images or locking inputs:
+
+| File | Settings |
+| --- | --- |
+| `example/build.yaml` | PostgreSQL source/version, selected features/targets, package revision and profile overrides |
+| `example/config/vendor.yaml` | Product branding and vendor slug |
+| `example/config/defaults.yaml` | Installation/data paths, service, build user, jobs, resource limits and default test policy |
+| `example/config/features/*.yaml`, `example/components/` | Component selection, source pins, patches and build/test recipes |
+| `example/config/documentation.yaml` | Documentation languages/formats, branding and translations |
+
+Defaults use UID:GID `1000:1000`, four jobs, an 8 GiB memory limit and a 20 GiB free-disk
+reserve. Match the build user to `id -u`/`id -g` and resources to the host. The reserve
+is additional headroom, not an estimate of total storage; large extension builds need
+space for sources, objects, checkpoints, caches and Docker images. Documentation is
+disabled initially. `init --build-mode debug` selects debug flags and separate names.
+
+```bash
 pg-maker validate example/build.yaml
 pg-maker config show example/build.yaml --resolved
-pg-maker env prepare example/build.yaml --out example/environments.json --operations example/operations
-pg-maker resolve example/build.yaml --environments example/environments.json --out example/lock.json --input-store example/inputs --operations example/operations
-pg-maker plan example/lock.json --out example/plan.json --goal build
-pg-maker build example/lock.json --plan example/plan.json --operations example/operations --detach
+pg-maker package names example/build.yaml
 ```
 
-`init` creates editable vendor/defaults/documentation YAML, a `my-feature` variant,
-component recipes, schemas and the built-in socket-directory patch. The initial
-target is PostgreSQL 18.1 / Debian 13 / x86_64 / DEB, without documentation.
-The default components are `pg_stat_statements`, `pg_stat_kcache 2.3.2` and
-`pg_wait_sampling 1.1.11`. External sources are pinned by commit SHA. Set
-`components: []` to omit additional extensions. See [component recipes](docs/interfaces/components.md).
+Existing projects keep their copied YAML when pg-maker is upgraded. Changes to source,
+configuration, recipes or controller code require a new resolve and plan. Dependency
+changes also require matching prepared environments. See [configuration](docs/interfaces/configuration.md).
 
-`env prepare` downloads missing base images and installs dependencies inside
-containers. Its result records build/test image IDs, package versions and toolchain
-inventory. `resolve` freezes source commits, submodules, snapshots, archive
-checksums and ChangeSets in a BuildLock. Offline resolution reuses stored inputs
-and reports missing ones. Both operations support `--detach` and `--request-id`.
-
-The build user defaults to `1000:1000` and must match the non-root owner of the
-workspace. Environment preparation creates this user inside the image. Build
-commands run with networking disabled. Outputs stay inside the operation directory.
-
-**Database tests run by default for every profile.** A normal build runs core
-regression, `check-world` (including contrib, isolation and TAP), selected component
-tests and acceptance checks. The PostgreSQL 16, 17 and 18 evidence adapters reconcile
-executed suites; an unsupported adapter fails explicitly.
-
-Use `--goal package` for server/client/libpq DEBs and mandatory installation checks
-in fresh, offline containers. The longest core suites are separate:
+## Build and export DEB packages
 
 ```bash
-# Standard source and installed-package qualification:
-pg-maker build example/lock.json --goal package --operations example/operations
-# All standard source tests plus expensive core suites:
-pg-maker test-full example/lock.json --operations example/operations
-# Equivalent spelling: pg-maker build example/lock.json --goal test-full
+pg-maker env prepare example/build.yaml --input-store example/inputs --out example/environments.json --operations example/operations
+pg-maker resolve example/build.yaml --environments example/environments.json --out example/lock.json --input-store example/inputs --operations example/operations
+pg-maker plan example/lock.json --out example/plan.json --goal package
+pg-maker build example/lock.json --plan example/plan.json --operations example/operations --operation-id build --detach
+pg-maker status example/operations/build
+pg-maker wait example/operations/build
+pg-maker artifacts example/operations/build
+pg-maker export example/operations/build --out example/delivery
 ```
 
-`test-full` adds WAL consistency checking, plus XID wraparound for PostgreSQL 17/18.
-Set `spec.validation.test_suites: [standard, long]` in build.yaml to require these
-same suites before packaging. Additional mandatory test IDs belong in
-`spec.validation.required_tests`; missing or skipped evidence blocks qualification.
-It produces source-test evidence; use `--goal package` for installed-package checks.
-A supplied plan controls the test mode. `--skip-db-tests` is an explicit development
-escape hatch and produces `unverified`, `db_tests=skipped`, publication-ineligible
-results. Existing projects with a copied false default need to enable it and resolve
-again. Successful source suites grant at most `source-verified`; `package-verified`
-requires installed-package qualification too. See [build](docs/interfaces/build.md)
-and [packaging](docs/interfaces/packaging.md).
+`env prepare` downloads the base image, installs tools/dependencies in containers and
+records reusable build/test image IDs. `resolve` downloads and freezes source commits,
+submodules, archives, patches and checksums. Both need network access for missing inputs;
+`resolve --offline` reuses a populated input store. An environment JSON file references
+Docker images and does not contain them.
 
-## Build documentation only
+`build` starts the prepared container automatically, mounts the operation workspace and
+compiles without networking. No manual `docker run` is needed. `--detach` starts a worker;
+`wait` reports its terminal result. Use a new operation ID and export destination for a
+new run. The [recovery contract](docs/interfaces/recovery.md) covers retries of failed runs.
+
+For this profile, DEBs appear **on the host** under:
+
+```text
+example/operations/build/workspace/output/yc18-icu70.debian13-x64.candidate/packages/
+example/delivery/output/yc18-icu70.debian13-x64.candidate/packages/  # exported copy
+```
+
+The three roles are server/extensions, client programs and libpq. Reports, manifests,
+checksums and `INSTALL.txt` accompany the branch outputs. With documentation enabled,
+HTML/PDF have a separate docs DEB; manpages follow their command packages.
+
+All YC profiles use `/opt/postgresql-yc-clone/<major>/bin`,
+`/var/lib/postgresql-yc-clone/<major>/data` and `postgresql-yc-clone-<major>.service`.
+Debug appends `-debug` to the major. Installation creates an empty data directory;
+it does not run initdb or start a cluster. Existing data is not relocated automatically.
+Follow the [Nexus upload and Debian installation guide](docs/yc-clone-packages.md).
+
+## Test modes and qualification
+
+**Database tests run by default.** Normal builds run core regression, `check-world`
+(contrib, isolation and TAP), selected component tests and acceptance checks. Package
+builds add installation/lifecycle checks in fresh offline containers. Source tests
+can grant `source-verified`; package qualification requires all installed-package gates.
+Historical qualification records cover their exact artifacts and installation paths.
+
+| Goal | Result |
+| --- | --- |
+| `source` | Prepared source trees; no compilation or database tests |
+| `build` | Compiled and installed build tree, with source tests by default; no DEBs |
+| `package` | DEBs and installed-package qualification by default |
+| `verified` | Package goal that requires tests, even if the locked default is false |
+| `test-full` | Standard source/component tests plus expensive core suites; no DEBs |
+| `docs` | Selected documentation formats; no server compilation or DEBs |
+
+To build packages explicitly without database tests, use a separate saved plan:
+
+```bash
+pg-maker plan example/lock.json --goal package --skip-db-tests --out example/quick-plan.json
+pg-maker build example/lock.json --plan example/quick-plan.json --operations example/operations --operation-id quick --detach
+pg-maker wait example/operations/quick
+```
+
+Build inherits the saved plan's test mode; conflicting flags are rejected. Skipped-test
+results are `unverified`, `db_tests=skipped`, `publication_eligible=false`. Structural
+build/package checks remain; enabled documentation still has rendering and installed-doc
+checks. An external Nexus upload does not change qualification.
+
+`pg-maker test-full example/lock.json --operations example/operations` adds WAL consistency
+and, for PG17/18, XID wraparound suites. To require these before packaging, set
+`spec.validation.test_suites: [standard, long]` in `build.yaml` before resolve. Mandatory
+extra IDs belong in `spec.validation.required_tests`; missing evidence fails qualification.
+Majors 14/15/19 need explicit skipped-test builds until evidence adapters exist.
+See [test policy and diagnostics](docs/interfaces/build.md) and [packaging](docs/interfaces/packaging.md).
+
+## Build PostgreSQL documentation
 
 ```bash
 pg-maker init docs-project --with-doc --doc-language en
-pg-maker env prepare docs-project/build.yaml --out docs-project/environments.json
-pg-maker resolve docs-project/build.yaml --environments docs-project/environments.json --out docs-project/lock.json
-pg-maker docs build docs-project/lock.json
+pg-maker env prepare docs-project/build.yaml --input-store docs-project/inputs --out docs-project/environments.json --operations docs-project/operations
+pg-maker resolve docs-project/build.yaml --environments docs-project/environments.json --out docs-project/lock.json --input-store docs-project/inputs --operations docs-project/operations
+pg-maker docs build docs-project/lock.json --operations docs-project/operations
 ```
 
-`docs build` builds documentation without compiling the server or producing DEBs.
-It accepts official archive/Git sources or a snapshot of a locally modified source
-tree. Set `branding: none` for upstream PostgreSQL branding. The default HTML uses
-`sphinx_book_theme`, with an expandable sidebar, page contents and local search.
-The footer uses the selected product, version, feature, language and optional vendor
-links. `html_backend: docbook` selects the original DocBook layout explicitly.
+The enabled default formats are HTML/man. Add `pdf` to `spec.formats` in
+`config/documentation.yaml` **before** environment preparation and resolve to build PDF.
+The default HTML uses `sphinx_book_theme`; `html_backend: docbook` selects upstream
+DocBook output. Use `branding: none` for upstream branding. Inputs may be official
+archives, Git commits or snapshots of locally modified PostgreSQL sources.
 
-`config/documentation.yaml` selects HTML/man/PDF. The two external extensions'
-guides join the main Sphinx HTML/PDF manual when documentation is enabled.
-Russian PostgreSQL output requires a complete, current external translation bundle;
-the project's own Markdown documentation is English. HTML/PDF can be packaged in
-a separate docs DEB, with manpages assigned to the packages that own their commands.
-See the [documentation contract](docs/interfaces/documentation.md).
+Russian output needs a complete, current external translation bundle. The standalone
+`sgml-writer` and `sgml-translate` commands use the same locked pipeline. The controller's
+own Markdown manuals are English. See [documentation and translation](docs/interfaces/documentation.md).
 
-## Develop code and patches
+## Diagnose, resume and reuse work
 
 ```bash
-pg-maker dev open development --from-run example/operations/FAILED_RUN
+pg-maker status example/operations/build --machine
+pg-maker events example/operations/build --after-sequence 0 --limit 20 --machine
+pg-maker wait example/operations/build --timeout 120 --machine
+# To stop an active operation:
+pg-maker cancel example/operations/build
+```
+
+Progress and command logs live under the operation's `attempts/N/`; detached worker
+output is in `worker.log`, and branch reports are under `workspace/output/`. `logs verify`
+checks saved compiler/test logs against a diagnostic policy; see [diagnostics](docs/interfaces/build.md#diagnostic-policy).
+`status` succeeds if it can read state, even when the operation failed. `wait` returns
+the operation's exit code; a waiting timeout or closing the CLI does not cancel the worker.
+
+`resume` retries the original inputs with the original plan/input hash. Changed code
+needs a new build or development iteration. Prepared images, cached inputs, matching
+core/component outputs and private checkpoints accelerate later runs. `--no-cache`
+disables shared reuse but keeps private checkpoints. Export before cleanup; preview/apply
+commands remove only owned scratch. See [recovery](docs/interfaces/recovery.md),
+[development reuse](docs/development.md) and [disk management](docs/development-storage.md).
+
+## Develop core and extension patches
+
+```bash
+pg-maker dev open development --lock example/lock.json
+# Alternatively: pg-maker dev open development --from-run example/operations/FAILED_RUN
 pg-maker dev status development
-# Edit the source paths returned by status, then record a patch:
-pg-maker dev patch development commit --scope component:pg-wait-sampling --id fix-build
-pg-maker dev explain development --component pg-wait-sampling
-pg-maker dev build development --component pg-wait-sampling
+# Edit the component source path returned by status, then record the patch:
+pg-maker dev patch development commit --scope component:yc18-pg-stat-query-plans --id fix-build
+pg-maker dev explain development --component yc18-pg-stat-query-plans
+pg-maker dev build development --component yc18-pg-stat-query-plans --detach
 ```
 
-Each session owns real Git repositories. It can import an existing local repository
-with history, maintain intermediate commits, refresh patches, pop/push a series and
-resolve rebase conflicts. New iterations freeze changed inputs into new locks;
-`resume` retains its original meaning: retry the same operation with the same inputs.
-Independent extensions and the core can be reused when their inputs match. Header,
-ABI, toolchain and declared dependency changes invalidate affected results.
-[Development guide](docs/development.md) and [interface contract](docs/interfaces/development.md).
+Sessions own Git repositories and support imported history, patch import/export,
+refresh, pop/push and rebase. Iterations freeze edits into new locks and remain
+unverified. Use the component IDs in the chosen profile. See the [development guide](docs/development.md).
 
-## Observe and retain results
+Automation uses the [Python API](docs/interfaces/api.md) or `--machine` JSON output;
+`--component-capabilities` lists available commands. Optional pg_play integration
+provides MCP tools. A [runtime image handoff](docs/interfaces/runtime.md) can install
+locked DEBs into a pinned image for pg_stand without initializing a database.
 
-```bash
-pg-maker status example/operations/RUN --machine
-pg-maker events example/operations/RUN --after-sequence 0 --limit 20 --machine
-pg-maker wait example/operations/RUN --timeout 120 --machine
-pg-maker cancel example/operations/RUN --machine
-pg-maker export example/operations/RUN --out exported-result
-```
+## Documentation and development
 
-The detached worker owns the operation. Closing a waiting CLI does not cancel it;
-cancellation is explicit and repeatable. `status` returns success when it can read
-the operation, even if the operation failed; `wait` returns the operation's exit code.
-The [Python API](docs/interfaces/api.md) and optional pg_play CLI/MCP integration
-use the same service and machine contract.
+[Documentation index](docs/README.md): task guides, interface contracts, implementation
+limits and historical validation reports. Pip installs these manuals under
+`<installation-prefix>/share/doc/pg-maker` (`.venv/share/doc/pg-maker` in a venv);
+`init` also creates a short project README.
 
-Source stores, workspaces, checkpoints and Docker caches consume disk space.
-Check `df -h`, workspace sizes and `docker system df` before long runs. Use explicit
-preview/apply cleanup and preserve needed outputs. See [storage and cleanup](docs/development-storage.md).
+[Contributing and checks](CONTRIBUTING.md) · [Architecture](docs/architecture.md) ·
+[Release procedure](docs/releasing.md) · [Changelog](CHANGELOG.md)
 
-## Project documentation
-
-- [Architecture](docs/architecture.md) and [reuse decisions](docs/reuse.md).
-- [Roadmap and implementation limits](docs/roadmap.md).
-- [Interface specifications](docs/interfaces/README.md).
-- [Validation reports](docs/validation/stage56.md), [documentation](docs/validation/stage7.md)
-  and [integration](docs/validation/integration.md).
-- [Contributing and local checks](CONTRIBUTING.md).
-- [Git and PyPI release procedure](docs/releasing.md).
-
-Distributed under the [MIT License](LICENSE). Third-party test fixtures retain their
-original copyright and license notices.
+Distributed under the [MIT License](LICENSE). Upstream fixtures retain their own notices.

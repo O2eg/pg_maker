@@ -3,10 +3,12 @@
 import argparse
 import json
 import os
+import re
 import subprocess
 import tempfile
 import venv
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 
 def main():
@@ -17,7 +19,8 @@ def main():
     environment = {k: v for k, v in os.environ.items() if k not in {"PYTHONPATH", "PYTHONHOME"}}
     with tempfile.TemporaryDirectory(prefix="pg-maker-wheel-") as temporary:
         directory = Path(temporary)
-        venv.EnvBuilder(with_pip=True).create(directory / "venv")
+        # A copied relocatable Python executable may lose its stdlib prefix.
+        venv.EnvBuilder(with_pip=True, symlinks=True).create(directory / "venv")
         binaries = directory / "venv/bin"
 
         def run(argv):
@@ -27,6 +30,8 @@ def main():
 
         run([binaries / "python", "-m", "pip", "install", "--disable-pip-version-check", wheel])
         run([binaries / "python", "-m", "pip", "check"])
+        # Import the runtime TOML reader without dev extras, including on Python 3.10.
+        run([binaries / "python", "-c", "from pg_maker.validation.upstream import vectorscale"])
         print(run([binaries / "pg-maker", "--version"]).strip())
         response = json.loads(run([binaries / "pg-maker", "--machine", "--component-capabilities"]))
         assert response["status"] == "succeeded", response
@@ -44,6 +49,9 @@ root = Path(sys.argv[1])
 config = load_config(root / 'build.yaml').data
 assert config['postgresql']['version'] == '16.15'
 variant = config['variants'][0]
+assert variant['identity']['paths']['runtime_prefix'] == '/opt/postgresql-yc-clone/16'
+assert variant['identity']['paths']['data_directory'] == '/var/lib/postgresql-yc-clone/16/data'
+assert variant['identity']['service'] == 'postgresql-yc-clone-16'
 assert variant['identity']['product_version'] == '16.15'
 assert all(p['deb_version'] == '16.15-1.deb13' for p in variant['identity']['packages'])
 assert {p['role']: p['name'] for p in variant['identity']['packages']} == {
@@ -107,6 +115,10 @@ version = sys.argv[2]
 major = version.split('.')[0]
 assert c['postgresql']['version'] == version
 assert c['postgresql_recipe']['db_test_adapter'] == 'pg' + major
+identity = c['variants'][0]['identity']
+assert identity['paths']['runtime_prefix'] == '/opt/postgresql-yc-clone/' + major
+assert identity['paths']['data_directory'] == '/var/lib/postgresql-yc-clone/' + major + '/data'
+assert identity['service'] == 'postgresql-yc-clone-' + major
 components = {x['metadata']['id']: x['spec'] for x in c['features'][0]['spec']['components']}
 assert 'yc' + major + '-plv8' not in components
 assert ('yc' + major + '-repl-mon' in components) == (major == '18')
@@ -134,6 +146,14 @@ print('OK: installed PG' + major + ' profile, ICU70.1, frozen Cargo inputs, PLV8
         assert (manuals / "docs/interfaces/development.md").is_file()
         assert (manuals / "docs/managed-16-icu70.md").is_file()
         assert (manuals / "docs/managed-17-icu70.md").is_file()
+        assert (manuals / "docs/managed-18-icu70.md").is_file()
+        assert (manuals / "docs/yc-clone-packages.md").is_file()
+        for document in manuals.rglob("*.md"):
+            prose = re.sub(r"```.*?```", "", document.read_text(), flags=re.DOTALL)
+            for target in re.findall(r"!?\[[^\]\n]*\]\(([^\s)]+)", prose):
+                link = urlsplit(target.strip("<>"))
+                if not link.scheme and not link.netloc and link.path:
+                    assert (document.parent / unquote(link.path)).exists(), (document, target)
     print("OK: isolated wheel install, dependencies, CLI, init/validate and installed manuals")
 
 

@@ -3,6 +3,10 @@
 This is the design boundary for stage 10; executable repository publication adapters
 are not implemented. It is separate from [publishing the Python utility](../releasing.md).
 
+The [Nexus walkthrough](../yc-clone-packages.md#upload-to-nexus) uses an external
+HTTP client. It is not an implementation of the planned publisher below and does
+not enforce or promote pg-maker's package qualification.
+
 PublicationPlanner will accept verified ArtifactManifest/VerificationRecord and
 RepositoryConfig, producing exact hashes, identities and destinations in a
 PublicationPlan. Publisher will execute upload/index/verification stages and return

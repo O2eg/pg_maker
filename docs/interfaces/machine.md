@@ -1,6 +1,6 @@
 # Machine interface
 
-pg_maker implements `pg_play/component/v1` without importing pg_play. `--machine`
+pg-maker implements `pg_play/component/v1` without importing pg_play. `--machine`
 reserves stdout for one JSON envelope. Request IDs propagate through responses and
 idempotent startup. Both flags work before or after the command.
 `--component-capabilities` returns capabilities directly, or inside the standard

@@ -1,5 +1,8 @@
 # Development workflows and Python release preparation — 2026-10-18
 
+Historical evidence for the recorded run/version. Defaults, paths and limitations
+may differ today; use the [current documentation index](../README.md) for new builds.
+
 This validation concerns the controller and its development/release interfaces. It
 does not claim a new PostgreSQL matrix qualification or a remote publication.
 
@@ -45,5 +48,5 @@ The tiny Docker fixture image/context were removed after tests. Global Docker pr
 was not used; unrelated containers/images were retained. The two Python distributions
 occupy less than 1 MiB together; free space on / remained about 19 GiB.
 
-Historical PostgreSQL build reports retain their original dates and scope. Database
-suites remain disabled by default. The release checklist is in [releasing](../releasing.md).
+At this report's date, database suites were disabled by default. Current profiles
+enable them; see the [test policy](../interfaces/build.md#default-tests-and-test-full). The release checklist is in [releasing](../releasing.md).

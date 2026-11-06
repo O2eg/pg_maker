@@ -16,5 +16,6 @@ resolve fixes both source commits and documentation asset hashes in the lock.
 These are maintained guides, not automatic imports of arbitrary upstream README files.
 The pg_stat_statements manual already belongs to the selected PostgreSQL source tree.
 
-English is the source language. Russian builds require reviewed translation bundles
-for the new sections under the existing translation policy.
+English is the source language. Russian builds require current translation bundles
+for the new sections. Bundles must be reviewed when `require_reviewed` is enabled;
+the release validation profile enforces that setting.

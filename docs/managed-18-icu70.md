@@ -3,12 +3,13 @@
 `yc-18.6-icu70` builds community PostgreSQL **18.6** for **Debian 13 amd64**,
 with private **ICU 70.1** and the public extension versions observed on
 `rc1a-novptt4hkfpbodb6.mdb.yandexcloud.net` on 2026-11-05. It has independent
-component recipes; the qualified PostgreSQL 16 profile remains unchanged.
+component recipes; its extension recipes are separate from PostgreSQL 16. All YC profiles share the
+current installation-path policy.
 
 ```bash
 pg-maker init yc18 --profile yc-18.6-icu70
 pg-maker validate yc18/build.yaml
-pg-maker env prepare yc18/build.yaml --out yc18/environments.json --operations yc18/operations
+pg-maker env prepare yc18/build.yaml --input-store yc18/inputs --out yc18/environments.json --operations yc18/operations
 pg-maker resolve yc18/build.yaml --environments yc18/environments.json --out yc18/lock.json --input-store yc18/inputs --operations yc18/operations
 pg-maker plan yc18/lock.json --goal package --out yc18/plan.json
 pg-maker build yc18/lock.json --plan yc18/plan.json --operations yc18/operations --detach
@@ -27,6 +28,17 @@ ABI naming convention and intentionally has no PostgreSQL major in its name.
 ICU is installed under the distribution's private prefix and travels with the
 server package; the package does not request the host's ICU 70 package.
 LZ4 and Zstandard are enabled, including support for the source's LZ4 TOAST/WAL.
+
+## Installation paths
+
+Newly initialized profiles use `/opt/postgresql-yc-clone/18/bin`,
+`/var/lib/postgresql-yc-clone/18/data` and
+`postgresql-yc-clone-18.service`. Debug builds append `-debug` to the major.
+The feature ID `yc18-icu70` remains an internal recipe selector. Configure the
+paths in the generated `config/defaults.yaml` and vendor in `config/vendor.yaml`.
+Existing projects and previously built DEBs retain their original settings; they
+require a new resolve/build. Earlier qualification records do not qualify the new
+layout. See the [build, upload and install walkthrough](yc-clone-packages.md).
 
 ## Managed observations and limits
 
@@ -200,6 +212,8 @@ Before a new major build, copy all three previous DEBs, SHA256SUMS and the compl
 qualified delivery archive to a release directory, then verify their checksums.
 Do not clean that directory while preparing or retrying the new build.
 
-This profile's initial status is **selected, pending native qualification**.
-The completed operation's reports, rather than the existence of a recipe, establish
-whether the resulting packages passed qualification.
+Newly initialized projects retain `selected-unverified` catalog entries. Qualification
+belongs to a completed operation and its exact packages, not the profile name. The
+local ARM64 build described in the [package walkthrough](yc-clone-packages.md) explicitly
+skipped database tests and remains unverified. Earlier amd64 artifacts and newer
+installation paths must be assessed against their own locked evidence.

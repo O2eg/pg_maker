@@ -1,9 +1,9 @@
 # Reuse decisions
 
-Sibling projects informed the design. Their mechanisms were adapted to pg_maker's
+Sibling projects informed the design. Their mechanisms were adapted to pg-maker's
 contracts; they are not runtime dependencies.
 
-| Reference | Mechanism | pg_maker adaptation |
+| Reference | Mechanism | pg-maker adaptation |
 | --- | --- | --- |
 | pg_diag progress | Small progress reporter with UTC, level and percentage | stderr, append-only logs, operation/target/step/attempt context |
 | pg_diag artifact IO | Temporary file, fsync, replace and private permissions | Directory fsync; strict JSON rejects duplicate keys and NaN |
@@ -15,7 +15,7 @@ contracts; they are not runtime dependencies.
 | pg_converter API/events | Shared service and structured events | Durable journal failures are not swallowed as subscriber failures |
 | pg_configurator orchestration | Semantic hashes exclude time and paths | OperationInput hashing excludes local operation directories |
 | pg_workload resources | Free disk and available memory checks | cgroup memory limits, CPU affinity and Docker limits |
-| pg_diag release workflows | Pinned actions, Python matrix, wheel smoke and documentation checks | pg_maker resources/CLI, explicit long database suites and PyPI release gate |
+| pg_diag release workflows | Pinned actions, Python matrix, wheel smoke and documentation checks | pg-maker resources/CLI, explicit long database suites and PyPI release gate |
 
 Mutable object directories are never shared between runs. Reuse restores immutable
 snapshots into private directories. The small systemctl test harness is an original,

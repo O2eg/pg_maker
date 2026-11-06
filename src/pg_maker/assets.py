@@ -3,6 +3,9 @@
 from importlib.resources import files
 from pathlib import Path
 
+import yaml
+
+from pg_maker.config import merge
 from pg_maker.errors import OwnershipError, ValidationError
 from pg_maker.storage import ensure_directory, write_text
 
@@ -29,6 +32,15 @@ def initialize_project(
     for item in bundled.joinpath("config").iterdir():
         if item.name.endswith(".yaml"):
             assets[f"config/{item.name}"] = item.read_text()
+    if profile is not None:
+        # Managed profiles share a major-based layout; ordinary feature builds
+        # retain separate prefixes and services so their identities do not collide.
+        for name in ("vendor", "defaults"):
+            key = f"config/{name}.yaml"
+            override = bundled.joinpath("config", "yc-clone", name + ".yaml").read_text()
+            assets[key] = yaml.safe_dump(
+                merge(yaml.safe_load(assets[key]), yaml.safe_load(override)), sort_keys=False
+            )
     for item in bundled.joinpath("config", "features").iterdir():
         if item.name.endswith(".yaml"):
             assets[f"config/features/{item.name}"] = item.read_text()
@@ -50,8 +62,6 @@ def initialize_project(
         if item.name.endswith(".json"):
             assets[f"schemas/{item.name}"] = item.read_text()
     if any(value is not None for value in (with_doc, doc_languages, features, build_mode)):
-        import yaml
-
         manifest = yaml.safe_load(assets["build.yaml"])
         docs = yaml.safe_load(assets["config/documentation.yaml"])
         defaults = yaml.safe_load(assets["config/defaults.yaml"])

@@ -76,6 +76,11 @@ def prepared_build(tmp_path, configure, *, source_files=None, extra_feature=Fals
     feature_path.write_text(yaml.safe_dump(feature, sort_keys=False))
     source = tmp_path / "source"
     source.mkdir()
+    (source / "src").mkdir()
+    shutil.copyfile(
+        Path(__file__).parents[1] / "fixtures/layout/Makefile.global.in",
+        source / "src/Makefile.global.in",
+    )
     (source / "configure.ac").write_text("AC_INIT([PostgreSQL], [18.1], [test])\n")
     (source / "configure").write_text(
         configure

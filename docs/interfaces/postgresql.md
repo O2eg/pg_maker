@@ -18,7 +18,7 @@ previous major's behavior.
 The catalog records the C standard, tool minimums, generator requirements,
 unavailable options, PG_TEST_EXTRA, database test evidence adapter, documentation
 format/path/entrypoint, generated prerequisites and make targets. Upstream Meson
-availability is separate from implemented pg_maker execution backends.
+availability is separate from implemented pg-maker execution backends.
 
 `verify_tools(minimums, observed)` checks captured container tool output and reports
 `precondition_failed` with the tool and minimum. Environment preparation invokes it
@@ -36,7 +36,7 @@ single minimum GCC release. The environment records the actual compiler version.
 | 19 | C11 | 3.81 | 5.14 | 2.3 | unspecified | 14 | 0.57.2 |
 
 These are catalog values, not a claim that every minor works with every newer
-compiler. Flex remains required when its numeric minimum is unspecified. pg_maker
+compiler. Flex remains required when its numeric minimum is unspecified. pg-maker
 requires make >=4.0 for `--output-sync`. Autoconf 2.69 is listed for configure
 regeneration; automatic autoreconf is not performed. Normal Git/release sources
 already contain configure. PostgreSQL 14 rejects `--with-zstd`. Meson is recorded
@@ -46,7 +46,7 @@ All supported majors 14–19 use **DocBook XML 4.5**, despite `.sgml` filenames;
 OpenSP/SGML adapter is unnecessary. Majors 14/15 pass entities directly to XSLT;
 from 16, upstream first generates `postgres-full.xml`. The selected source's native
 targets are used. HTML/man use xmllint/xsltproc and a local catalog; PDF uses FOP.
-Sphinx provides the optional pg_maker presentation layer.
+Sphinx provides the optional pg-maker presentation layer.
 
 Source references are recorded in YAML: installation/docguide sources, documentation
 Makefile, configure.ac, configure and config/programs.m4. Official background:
@@ -56,10 +56,12 @@ Makefile, configure.ac, configure and config/programs.m4. Official background:
 [14 DocBook](https://www.postgresql.org/docs/14/docguide-toolsets.html) and
 [19 DocBook](https://www.postgresql.org/docs/19/docguide-toolsets.html).
 
-Stable product identity keeps `M.m.release`. Prerelease DEBs sort as
+The default product identity uses `M.m.release`; YC profiles select the `postgresql`
+version format (`M.m`, with release zero). Prerelease DEBs in the default format sort as
 `19.0.0~beta4-1.deb13` < `19.0.0~rc1-1.deb13` < `19.0.0-1.deb13`.
 Prefixes/package roles use major 19, not 19beta4. OCI tags replace `~` with `-`.
-Naming policy is v2; identity schemas accept v1/v2. Old locks lacking the catalog or
+Naming policy is v4; identity schemas accept v1–v4. See
+[version and package naming](configuration.md#product-version-format). Old locks lacking the catalog or
 using a previous implementation identity require a new resolve.
 
 The common socket patch is generated at resolve from one exact full-line anchor

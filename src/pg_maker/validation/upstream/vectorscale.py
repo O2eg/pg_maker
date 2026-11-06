@@ -10,7 +10,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:
+    import tomli as tomllib
 
 
 def crate_key(name, version):

@@ -1,5 +1,8 @@
 # Default-component validation — 2026-10-18
 
+Historical evidence for the recorded run/version. Defaults, paths and limitations
+may differ today; use the [current documentation index](../README.md) for new builds.
+
 New projects select upstream pg_stat_statements, pg_stat_kcache 2.3.2 and
 pg_wait_sampling 1.1.11 (SQL version 1.1). Pins/selection rules are in the
 [component contract](../interfaces/components.md). This is a historical validation

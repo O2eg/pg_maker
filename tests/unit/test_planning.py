@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 import tarfile
+from pathlib import Path
 
 import pytest
 import yaml
@@ -49,6 +50,10 @@ def project(tmp_path):
     source.mkdir()
     (source / "configure.ac").write_text("AC_INIT([PostgreSQL], [18.1], [bugs@example.invalid])\n")
     (source / "src/include").mkdir(parents=True)
+    shutil.copyfile(
+        Path(__file__).parents[1] / "fixtures/layout/Makefile.global.in",
+        source / "src/Makefile.global.in",
+    )
     (source / "src/include/pg_config_manual.h").write_text('#define DEFAULT_PGSOCKET_DIR  "/tmp"\n')
     (source / "tool").write_text("#!/bin/sh\nexit 0\n")
     (source / "tool").chmod(0o755)

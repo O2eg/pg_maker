@@ -1,5 +1,8 @@
 # Stages 5–6 validation — 2026-10-17
 
+Historical evidence for the recorded run/version. Defaults, paths and limitations
+may differ today; use the [current documentation index](../README.md) for new builds.
+
 Environment: Linux, Python 3.12, local Docker, PostgreSQL 18.1 / Debian 13 / x86_64.
 Long database tests were disabled by user instruction. Packages remained unverified,
 db_tests=skipped and publication_eligible=false.

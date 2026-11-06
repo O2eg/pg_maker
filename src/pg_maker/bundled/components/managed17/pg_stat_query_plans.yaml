@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc17-pg-stat-query-plans
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
@@ -11,8 +11,8 @@ spec:
     sha256: sha256:226c66991adc644d9c4a89ffd576928197918962fd9ddcc1e50c718e955715d0
     strip_components: 1
   source_patches:
-  - ../../patches/pg-stat-query-plans-pg18-privileges.patch
-  - ../../patches/pg-stat-query-plans-uint64-format.patch
+  - ../../patches/pg-stat-query-plans-pg17-runtime.patch
+  - ../../patches/pg-stat-query-plans-pg17-tests.patch
   compatible_postgresql: '>=17.11,<18'
   requires: []
   conflicts: []

@@ -5,13 +5,24 @@ with source-pinned ICU 70.1, installs the required ICU runtime libraries inside 
 product prefix and selects public-source extensions from the managed catalog.
 It does not reproduce Yandex patches or claim vendor binary compatibility.
 
+## Installation paths
+
+Newly initialized profiles use `/opt/postgresql-yc-clone/16/bin`,
+`/var/lib/postgresql-yc-clone/16/data` and
+`postgresql-yc-clone-16.service`. Debug builds append `-debug` to the major.
+The feature ID `yc16-icu70` remains an internal recipe selector. Configure the
+paths in the generated `config/defaults.yaml` and vendor in `config/vendor.yaml`.
+Existing projects and previously built DEBs retain their original settings; they
+require a new resolve/build. Earlier qualification records do not qualify the new
+layout. See the [build, upload and install walkthrough](yc-clone-packages.md).
+
 ## Create and build
 
 ```bash
 pg-maker init yc16 --profile yc-16.15-icu70
 pg-maker validate yc16/build.yaml
 pg-maker config show yc16/build.yaml --resolved
-pg-maker env prepare yc16/build.yaml --out yc16/environments.json --operations yc16/operations
+pg-maker env prepare yc16/build.yaml --input-store yc16/inputs --out yc16/environments.json --operations yc16/operations
 pg-maker resolve yc16/build.yaml --environments yc16/environments.json --out yc16/lock.json --input-store yc16/inputs --operations yc16/operations
 pg-maker plan yc16/lock.json --goal package --out yc16/plan.json
 pg-maker build yc16/lock.json --plan yc16/plan.json --operations yc16/operations --detach
@@ -22,7 +33,7 @@ project files remain editable. The standard `init` still creates the 18.1 profil
 Reserve substantially more than the configured 20 GiB minimum for the complete
 extension set, especially PostGIS/GDAL, inputs and checkpoints. Enabling the optional
 PLV8/V8 recipe adds substantial build time and disk usage.
-The current profile passed native amd64 source, extension and installed-package
+The earlier package set passed native amd64 source, extension and installed-package
 qualification on 2026-11-05, including the full test profile. See the
 [qualification record](managed-16-icu70-qualification-20261105.md) for exact package
 hashes, test coverage, warning review and limitations. PLV8 is disabled in this
@@ -129,7 +140,7 @@ It does not infer unspecified dependency versions or enable network access in bu
 The source inventory is the 2026-11-02 non-contrib catalog snapshot from
 `rc1d-kp80p78vpf7pi1pd.mdb.yandexcloud.net`, database `ad_analytics`.
 Only pg_repack was installed in that database; the list describes availability.
-The editable [catalog](../src/pg_maker/bundled/catalogs/yc-16.15-extensions.yaml)
+The editable [catalog](https://github.com/O2eg/pg_maker/blob/main/src/pg_maker/bundled/catalogs/yc-16.15-extensions.yaml)
 retains all 38 names, default/installed/catalog versions, source pins, selection and
 exclusion reasons. The profile selects 33 SQL extensions through 25 source recipes,
 plus contrib pg_stat_statements, contrib fuzzystrmatch (required by the Tiger geocoder)
@@ -157,7 +168,7 @@ and prepare/resolve a new lock and plan. Existing locks still select their origi
 components and must not be reused to request a build without PLV8. Already initialized
 projects keep their copied configuration and do not automatically inherit profile edits.
 The retained PLV8 recipe uses the bundled
-[source patch](../src/pg_maker/bundled/patches/plv8-3.2.3-gcc14-and-resume.patch).
+[source patch](https://github.com/O2eg/pg_maker/blob/main/src/pg_maker/bundled/patches/plv8-3.2.3-gcc14-and-resume.patch).
 It adds the explicit `<algorithm>` include required by GCC 14 and always completes
 the nested incremental V8 build, using the parent make jobserver. SQL version 3.2.3
 is retained. The resolver records patch hashes, the original source tree and the
@@ -171,7 +182,7 @@ this checkout applies the patch through the recipe. For long QEMU builds, set
 `spec.execution.limits.stage_timeout_seconds: 21600` in `config/defaults.yaml`.
 
 The pgRouting 3.5.0 recipe also applies
-[a GCC 14 compatibility patch](../src/pg_maker/bundled/patches/pgrouting-3.5.0-gcc14.patch).
+[a GCC 14 compatibility patch](https://github.com/O2eg/pg_maker/blob/main/src/pg_maker/bundled/patches/pgrouting-3.5.0-gcc14.patch).
 `SPI_getvalue` already returns `char *`; the patch removes the incorrect
 `DatumGetCString` wrapper rejected by GCC 14. The SQL extension version remains
 3.5.0, and the patch and resulting source tree are recorded in the lock.

@@ -50,6 +50,8 @@ install-world-bin → check-world → components/tests → acceptance → report
 runs core check and component/acceptance checks without check-world, recording
 source_test_scope=baseline-core. Acceptance without baseline expectations is candidate-only.
 
+## Diagnostic policy
+
 Configure checks requested settings against Makefile.global/pg_config.h before compile,
 rejects unrecognized options and records its result. Every build command has a
 structured diagnostic report under diagnostics/. Compiler/runtime errors, sanitizer

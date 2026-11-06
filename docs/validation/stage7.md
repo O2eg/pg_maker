@@ -1,5 +1,8 @@
 # Stage 7 validation — 2026-10-17
 
+Historical evidence for the recorded run/version. Defaults, paths and limitations
+may differ today; use the [current documentation index](../README.md) for new builds.
+
 Local environment: Linux x86_64, Python 3.12, Docker and Debian 13 build/test images.
 PostgreSQL and installed-database suites were disabled. Documentation make check
 validates DocBook and does not run database regression/check-world.

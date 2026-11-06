@@ -1,4 +1,7 @@
-# pg_maker / pg_play integration validation — 2026-10-17
+# pg-maker / pg_play integration validation — 2026-10-17
+
+Historical evidence for the recorded run/version. Defaults, paths and limitations
+may differ today; use the [current documentation index](../README.md) for new builds.
 
 Subsequent packaging fixes are recorded in [review fixes](review-fixes.md). The local
 environment was Linux x86_64, Python 3.12, Docker, Debian 13 and PostgreSQL 18.1.

@@ -2,6 +2,8 @@
 
 These contracts describe implemented public behavior:
 
+For task-oriented instructions, start with the [documentation index](../README.md).
+
 - [API and CLI](api.md)
 - [Models and documents](documents.md)
 - [Runner and subprocesses](execution.md)

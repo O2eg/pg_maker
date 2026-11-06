@@ -32,8 +32,10 @@ removes temporary source.before-N copies. Failure/cancellation preserves origina
 inputs and never reapplies a partially modified group.
 
 New actions require explicit registry entries, versioned schemas and positive/negative
-fixtures. The only built-in source patch unifies the Unix socket directory; branding
-is explicit data.
+fixtures. The built-in common ChangeSet unifies the Unix socket directory; branding
+is explicit data. Independently, source materialization normalizes PostgreSQL's private
+installation subdirectories before applying ChangeSets, recording `install-layout.patch`
+and its source hash. See the [installation layout contract](packaging.md#universal-package-description).
 
 ## Agent workspaces
 

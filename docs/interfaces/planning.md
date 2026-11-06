@@ -1,6 +1,6 @@
 # BuildLock and BuildPlan
 
-Planning and execution support source/build/package/verified and documentation goals.
+Planning and execution support source/build/package/verified/test-full and documentation goals.
 
 `planning.resolve.resolve_inputs(PreparationRequest, context) -> dict` runs in the
 worker after OperationInput is durable. It verifies EnvironmentManifest and the
@@ -29,7 +29,8 @@ and source snapshot for each scope. Input hashes are verified normally. Developm
 locks cannot be used for full release qualification.
 
 Goals include source, build and package; verified forces package tests even if disabled
-in the lock. The separate test-full goal adds expensive core suites to source tests. Documentation goals are `doc-source`,
+in the lock. The separate test-full goal adds expensive core suites to source tests.
+Documentation goals are `doc-source`,
 `translations`, `translated-docs` and `docs`; they require enabled documentation,
 configure sources and generate tables without compiling/testing the database.
 With documentation enabled, ordinary builds include its outputs and InstallTree.
@@ -42,6 +43,10 @@ when no override is supplied; the default is true. Source always has false.
 Verified/test-full require true and reject an explicit false. The default CLI plan
 goal is build. Without database tests, inventory/test/acceptance steps and baseline
 are absent; component build/install remains enabled.
+
+When documentation is enabled, skipped-test package plans still include
+`test_documentation_packages` with `run_database=false`. This checks installed
+documentation without starting PostgreSQL and does not grant package qualification.
 
 StepSpec defines id/kind/adapter, dependencies, feature/target/branch, environment
 and image IDs, argv/env/user/cwd, parameters, inputs/outputs/checks, timeout,

@@ -43,6 +43,14 @@ server packages do not depend on a complete compiler toolchain.
 
 ## Universal package description
 
+Source materialization normalizes PostgreSQL's `src/Makefile.global.in` directory
+tests to inspect the final directory name. This preserves `lib/postgresql`,
+`share/postgresql` and `include/postgresql` even when an ancestor prefix contains
+`postgres`, as in `/opt/postgresql-yc-clone/18`. The branch records the policy and
+resulting source hash in `report.json`, plus `install-layout.patch` when changed.
+The controller implementation hash participates in lock/cache identity; changed
+layout code requires a fresh resolve. Unsupported source rules fail explicitly.
+
 Templates receive vendor, feature and major from build parameters, without fixed
 product/version strings. PackageSpec contains identity (DEB/RPM versions/releases and
 native architecture), metadata, dependencies, paths, service, tree hash and exact

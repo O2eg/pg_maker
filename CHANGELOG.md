@@ -1,10 +1,27 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 — 2026-11-06
 
+- Fix Python 3.10 imports in the vectorscale helper; install the conditional
+  `tomli` runtime dependency without requiring dev extras. Smoke-test wheel
+  installation on Python 3.10 and 3.12.
+- Give all YC profiles `/opt/postgresql-yc-clone/<major>` binaries,
+  `/var/lib/postgresql-yc-clone/<major>/data` and a matching service name.
+  Preserve separate feature paths for the generic profile. Normalize PostgreSQL
+  private subdirectories when a vendor prefix contains `postgres` or `pgsql`.
+- Update pip-shipped manuals and generated project instructions, including explicit
+  skipped-test builds, package locations, Nexus/APT steps and ARM64 limitations.
+- Complete the main README build/export workflow and documentation index; align
+  test adapters, naming policy, API references and historical-report scope with
+  current behavior.
 - Add the Debian 13 amd64 `yc-17.11-icu70` profile with private ICU 70.1,
   the audited PG17 extension catalog and explicit blocked/disabled entries.
-  Keep PLV8 commented out; native database/package qualification is pending.
+  Keep PLV8 commented out. Native core/extension and fresh-container package
+  qualification completed for the locked /opt/test/yc17-icu70/17 layout,
+  with explicit RUM and upstream-test limitations.
+- Adapt pg_stat_query_plans utility tracking and extended-protocol tests for PG17;
+  retain native MERGE RETURNING coverage. Use exact-offset pglogical sync patches
+  and synchronize replicated DDL in its add_table fixture.
 - Select the actual PostgreSQL 17/18 major in the offline vectorscale helper
   and report upstream-disabled PG17 upgrade tests without counting them as passed.
 
@@ -80,7 +97,7 @@ entries retain their unverified status.
 
 ## 0.1.0 — 2026-10-18
 
-Initial alpha of the PostgreSQL distribution controller:
+Initial release of the PostgreSQL distribution controller:
 
 - Strict YAML configuration, pinned sources/environments, immutable locks and plans.
 - Isolated Docker builds, durable operations, events, cancellation, recovery and caches.

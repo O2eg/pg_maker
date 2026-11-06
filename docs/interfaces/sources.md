@@ -43,6 +43,11 @@ when the extracted header is newer. Normalization happens before ChangeSets;
 changed generator inputs receive new mtimes and rebuild normally. CAS and the
 original checkout remain unchanged.
 
+Build materialization also normalizes `src/Makefile.global.in` directory predicates
+before ChangeSets so a vendor prefix containing `postgres` does not suppress private
+`lib/postgresql` and `share/postgresql` subdirectories. The source hash and generated
+patch are recorded in the branch output; immutable InputStore trees remain unchanged.
+
 [Development sessions](development.md) snapshot Git-tracked and nonignored files
 without `.git`, then build from immutable copies. Their mutable checkouts never
 replace the exact inputs of an existing operation.

@@ -1,5 +1,8 @@
 # Documentation theme validation — 2026-10-17
 
+Historical evidence for the recorded run/version. Defaults, paths and limitations
+may differ today; use the [current documentation index](../README.md) for new builds.
+
 HTML defaults to sphinx_book_theme. Package templates/CSS/JS/adapter enter implementation
 identity; environment manifests pin Sphinx/theme packages. Explicit html_backend=docbook
 keeps the original layout. This record describes that day's executed validation.

@@ -10,6 +10,12 @@ to stderr and an append-only 0600 file by default, including UTC, level, operati
 target, step, attempt and progress. Progress logs do not replace durable events.
 Losing CLI stdout does not cancel a detached worker.
 
+Build branches also record compiler/test diagnostics under their output directories.
+`validation.diagnostics` defines the locked policy; `pg-maker logs verify --stdout FILE
+--lock LOCK` rechecks a saved log without building or starting a container. It returns
+diagnostic evidence, not a replacement for a complete build/test qualification.
+See [diagnostic policy](build.md#diagnostic-policy) for scopes, exceptions and warning handling.
+
 Commands have separate stdout/stderr files per attempt. Evidence is not rotated or
 deleted automatically. Console messages and exception details redact common credential
 fields and URL passwords.

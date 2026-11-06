@@ -3,6 +3,8 @@
 Start with prepared environments, a BuildLock and retained InputStore. Git commands
 operate inside repositories owned by the session. `--repository` copies a local
 PostgreSQL repository with history; the original checkout stays with its owner.
+The component examples below use the generic `my-feature` profile; select IDs from
+your own feature YAML or `dev status` when using a YC profile.
 
 ```bash
 pg-maker dev open work --lock example/lock.json

@@ -62,9 +62,9 @@ releases them. InputStore garbage collection is not automatic.
 ## Docker storage
 
 `docker image prune -a`, `docker builder prune` and `docker volume prune` affect the
-shared Docker daemon. They are manual administrative operations, never pg_maker
+shared Docker daemon. They are manual administrative operations, never pg-maker
 finalizers. Prefer deleting specific unused images after checking saved locks.
-pg_maker removes only containers/resources owned by its operations, including their
+pg-maker removes only containers/resources owned by its operations, including their
 anonymous volumes; named volumes are retained.
 
 Historical observation: on 2026-10-17, removing completed stage-4 workspaces reduced

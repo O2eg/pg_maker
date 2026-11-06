@@ -1,5 +1,8 @@
 # Stage 4 validation — 2026-10-17
 
+Historical evidence for the recorded run/version. Defaults, paths and limitations
+may differ today; use the [current documentation index](../README.md) for new builds.
+
 Initial matrix: PostgreSQL 18.1 (REL_18_1), Debian 13, x86_64, Autotools, GCC 14,
 LLVM/OpenSSL/ICU and English/Russian NLS. Containers had no network, UID:GID 1000:1000,
 4 CPUs, 8 GiB RAM, 1 GiB shared memory and Docker init. The local fixture used a

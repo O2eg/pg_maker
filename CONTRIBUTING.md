@@ -60,5 +60,8 @@ Use a distribution directory containing exactly one version. Release checks comp
 all Markdown and runtime package files byte-for-byte between source, wheel and sdist,
 and ensure test fixtures/tooling are present in sdist. Wheel smoke creates and removes
 a temporary isolated environment, installs dependencies, checks entry points and
-initializes/validates a project outside checkout. It does not contact Docker.
+initializes/validates the generic and all three YC profiles outside checkout, imports
+the runtime TOML helper without dev extras, and verifies installed-manual links.
+CI runs unit/contracts and isolated wheel installation on Python 3.10 and 3.12.
+These checks do not contact Docker.
 Publication is described in [releasing](docs/releasing.md).
