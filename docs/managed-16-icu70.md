@@ -1,9 +1,24 @@
 # PostgreSQL 16.15 with private ICU 70.1
 
+Physical binary compatibility with the managed source is **not verified**.
+The [clone compatibility contract](yc-clone-compatibility.md) applies to this profile
+and to previously built packages; build/package qualification is a separate result.
+
+All maintenance profiles include the complete standard PostgreSQL contrib, including
+optional UUID, SELinux and Perl/Python transform modules. Contrib is inventoried
+independently of the managed extension catalog and delivered in the server DEB;
+`auto_explain.so` does not need a CREATE EXTENSION command. PLV8 stays disabled.
+
+
 This profile targets Debian 13 / x86_64 / DEB. It builds upstream PostgreSQL 16.15
 with source-pinned ICU 70.1, installs the required ICU runtime libraries inside the
 product prefix and selects public-source extensions from the managed catalog.
 It does not reproduce Yandex patches or claim vendor binary compatibility.
+
+`yc-16.14-icu70` selects PostgreSQL 16.14 with its official archive SHA256 and
+otherwise uses the same settings and component recipes as `yc-16.15-icu70`.
+The extension catalog remains the audit of the 16.15 source system. Examples and
+historical qualification records below refer to 16.15.
 
 ## Installation paths
 
@@ -138,7 +153,7 @@ It does not infer unspecified dependency versions or enable network access in bu
 ## Managed extension coverage
 
 The source inventory is the 2026-11-02 non-contrib catalog snapshot from
-`rc1d-kp80p78vpf7pi1pd.mdb.yandexcloud.net`, database `ad_analytics`.
+a managed PostgreSQL 16 reference database.
 Only pg_repack was installed in that database; the list describes availability.
 The editable [catalog](https://github.com/O2eg/pg_maker/blob/main/src/pg_maker/bundled/catalogs/yc-16.15-extensions.yaml)
 retains all 38 names, default/installed/catalog versions, source pins, selection and
@@ -437,8 +452,7 @@ Other per-extension source URLs and immutable refs are in the catalog.
 
 ## Native Debian 13 amd64 package acceptance — 2026-11-03
 
-Build operation `op-49302543516b4ad6ae84819fadc21446` completed all 42 steps
-on the native amd64 builder `10.248.45.7`, using 8 build jobs and a 30 GiB
+The native amd64 build completed all 42 steps using 8 build jobs and a 30 GiB
 container memory limit. The builder host runs Debian 12; build and installation
 test containers run Debian 13. Packages are version `16.15-1.deb13`.
 
@@ -461,6 +475,6 @@ with preserved PGDATA. The tests use an emulated systemctl in containers. Native
 systemd, full upstream regression suites and physical replication from managed
 PGDATA were not tested by this acceptance run.
 
-The complete exported build is in `/home/debian/pg_maker/yc16/delivery` on the
+The complete exported build is in `yc16/delivery` on the
 builder. Installed-package evidence is in `yc16/package-acceptance`; local packages,
 checksums and the acceptance report are in `work/native-build-20261103`.

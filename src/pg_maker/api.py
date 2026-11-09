@@ -573,7 +573,7 @@ class MakerService:
         )
         if (
             goal in {"verified", "package"}
-            and expected["spec"]["run_db_tests"]
+            and expected["spec"]["run_package_tests"]
             and any(
                 not image.get("runtime_repository")
                 for image in locked["spec"]["environments"]["spec"]["images"]

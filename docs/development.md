@@ -39,6 +39,14 @@ Build iterations support ordinary resume; debug commands are repeated as new run
 A corrected source tree requires a new `dev build`. Resume retries the original
 operation with its original inputs.
 
+Each next build takes ownership of the stopped prior workspace by rename. Core and
+unchanged extensions keep their objects; edited sources update only the affected
+component and its dependents. Use `execution.workspace_retention: keep` in a regular
+package project when successful build scratch is needed for later iterations.
+Otherwise successful packaging removes scratch, while failures retain it.
+Ordinary builds can opt in with `build NEW_LOCK --reuse-from operations/OLD_RUN`.
+Per-component staging prevents partial install files from entering new packages.
+
 ## Patch series
 
 ```bash

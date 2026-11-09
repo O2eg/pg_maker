@@ -10,12 +10,11 @@ spec:
     location: https://codeload.github.com/pgpartman/pg_partman/tar.gz/a12b23ee6615d179dfaa38cc6fed8ed44cd61ba2
     sha256: sha256:9c8251492110d8dc94555fd3384e376f86e3b42bde33a17a2efa867b54cc8c1e
     strip_components: 1
-  compatible_postgresql: '>=18.6,<19'
+  compatible_postgresql: '>=18.4,<19'
   requires: []
   conflicts: []
   build_dependencies:
   - libtap-parser-sourcehandler-pgtap-perl
-  - python3-psycopg2
   runtime_dependencies: []
   make_targets:
   - all
@@ -65,3 +64,5 @@ spec:
   source_patches:
   - ../../patches/pg-partman-5.4-30sec-tests.patch
   - ../../patches/pg-partman-5.4-calendar-tests.patch
+  test_dependencies:
+  - python3-psycopg2

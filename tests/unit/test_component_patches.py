@@ -115,3 +115,35 @@ def test_failed_component_patch_identifies_its_input(project):
     assert state["status"] == "failed"
     assert state["error"]["details"]["patch_input"] == "components/patched/source-patches/0"
     assert state["error"]["details"]["patch_sha256"] == file_hash(patch)
+
+
+@pytest.mark.parametrize("requirement,applies", [(">=18,<18.6", True), (">=18.6,<19", False)])
+def test_version_conditional_patch_is_selected_and_frozen_offline(project, requirement, applies):
+    recipe, patch = configure_patch(project)
+    component = load_yaml(recipe)
+    component["spec"]["source_patches"] = [
+        {"path": "../patches/component.patch", "compatible_postgresql": requirement}
+    ]
+    write_yaml(recipe, component)
+    if not applies:
+        patch.unlink()  # An unselected patch is not a required input.
+    state, lock = resolved(project)
+    assert state["status"] == "succeeded", state
+    spec = lock["spec"]["config"]["features"][0]["spec"]["components"][0]["spec"]
+    tree = InputStore(project / "inputs").tree(spec["source"]["source_hash"])
+    assert (tree / "file.txt").read_text() == ("fixed\n" if applies else "original\n")
+    assert len(spec["source_patches"]) == int(applies)
+    state, offline = resolved(project, offline=True)
+    assert state["status"] == "succeeded", state
+    assert offline["spec"]["config"] == lock["spec"]["config"]
+
+
+def test_conditional_patch_rejects_invalid_compatibility(project):
+    recipe, _ = configure_patch(project)
+    component = load_yaml(recipe)
+    component["spec"]["source_patches"] = [
+        {"path": "../patches/component.patch", "compatible_postgresql": "18 or later"}
+    ]
+    write_yaml(recipe, component)
+    with pytest.raises(ValidationError, match="source patch PostgreSQL compatibility"):
+        load_config(project / "build.yaml")

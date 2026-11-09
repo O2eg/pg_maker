@@ -15,7 +15,7 @@ spec:
   source_patches:
   - ../../patches/icu70-python313-tests.patch
   - ../../patches/icu70-collation-builder-init.patch
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires: []
   conflicts: []
   build_dependencies: []

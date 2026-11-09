@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/munakoiso/lwaldump/tar.gz/91d7a88e35fc75b5e04b68cc34d2b9a56ca7b34e
     sha256: sha256:62d7b7471a3f02811316f32e8f6eb02dc37933e2d20409d8755163b0ea347a35
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires: []
   conflicts: []
   build_dependencies: []

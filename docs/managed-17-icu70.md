@@ -1,10 +1,25 @@
 # PostgreSQL 17 managed-compatibility profile
 
+Physical binary compatibility with the managed source is **not verified**.
+The [clone compatibility contract](yc-clone-compatibility.md) applies to this profile
+and to previously built packages; build/package qualification is a separate result.
+
+All maintenance profiles include the complete standard PostgreSQL contrib, including
+optional UUID, SELinux and Perl/Python transform modules. Contrib is inventoried
+independently of the managed extension catalog and delivered in the server DEB;
+`auto_explain.so` does not need a CREATE EXTENSION command. PLV8 stays disabled.
+
+
 `yc-17.11-icu70` targets **Debian 13 amd64**, community **PostgreSQL 17.11**,
 private **ICU 70.1**, and the available SQL extension versions audited on
-`rc1a-j8rnpvd41jpbqmrb.mdb.yandexcloud.net` (`10.237.32.28`) on 2026-11-06.
+a managed PostgreSQL 17 reference database on 2026-11-06.
 A 2026-11-06 snapshot of this profile is **natively built and package-verified**.
 Its component recipes are independent of the qualified PG16 and PG18 profiles.
+
+`yc-17.10-icu70` selects PostgreSQL 17.10 with its official archive SHA256 and
+otherwise uses the same settings and component recipes as `yc-17.11-icu70`.
+The extension catalog remains the audit of the 17.11 source system. Examples and
+historical qualification records below refer to 17.11.
 
 ```bash
 pg-maker init yc17 --profile yc-17.11-icu70
@@ -84,6 +99,14 @@ replicated CREATE before using the subscriber relation, with a bounded timeout;
 the subsequent concurrent-update/resync checks remain intact. PG18's smlar
 accessor compatibility patch is not needed on PG17.
 
+PostgreSQL 17.10 has no `output_plugin_libraries` setting. Its pglogical fixtures
+remove that setting, and the TimescaleDB output-plugin and COPY-input test
+adjustments apply only from 17.11. Patch selection is locked by PostgreSQL version.
+Pglogical also copies the resynchronization relation name before closing the
+relation: a lock wait can process relcache invalidations and invalidate the borrowed
+name. The deterministic `t/042_resync_relcache.pl` regression is included on both
+maintenance versions, alongside the existing concurrent resynchronization tests.
+
 `pg_stat_query_plans` has a PG17-specific utility-query jumbling and nesting fix,
 plus the shared permissions and portable uint64 formatting corrections. Its
 extended-protocol tests use a test-only libpq client because PG17 psql lacks
@@ -160,8 +183,8 @@ isolated wheel installation with all three managed profiles available.
 - Compiler and package diagnostics were retained and reviewed. Production Linux
   tests disabled for Windows or injection-point builds remain explicitly listed.
 
-Release artifacts and the full evidence archive are preserved on `10.248.45.7`:
-`/home/debian/releases/yc-clone/17.11-1.deb13-amd64`. The archive includes the lock,
+Release artifacts and the full evidence archive are preserved in the native builder's
+`17.11-1.deb13-amd64` release directory. The archive includes the lock,
 plan, logs, manifests, warning review and `QUALIFICATION.md`. Service lifecycle
 tests use real PostgreSQL processes with a test service-manager shim; they do
 not test systemd as PID 1 or an upgrade from earlier DEBs. A combined preload of

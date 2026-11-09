@@ -100,6 +100,9 @@ def test_pg17_supports_tested_builds_and_packages(project, openssl):
     select_version(project, "17.5")
     manifest = load_yaml(project / "build.yaml")
     manifest["spec"]["build"] = {"options": {"openssl": openssl}}
+    if not openssl:
+        # This custom minimal-build case deliberately omits OpenSSL contrib modules.
+        manifest["spec"]["packaging"] = {"standard_contrib": False}
     write_yaml(project / "build.yaml", manifest)
     state, lock = resolved(project)
     assert state["status"] == "succeeded", state

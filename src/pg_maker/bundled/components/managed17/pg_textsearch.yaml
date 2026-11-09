@@ -18,7 +18,7 @@ spec:
   - ../../patches/pg-textsearch-1.3-segment-tests.patch
   - ../../patches/pg-textsearch-1.3-concurrent-score.patch
   - ../../patches/pg-textsearch-1.3-stress-tests.patch
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires:
   - yc17-timescaledb
   conflicts: []

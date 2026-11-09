@@ -1,5 +1,14 @@
 # Default components
 
+External components can declare ordered `source_patches`. Each entry is either a
+relative patch filename or a mapping with `path` and `compatible_postgresql`
+(a Python packaging version specifier, for example `'>=18.6,<19'`). Configuration
+loading selects matching patches for the requested PostgreSQL version; only those
+files become hashed inputs in BuildLock and participate in source resolution.
+Unmatched entries require no patch file. Invalid version specifiers fail validation.
+Use this for maintenance-specific test configuration while retaining the same
+extension source version and mandatory test coverage.
+
 Init creates editable `components/*.yaml` and `documentation/*` alongside the
 `my-feature` configuration. The feature explicitly lists its components:
 
@@ -20,6 +29,23 @@ dependency. pg_wait_sampling can be selected independently. The engine does not 
 components outside the feature list; `components: []` omits all three. pg_play runtime
 profiles may select others explicitly. Resolve downloads and freezes external sources;
 builds use locked inputs without networking.
+
+Optional `test_dependencies` and `documentation_dependencies` supplement
+`build_dependencies` only when their stages are enabled. Optional
+`extra_source_roles: {clickhouse: test}` classifies named extra sources as `build`
+(default), `test` or `documentation`; disabled-purpose sources are excluded before
+downloads and locking. Dependencies used to generate installed SQL or required by
+configure remain build dependencies even when documentation/tests are disabled.
+
+Installers must honor `DESTDIR`: Make receives an explicit assignment, CMake and
+custom `build_commands` receive the environment variable. A custom installer must
+place its payload at `$DESTDIR` followed by the absolute runtime prefix. Empty
+staging fails instead of silently accepting an installer that ignored DESTDIR.
+Staging mirrors prefix directories only, for PGXS hooks that expect existing header
+directories. Files are published only after the install command succeeds. A durable
+intent supports replay after interruption, ownership records prevent conflicting
+overwrites, and files removed by a new component version are retired. Tests execute
+against the published prefix and rerun on every testing iteration.
 
 Component documentation rules add a DocBook page to the contrib appendix. It appears
 only for selected components with documentation enabled and participates in shared

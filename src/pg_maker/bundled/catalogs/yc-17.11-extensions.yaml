@@ -1,5 +1,5 @@
-source_host: rc1a-j8rnpvd41jpbqmrb.mdb.yandexcloud.net
-database: db1
+source_host: managed-pg17.example.invalid
+database: reference
 observed_at: '2026-11-06'
 coverage: Available non-contrib SQL extensions; matching public versions do not establish vendor binary
   or physical replication equivalence.
@@ -692,8 +692,14 @@ additional_modules:
   source_ref: d90081773b5809f4138157e40f722a511cedb4e1
   managed_version: null
   status: selected-unverified
-source_address: 10.237.32.28
+source_address: redacted
 postgresql_version: 17.11-201-yandex.60286.5a0f49380c
 unobserved_preload_modules:
   repl_mon: 'Not selected: shared_preload_libraries and pg_config are inaccessible to the audit role;
     module presence/version could not be confirmed.'
+
+binary_compatibility:
+  required: true
+  status: not-verified
+  physical_replay_tested: false
+  qualification_note: Build and package tests do not establish complete managed vendor binary compatibility.

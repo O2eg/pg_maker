@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import re
 from dataclasses import replace
+from pathlib import Path
 
 from pg_maker.config import environment_requirements
 from pg_maker.errors import CancelledError, PreconditionError, ValidationError
 from pg_maker.models import CleanupPolicy, CommandSpec, EnvironmentSpec
 from pg_maker.planning.documents import seal
 from pg_maker.runners.docker import DockerRunner
-from pg_maker.storage import content_hash, parse_json, read_json, write_json
+from pg_maker.storage import content_hash, file_hash, parse_json, read_json, write_json
 
 
 def missing_packages(requirements: list[str], inventory: list[dict]) -> list[str]:
@@ -107,6 +108,30 @@ def prepare_environments(config: dict, context) -> dict:
                 continue
         inspected = inspect_base_image(runner, context, requirement)
         base_id = inspected["Id"]
+        cache_key = content_hash(
+            {
+                "requirement": requirement,
+                "base": base_id,
+                "builder_user": requirements["builder_user"],
+                "adapter": file_hash(Path(__file__)),
+            }
+        )
+        cache = (
+            getattr(context, "input_store", context.directory.parent)
+            / "environments"
+            / (cache_key[7:] + ".json")
+        )
+        if cache.is_file():
+            cached = read_json(cache)
+            record = cached.get("image", {})
+            if cached.get("key") == cache_key and cached.get("image_hash") == content_hash(record):
+                exists = runner._control(
+                    ["image", "inspect", record["image_id"], "--format", "{{.Id}}"], check=False
+                )
+                if exists.succeeded and exists.stdout_tail.strip() == record["image_id"]:
+                    images.append(record)
+                    context.advance("environment_reused", target_id=requirement["target"])
+                    continue
         expected_arch = {"x86_64": "amd64", "aarch64": "arm64"}.get(
             requirement["architecture"], requirement["architecture"]
         )
@@ -228,7 +253,6 @@ def prepare_environments(config: dict, context) -> dict:
                     "-f=${Package}\t${Version}\t${Architecture}\t${db:Status-Status}\\n",
                 ]
             )
-            from pathlib import Path
 
             inventory = []
             for line in Path(package_result.stdout_log).read_text().splitlines():
@@ -329,6 +353,10 @@ def prepare_environments(config: dict, context) -> dict:
                 "image": images[-1],
             }
             write_json(partial_path, saved)
+            write_json(
+                cache,
+                {"key": cache_key, "image_hash": content_hash(images[-1]), "image": images[-1]},
+            )
             context.advance("environment_prepared", target_id=requirement["target"])
         finally:
             # Keep only the committed images; construction containers are owned operation resources.

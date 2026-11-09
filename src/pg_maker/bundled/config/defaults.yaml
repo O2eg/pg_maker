@@ -27,6 +27,12 @@ spec:
       llvm: true
       openssl: true
       icu: true
+      libxml: true
+      libxslt: true
+      uuid: true
+      selinux: true
+      perl: true
+      python: true
     nls_languages:
     - en
     - ru
@@ -62,6 +68,7 @@ spec:
       - -ggdb3
       cppflags: []
   packaging:
+    standard_contrib: true
     server_dev_files: false
   validation:
     profile: full
@@ -82,3 +89,5 @@ spec:
       min_free_disk_bytes: 21474836480
       stage_timeout_seconds: 7200
     keep_failed_environment: false
+    checkpoints: final
+    workspace_retention: on-failure

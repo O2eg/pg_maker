@@ -1,0 +1,49 @@
+# Candidate profile: managed physical binary compatibility is required but not verified.
+# See docs/yc-clone-compatibility.md; a successful build does not remove catalog blockers.
+api_version: pg_maker/v1
+kind: PostgreSQLBuild
+metadata:
+  name: yc-18-4-icu70
+spec:
+  config_dir: ./config
+  source:
+    kind: archive
+    location: https://ftp.postgresql.org/pub/source/v18.4/postgresql-18.4.tar.bz2
+    sha256: sha256:81a81ec695fb0c7901407defaa1d2f7973617154cf27ba74e3a7ab8e64436094
+    strip_components: 1
+  postgresql:
+    version: '18.4'
+  product:
+    release: 0
+    package_revision: 1
+    version_format: postgresql
+  naming:
+    package_by_role:
+      server: postgresql-{postgresql.major}{build.mode_suffix}-yc-clone
+      client: postgresql-client-{postgresql.major}{build.mode_suffix}-yc-clone
+      libpq: libpq{role.abi_suffix}{build.mode_suffix}-yc-clone
+      docs: postgresql-doc-{postgresql.major}{build.mode_suffix}-yc-clone
+  features:
+  - yc18-icu70
+  targets:
+  - id: debian13-x64
+    platform: debian-13
+    architecture: x86_64
+    cpu_target: x86-64
+    artifacts:
+    - deb
+  documentation:
+    profile: ./config/documentation.yaml
+  validation:
+    profile: full
+    baseline: false
+  packaging:
+    standard_contrib: true
+    server_dev_files: true
+  build:
+    options:
+      llvm: false
+      lz4: true
+      zstd: true
+      libxml: true
+      libxslt: true

@@ -141,6 +141,26 @@ def test_collect_includes_complete_development_payload_in_server_only(
     (prefix / "lib/libpq.so").symlink_to("libpq.so.5")
     output = tmp_path / "output"
     write_json(output / "core-files.json", inventory(prefix))
+    contrib_files = [
+        "lib/postgresql/auto_explain.so",
+        "lib/postgresql/pg_trgm.so",
+        "share/postgresql/extension/pg_trgm.control",
+        "share/postgresql/extension/pg_trgm--1.6.sql",
+        "share/postgresql/tsearch_data/unaccent.rules",
+        "bin/vacuumlo",
+    ]
+    for name in contrib_files:
+        path = prefix / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("contrib " + name)
+    write_json(
+        output / "contrib-files.json",
+        {
+            "modules": ["auto_explain", "pg_trgm", "unaccent", "vacuumlo"],
+            "entries": [e for e in inventory(prefix)["entries"] if e["path"] in contrib_files],
+        },
+    )
+    (prefix / "lib/postgresql/unselected.so").write_text("not contrib")
     source = tmp_path / "source"
     source.mkdir()
     (source / "COPYRIGHT").write_text("fixture license")
@@ -174,7 +194,7 @@ def test_collect_includes_complete_development_payload_in_server_only(
         report={},
         feature={"spec": {"components": []}},
         config={
-            "defaults": {"packaging": {"server_dev_files": enabled}},
+            "defaults": {"packaging": {"server_dev_files": enabled, "standard_contrib": True}},
             "documentation": {"enabled": False},
             "postgresql": {"version": "17.5"},
         },
@@ -202,6 +222,8 @@ def test_collect_includes_complete_development_payload_in_server_only(
     assert roles["bin/pg_config"] == "client"
     assert roles["lib/libpq.so.5.0"] == "libpq"
     assert not set(ecpg_files) & roles.keys()
+    assert all(roles[p] == "server" for p in contrib_files)
+    assert "lib/postgresql/unselected.so" not in roles
     assert len(branch.variant["identity"]["packages"]) == 3
 
 
@@ -331,6 +353,62 @@ def test_skipped_installed_database_tests_never_qualify():
     )
     with pytest.raises(PreconditionError, match="lacks"):
         finish(branch)
+
+
+@pytest.mark.parametrize("evidence", [{}, {"passed": True, "run_database": False}])
+def test_package_only_mode_requires_actual_installed_checks(evidence):
+    branch = SimpleNamespace(
+        report={"qualification": "unverified", "package_tests": evidence},
+        request=SimpleNamespace(plan={"spec": {"run_db_tests": False, "run_package_tests": True}}),
+    )
+    with pytest.raises(PreconditionError, match="installed-package"):
+        finish(branch)
+
+
+def test_repack_seals_current_lock_and_plan_before_hashing_evidence(tmp_path):
+    from pg_maker.artifacts.manifest import verify_manifest
+    from pg_maker.config import load_config, resource_path
+    from pg_maker.storage import file_hash, read_json
+
+    config = load_config(resource_path("bundled/build.yaml")).data
+    package = tmp_path / "fixture.deb"
+    package.write_bytes(deb_bytes())
+    branch = SimpleNamespace(
+        output=tmp_path,
+        config=config,
+        variant=config["variants"][0],
+        feature=config["features"][0],
+        branch="candidate",
+        context=SimpleNamespace(directory=tmp_path / "attempt", state={"attempt": 1}),
+        request=SimpleNamespace(
+            lock={"lock_hash": "original", "spec": {}, "transport": {}},
+            plan={"plan_hash": "original", "spec": {"goal": "package", "run_db_tests": False}},
+        ),
+        report={
+            "qualification": "unverified",
+            "db_tests": "skipped",
+            "source_hash": "source",
+            "install_tree": {"tree_hash": "tree"},
+            "packages": [
+                {
+                    "name": "fixture",
+                    "role": "server",
+                    "path": "fixture.deb",
+                    "sha256": file_hash(package),
+                }
+            ],
+        },
+    )
+    for value in ("original", "changed-after-source-edit"):
+        branch.request.lock["lock_hash"] = value
+        branch.request.plan["plan_hash"] = value
+        finish(branch)
+        verify_manifest(tmp_path, read_json(tmp_path / "artifact-manifest.json"))
+        evidence = {
+            e["path"]: e["sha256"] for e in read_json(tmp_path / "verification.json")["evidence"]
+        }
+        assert evidence["lock.json"] == file_hash(tmp_path / "lock.json")
+        assert evidence["plan.json"] == file_hash(tmp_path / "plan.json")
 
 
 def test_systemctl_pid_checks_real_executable_owner_and_liveness(tmp_path):

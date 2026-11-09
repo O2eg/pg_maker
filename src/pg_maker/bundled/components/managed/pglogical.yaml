@@ -15,7 +15,7 @@ spec:
   - ../../patches/pglogical-idle-sync.patch
   # Local fix with a deterministic blocked-apply regression test.
   - ../../patches/pglogical-resync-cache.patch
-  compatible_postgresql: '>=16.15,<17'
+  compatible_postgresql: '>=16.14,<17'
   requires: []
   conflicts: []
   build_dependencies: []

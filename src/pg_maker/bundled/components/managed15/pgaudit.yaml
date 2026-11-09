@@ -1,0 +1,33 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc15-pgaudit
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: archive
+    location: https://codeload.github.com/pgaudit/pgaudit/tar.gz/8349710fbbe38ca9518ebe753a528b94f5ab2c19
+    strip_components: 1
+    sha256: sha256:a56127954647632edc74a2add93f02504cac7fd21386a26c61d90035cb28d6e9
+  compatible_postgresql: '>=15.18,<16'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets:
+  - installcheck
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: pgaudit
+  runtime_files:
+  - lib/postgresql/pgaudit.so
+  - share/postgresql/extension/pgaudit.control
+  - share/postgresql/extension/pgaudit--*.sql
+  sql_extension_versions:
+    pgaudit: '1.7'
+  preload:
+  - pgaudit

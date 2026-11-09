@@ -1,0 +1,151 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc15-postgis
+  revision: 2
+spec:
+  type: library
+  source:
+    kind: archive
+    location: https://download.osgeo.org/postgis/source/postgis-3.3.2.tar.gz
+    strip_components: 1
+    sha256: sha256:9a2a219da005a1730a39d1959a1c7cec619b1efb009b65be80ffc25bad299068
+  compatible_postgresql: '>=15.18,<16'
+  requires:
+  - fuzzystrmatch
+  conflicts: []
+  build_dependencies:
+  - libgeos-dev
+  - libproj-dev
+  - libgdal-dev
+  - libsfcgal-dev
+  - libjson-c-dev
+  - libprotobuf-c-dev
+  - protobuf-c-compiler
+  - libpcre2-dev
+  - libxml2-dev
+  - libxml2-utils
+  - docbook-xml
+  - xsltproc
+  - docbook-xsl
+  runtime_dependencies:
+  - libgeos-c1t64
+  - libproj25
+  - libgdal36
+  - libsfcgal2
+  - libjson-c5
+  - libprotobuf-c1
+  - libpcre2-8-0
+  - libxml2
+  make_targets:
+  - all
+  test_targets: []
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: postgis
+  runtime_files:
+  - lib/postgresql/postgis*.so
+  - lib/postgresql/postgis_raster-3.so
+  - lib/postgresql/address_standardizer*.so
+  - share/postgresql/extension/postgis*.control
+  - share/postgresql/extension/postgis*--*.sql
+  - share/postgresql/extension/address_standardizer*.control
+  - share/postgresql/extension/address_standardizer*--*.sql
+  sql_extension_versions:
+    postgis: 3.3.2
+    postgis_raster: 3.3.2
+    postgis_sfcgal: 3.3.2
+    postgis_tiger_geocoder: 3.3.2
+    postgis_topology: 3.3.2
+    address_standardizer: 3.3.2
+    address_standardizer_data_us: 3.3.2
+  configure_args:
+  - --with-pgconfig={prefix}/bin/pg_config
+  - --with-raster
+  - --with-sfcgal
+  - --with-address-standardizer
+  test_commands:
+  - id: unit-and-regression
+    env:
+      PGIS_REG_TMPDIR: '{component}/pg-maker-regression'
+    argv:
+    - make
+    - --output-sync=target
+    - -j
+    - '{jobs}'
+    - check
+    success_pattern: 'Run tests: (?P<count>\d+)\nFailed: 0'
+  test_dependencies:
+  - libcunit1-dev
+  source_patches:
+  - ../../patches/postgis-3.3.2-gidx-accessors.patch
+  installed_checks:
+  - argv:
+    - '{prefix}/bin/psql'
+    - -X
+    - -v
+    - ON_ERROR_STOP=1
+    - -Atqc
+    - |
+      DO $check$
+      DECLARE
+        dims integer;
+        idx record;
+        point_sql text;
+        bounds text;
+        query_sql text;
+        expected integer[];
+        actual integer[];
+        query_plan json;
+      BEGIN
+        FOR dims IN 2..4 LOOP
+          point_sql := CASE dims
+            WHEN 2 THEN 'ST_MakePoint(i, i % 97)'
+            WHEN 3 THEN 'ST_MakePoint(i, i % 97, i % 43)'
+            ELSE 'ST_MakePoint(i, i % 97, i % 43, i % 17)' END;
+          bounds := CASE dims
+            WHEN 2 THEN 'LINESTRING(200 20,1800 70)'
+            WHEN 3 THEN 'LINESTRING Z(200 20 10,1800 70 30)'
+            ELSE 'LINESTRING ZM(200 20 10 4,1800 70 30 12)' END;
+          CREATE TEMP TABLE pgmaker_spatial (id integer, g geometry);
+          EXECUTE 'INSERT INTO pgmaker_spatial SELECT i, ' || point_sql ||
+            ' FROM generate_series(1, 2000) AS i';
+          ANALYZE pgmaker_spatial;
+          FOR idx IN SELECT * FROM (VALUES
+            ('gist', 'gist_geometry_ops_nd'),
+            ('spgist', 'spgist_geometry_ops_nd'),
+            ('brin', format('brin_geometry_inclusion_ops_%sd', dims))
+          ) AS methods(am, opclass) LOOP
+            EXECUTE format('CREATE INDEX pgmaker_gidx ON pgmaker_spatial USING %I (g %I)',
+              idx.am, idx.opclass);
+            query_sql := format(
+              'SELECT array_agg(id ORDER BY id) FROM pgmaker_spatial WHERE g %s ST_GeomFromEWKT(%L)',
+              CASE WHEN idx.am = 'brin' AND dims = 2 THEN '&&' ELSE '&&&' END, bounds);
+            PERFORM set_config('enable_seqscan', 'on', true);
+            PERFORM set_config('enable_indexscan', 'off', true);
+            PERFORM set_config('enable_bitmapscan', 'off', true);
+            EXECUTE query_sql INTO expected;
+            IF coalesce(cardinality(expected), 0) = 0 THEN
+              RAISE EXCEPTION 'Empty spatial test fixture';
+            END IF;
+            PERFORM set_config('enable_seqscan', 'off', true);
+            PERFORM set_config('enable_indexscan', 'on', true);
+            PERFORM set_config('enable_bitmapscan', 'on', true);
+            EXECUTE 'EXPLAIN (FORMAT JSON) ' || query_sql INTO query_plan;
+            IF position('pgmaker_gidx' IN query_plan::text) = 0 THEN
+              RAISE EXCEPTION 'Spatial index not used: % %D', idx.am, dims;
+            END IF;
+            EXECUTE query_sql INTO actual;
+            IF actual IS DISTINCT FROM expected THEN
+              RAISE EXCEPTION 'Spatial index differs from sequential scan: % %D', idx.am, dims;
+            END IF;
+            DROP INDEX pgmaker_gidx;
+          END LOOP;
+          DROP TABLE pgmaker_spatial;
+        END LOOP;
+      END
+      $check$;
+      SELECT 'postgis-gidx-2d-3d-4d-passed';
+    timeout_seconds: 120
+    stdout_contains: postgis-gidx-2d-3d-4d-passed

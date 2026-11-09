@@ -1,0 +1,31 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc15-rum
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: archive
+    location: https://codeload.github.com/postgrespro/rum/tar.gz/6a065fd8dfb280680304991aa30d7f72787fdb04
+    strip_components: 1
+    sha256: sha256:b9cf6072ca68d42b9bd01eb71856065e2db2cbaf304a3a5ff5d7d4b3700931a0
+  compatible_postgresql: '>=15.18,<16'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets:
+  - installcheck
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: rum
+  runtime_files:
+  - lib/postgresql/rum.so
+  - share/postgresql/extension/rum.control
+  - share/postgresql/extension/rum--*.sql
+  sql_extension_versions:
+    rum: '1.3'

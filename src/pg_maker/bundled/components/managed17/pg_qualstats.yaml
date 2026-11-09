@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/powa-team/pg_qualstats/tar.gz/97cc5976f2afedfd1fcd7071833b0a6f5ddffee9
     sha256: sha256:489cfbce1f726587f7dc7e0e28a6d38a046a05ed25e62cda8de6cf4a56e046a0
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires: []
   conflicts: []
   build_dependencies: []

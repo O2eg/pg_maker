@@ -1,5 +1,6 @@
 """Check durable WAL discovery on a real physical standby and across restart."""
 
+import shutil
 import subprocess
 import time
 from pathlib import Path
@@ -44,6 +45,9 @@ def wait_for(port, query):
 
 def main():
     primary, standby = (Path("pg-maker-" + n).resolve() for n in ("primary", "standby"))
+    for path in (primary, standby):
+        if path.exists():
+            shutil.rmtree(path)
     started = []
     try:
         command(["initdb", "-D", str(primary), "-A", "trust", "--no-locale", "-E", "UTF8"])

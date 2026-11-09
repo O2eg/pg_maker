@@ -9,6 +9,8 @@ tree; a pip release contains the documentation shipped with that version.
 | Task | Guide |
 | --- | --- |
 | Build YC DEBs, upload to Nexus and install on Debian 13 | [Package walkthrough](yc-clone-packages.md) |
+| Select PostgreSQL 15.18/15.19 / ICU 70.1 and extensions | [PG15 profiles](managed-15-icu70.md) |
+| Understand YC clone physical compatibility requirements and gaps | [Compatibility contract](yc-clone-compatibility.md) |
 | Select PostgreSQL 16.15 / ICU 70.1 and extensions | [PG16 profile](managed-16-icu70.md) |
 | Select PostgreSQL 17.11 / ICU 70.1 and extensions | [PG17 profile](managed-17-icu70.md) |
 | Select PostgreSQL 18.6 / ICU 70.1 and extensions | [PG18 profile](managed-18-icu70.md) |
@@ -30,7 +32,7 @@ separates implemented behavior from remaining work. [Changelog](../CHANGELOG.md)
 records release and unreleased changes.
 
 Bundled targets are Debian 13 amd64. The catalog includes PostgreSQL 14–19;
-database-test adapters support 16/17/18. ARM64 needs additional recipes/helper changes.
+database-test adapters support 15/16/17/18. ARM64 needs additional recipes/helper changes.
 External curl uploads to Nexus are documented, while integrated repository publication
 is unimplemented. A successful skipped-test build remains unverified.
 

@@ -12,7 +12,7 @@ spec:
   source_patches:
   - ../../patches/pg-stat-query-plans-pg16-runtime.patch
   - ../../patches/pg-stat-query-plans-pg16-tests.patch
-  compatible_postgresql: '>=16.15,<17'
+  compatible_postgresql: '>=16.14,<17'
   requires: []
   conflicts: []
   build_dependencies: []

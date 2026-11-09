@@ -54,23 +54,39 @@ def test_pg17_inventory_private_icu_and_package_identity(tmp_path):
 
 
 @pytest.mark.parametrize("major", [17, 18])
-def test_vectorscale_build_uses_installed_pg_config(tmp_path, monkeypatch, major):
+@pytest.mark.parametrize("architecture", ["x86_64", "aarch64"])
+def test_vectorscale_build_uses_installed_pg_config(tmp_path, monkeypatch, major, architecture):
     def version(argv, *, text):
         assert argv == ["/private/bin/pg_config", "--version"] and text
         return f"PostgreSQL {major}.11\n"
 
     monkeypatch.setattr(vectorscale.subprocess, "check_output", version)
+    monkeypatch.setattr(vectorscale.platform, "machine", lambda: architecture)
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(
         vectorscale.sys, "argv", ["helper", "build", "/private", "8", "/inputs/cargo-pgrx"]
     )
     monkeypatch.setattr(vectorscale, "prepare", lambda *args: None)
     commands = []
-    monkeypatch.setattr(vectorscale, "run", lambda argv, **kwargs: commands.append(argv))
+    environments = []
+
+    def command(argv, **kwargs):
+        commands.append(argv)
+        environments.append(kwargs["env"])
+
+    monkeypatch.setattr(vectorscale, "run", command)
     vectorscale.main()
     assert ["cargo", "pgrx", "init", f"--pg{major}=/private/bin/pg_config"] in commands
     install = next(c for c in commands if c[:3] == ["cargo", "pgrx", "install"])
     assert install[install.index("--features") + 1] == f"pg{major},build_parallel"
+    for argv, env in zip(commands, environments, strict=True):
+        flags = env["RUSTFLAGS"]
+        if architecture == "aarch64":
+            assert flags == "-Ctarget-cpu=generic"
+        elif argv[:3] == ["cargo", "pgrx", "install"]:
+            assert flags == "-Ctarget-cpu=x86-64 -Ctarget-feature=+avx2,+fma"
+        else:
+            assert flags == "-Ctarget-cpu=x86-64"
 
 
 def test_vectorscale_rejects_unsupported_major(monkeypatch):

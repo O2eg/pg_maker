@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/ossc-db/pg_hint_plan/tar.gz/85e07af6ca4675a26fa2281370c37371b883b2a9
     sha256: sha256:5ee45cf3e7bef3ceefbe1b7e13f1dc6cfd11cd25aab2067a1e634a130a567f83
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires:
   - pg-stat-statements
   conflicts: []

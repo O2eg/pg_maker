@@ -23,6 +23,45 @@ from pg_maker.storage import (
 )
 
 TREE_FORMAT = "pg_maker/tree/v1"
+_VERIFIED_FILES = {}
+
+
+def verified_file_hash(path):
+    """Reuse digests within one process, checking inode/size/mtime/ctime/mode each time."""
+    before = path.stat(follow_symlinks=False)
+    key = (
+        str(path.absolute()),
+        before.st_dev,
+        before.st_ino,
+        before.st_size,
+        before.st_mtime_ns,
+        before.st_ctime_ns,
+        before.st_mode,
+    )
+    if key in _VERIFIED_FILES:
+        return _VERIFIED_FILES[key]
+    digest = file_hash(path)
+    after = path.stat(follow_symlinks=False)
+    if (
+        before.st_dev,
+        before.st_ino,
+        before.st_size,
+        before.st_mtime_ns,
+        before.st_ctime_ns,
+        before.st_mode,
+    ) != (
+        after.st_dev,
+        after.st_ino,
+        after.st_size,
+        after.st_mtime_ns,
+        after.st_ctime_ns,
+        after.st_mode,
+    ):
+        raise PreconditionError("file changed while verifying source")
+    if len(_VERIFIED_FILES) >= 100000:
+        _VERIFIED_FILES.clear()
+    _VERIFIED_FILES[key] = digest
+    return digest
 
 
 def materialize(source: Path, destination: Path) -> None:
@@ -76,7 +115,7 @@ def inventory(root: Path) -> dict:
                     raise ValidationError("source contains a symlink cycle") from exc
                 item.update(type="symlink", target=link)
             elif stat.S_ISREG(mode):
-                item.update(type="file", sha256=file_hash(path))
+                item.update(type="file", sha256=verified_file_hash(path))
             elif stat.S_ISDIR(mode):
                 item.update(type="directory")
                 visit(path)
@@ -205,7 +244,7 @@ class InputStore:
 
     def blob(self, digest: str) -> Path:
         path = self.path("blobs", digest)
-        if not path.is_file() or path.is_symlink() or file_hash(path) != digest:
+        if not path.is_file() or path.is_symlink() or verified_file_hash(path) != digest:
             raise PreconditionError("missing or changed input blob", details={"sha256": digest})
         return path
 

@@ -14,7 +14,7 @@ spec:
   - ../../patches/timescaledb-pg16-tests.patch
   - ../../patches/timescaledb-archive-metadata.patch
   - ../../patches/timescaledb-pg16-fixtures.patch
-  compatible_postgresql: '>=16.15,<17'
+  compatible_postgresql: '>=16.14,<17'
   requires: []
   conflicts: []
   build_dependencies:

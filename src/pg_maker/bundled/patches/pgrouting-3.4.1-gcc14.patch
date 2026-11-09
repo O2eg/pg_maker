@@ -1,0 +1,23 @@
+--- a/src/common/get_check_data.c
++++ b/src/common/get_check_data.c
+@@ -304,5 +304,5 @@
+  */
+ char*
+ pgr_SPI_getText(HeapTuple *tuple, TupleDesc *tupdesc,  Column_info_t info) {
+-    return DatumGetCString(SPI_getvalue(*tuple, *tupdesc, info.colNumber));
+-}
++    return SPI_getvalue(*tuple, *tupdesc, info.colNumber);
++}
+--- a/src/trsp/trsp.c
++++ b/src/trsp/trsp.c
+@@ -114,8 +114,8 @@
+   if (isnull)
+     elog(ERROR, "to_cost contains a null value");
+   rest->to_cost = DatumGetFloat8(binval);
+-  char *str = DatumGetCString(SPI_getvalue(*tuple, *tupdesc,
+-       restrict_columns->via_path));
++  char *str = SPI_getvalue(*tuple, *tupdesc,
++       restrict_columns->via_path);
+ 
+   // PGR_DBG("restriction: %f, %i, %s", rest->to_cost, rest->target_id, str);
+ 

@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/reorg/pg_repack/tar.gz/6902ab313aeb49227867087dca99cf107f7be23b
     sha256: sha256:8dae055868982913728152bc8dd51e6ba74764bb25aba323d73dc20d277dfc49
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires: []
   conflicts: []
   build_dependencies: []

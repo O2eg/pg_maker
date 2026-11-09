@@ -1,6 +1,7 @@
 """Recovery must validate bytes, preserve private mutable roots and honor retention."""
 
 import copy
+import json
 import os
 from pathlib import Path
 from types import SimpleNamespace
@@ -9,8 +10,72 @@ import pytest
 
 from pg_maker.errors import OwnershipError, PreconditionError, ValidationError
 from pg_maker.execution.cache import SnapshotStore
+from pg_maker.execution.checkpoints import Checkpoints
 from pg_maker.execution.resources import check_resources
 from pg_maker.storage import content_hash, write_json
+
+
+@pytest.mark.parametrize("disabled", [False, True])
+def test_final_only_checkpoints_preserve_final_snapshot(tmp_path, monkeypatch, disabled):
+    if disabled:
+        monkeypatch.setenv("PG_MAKER_NO_INTERMEDIATE_CHECKPOINTS", "1")
+    else:
+        monkeypatch.delenv("PG_MAKER_NO_INTERMEDIATE_CHECKPOINTS", raising=False)
+    events = []
+    root, output = tmp_path / "build", tmp_path / "output"
+    for path in (root / "source", root / "prefix", output):
+        path.mkdir(parents=True)
+        (path / "file").write_text(path.name)
+    branch = SimpleNamespace(
+        id="fixture",
+        root=root,
+        source=root / "source",
+        obj=root / "obj",
+        output=output,
+        context=SimpleNamespace(
+            directory=tmp_path,
+            state={"attempt": 1},
+            check=lambda: None,
+            event=lambda kind, **kw: events.append(kind),
+        ),
+        request=SimpleNamespace(
+            cache_store=None,
+            plan={"plan_hash": "fixture", "spec": {"run_db_tests": False}},
+        ),
+        config={
+            "defaults": {
+                "execution": {
+                    "checkpoints": "all",
+                    "limits": {
+                        "min_free_disk_bytes": 0,
+                        "memory_bytes": 1,
+                    },
+                }
+            }
+        },
+    )
+    steps = [{"id": "compile", "kind": "compile_core", "stage_key": "fixture", "cache": "always"}]
+    checkpoints = Checkpoints(branch, steps)
+    checkpoints.save(0)
+    assert events == ([] if disabled else ["checkpoint_saved"])
+    assert bool(list(checkpoints.index.glob("*.json"))) is (not disabled)
+    checkpoints.save(0, complete=True)
+    records = list(checkpoints.index.glob("*.json"))
+    assert len(records) == 1
+    import json
+
+    record = json.loads(records[0].read_text())
+    assert record["complete"]
+    restored = tmp_path / "restored"
+    checkpoints.store.restore(
+        record["snapshot_hash"],
+        {
+            "source": restored / "source",
+            "prefix": restored / "prefix",
+            "output": restored / "output",
+        },
+    )
+    assert (restored / "prefix/file").read_text() == "prefix"
 
 
 def snapshot(tmp_path, **kwargs):
@@ -191,3 +256,59 @@ def test_resource_guard_fails_before_work_for_disk_cpu_and_memory(tmp_path, monk
     )
     with pytest.raises(PreconditionError, match="memory"):
         check_resources(tmp_path, limits)
+
+
+@pytest.mark.parametrize(
+    "policy,expected", [("final", []), ("milestones", [1]), ("all", [0, 1, 2])]
+)
+def test_checkpoint_policy_excludes_component_objects_and_keeps_final(
+    tmp_path, monkeypatch, policy, expected
+):
+    monkeypatch.delenv("PG_MAKER_NO_INTERMEDIATE_CHECKPOINTS", raising=False)
+    root, output = tmp_path / "build", tmp_path / "output"
+    for name in ("source", "obj", "prefix", "components/probe/target", "extra-sources", "clusters"):
+        path = root / name
+        path.mkdir(parents=True)
+        (path / "file").write_text(name)
+    output.mkdir()
+    write_json(root / "workspace-journal.json", {"receipt": True})
+    b = SimpleNamespace(
+        id="fixture",
+        root=root,
+        source=root / "source",
+        obj=root / "obj",
+        output=output,
+        workspace=True,
+        context=SimpleNamespace(
+            directory=tmp_path, state={"attempt": 1}, check=lambda: None, event=lambda *a, **k: None
+        ),
+        request=SimpleNamespace(
+            cache_store=None, plan={"plan_hash": "plan", "spec": {"run_db_tests": True}}
+        ),
+        config={
+            "defaults": {
+                "execution": {
+                    "checkpoints": policy,
+                    "limits": {"min_free_disk_bytes": 0, "memory_bytes": 1},
+                }
+            }
+        },
+    )
+    steps = [
+        {"id": kind, "kind": kind, "stage_key": kind, "cache": "never"}
+        for kind in ("compile_core", "install_components", "build_tools", "export")
+    ]
+    checkpoints = Checkpoints(b, steps)
+    for i in range(3):
+        checkpoints.save(i)
+    records = [json.loads(p.read_text()) for p in checkpoints.index.glob("*.json")]
+    assert sorted(r["index"] for r in records) == expected
+    for r in records:
+        doc = checkpoints.store.verify(r["snapshot_hash"])
+        roots = {e["path"].split("/")[0] for e in doc["entries"]}
+        assert roots <= {"source", "objects", "prefix", "output", "owners", "journal"}
+        assert "journal" in roots
+    checkpoints.save(3, complete=True)
+    final = json.loads((checkpoints.index / "000001-000003.json").read_text())
+    doc = checkpoints.store.verify(final["snapshot_hash"])
+    assert {e["path"].split("/")[0] for e in doc["entries"]} == {"prefix", "output"}

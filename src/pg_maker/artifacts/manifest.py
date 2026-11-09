@@ -28,6 +28,11 @@ from pg_maker.storage import (
 
 def finish(branch):
     qualified = branch.report["qualification"]
+    package_results = branch.report.get("package_tests", {})
+    if branch.request.plan["spec"].get("run_package_tests") and (
+        not package_results.get("passed") or not package_results.get("run_database")
+    ):
+        raise PreconditionError("package goal lacks successful installed-package checks")
     if (
         branch.request.plan["spec"]["goal"] in {"verified", "package"}
         and branch.request.plan["spec"]["run_db_tests"]
@@ -45,6 +50,12 @@ def finish(branch):
         qualified = "package-verified"
     # Eligibility is granted only after the entire matrix (including baseline) succeeds.
     eligible = False
+    # Workspace reuse may carry the prior attempt's lock/plan. Publish current
+    # documents before sealing evidence; never replace a hashed file afterwards.
+    for name, value in (("lock", branch.request.lock), ("plan", branch.request.plan)):
+        document = copy.deepcopy(value)
+        document["transport"] = {}
+        write_json(branch.output / (name + ".json"), document)
     evidence = []
     for path in sorted(branch.output.rglob("*.json")):
         if path.name in {"report.json", "artifact-manifest.json", "verification.json"}:
@@ -66,7 +77,7 @@ def finish(branch):
         "lock_hash": branch.request.lock["lock_hash"],
         "db_tests": branch.report["db_tests"],
         "evidence": evidence,
-        "service_manager": "emulated" if qualified == "package-verified" else "not-tested",
+        "service_manager": "emulated" if package_results.get("passed") else "not-tested",
     }
     verification["verification_hash"] = content_hash(verification)
     write_json(branch.output / "verification.json", verification)
@@ -139,10 +150,6 @@ def finish(branch):
     manifest["manifest_hash"] = content_hash(manifest)
     verify_manifest(branch.output, manifest)
     write_json(branch.output / "artifact-manifest.json", manifest)
-    for name, value in (("lock", branch.request.lock), ("plan", branch.request.plan)):
-        document = copy.deepcopy(value)
-        document["transport"] = {}
-        write_json(branch.output / (name + ".json"), document)
     s = settings(branch.config, branch.variant)
     commands = " ".join("./" + p["path"] for p in branch.report["packages"])
     write_text(

@@ -1,0 +1,47 @@
+api_version: pg_maker/feature/v1
+kind: FeatureProfile
+metadata:
+  id: yc15-icu70
+  revision: 1
+spec:
+  description: PostgreSQL 15 candidate with private ICU 70.1; managed binary compatibility unverified
+  numeric_id: null
+  changes: []
+  components:
+  - ../../components/libraries/icu70.yaml
+  - ../../components/pg-stat-statements.yaml
+  - ../../components/fuzzystrmatch.yaml
+  - ../../components/managed15/hypopg.yaml
+  - ../../components/managed15/jsquery.yaml
+  - ../../components/managed15/logerrors.yaml
+  - ../../components/managed15/lwaldump.yaml
+  - ../../components/managed15/orafce.yaml
+  - ../../components/managed15/pg_cron.yaml
+  - ../../components/managed15/pg_hint_plan.yaml
+  - ../../components/managed15/pg_partman.yaml
+  - ../../components/managed15/pg_qualstats.yaml
+  - ../../components/managed15/pg_repack.yaml
+  - ../../components/managed15/pg_stat_kcache.yaml
+  - ../../components/managed15/pg_stat_query_plans.yaml
+  - ../../components/managed15/pg_tm_aux.yaml
+  - ../../components/managed15/pg_uuidv7.yaml
+  - ../../components/managed15/pgaudit.yaml
+  - ../../components/managed15/pglogical.yaml
+  - ../../components/managed15/pgrouting.yaml
+  - ../../components/managed15/postgis.yaml
+  - ../../components/managed15/rum.yaml
+  - ../../components/managed15/smlar.yaml
+  - ../../components/managed15/spqrguard.yaml
+  - ../../components/managed15/spqrhash.yaml
+  - ../../components/managed15/timescaledb.yaml
+  - ../../components/managed15/vector.yaml
+  - ../../components/managed15/clickhouse_fdw.yaml
+  build_options: {}
+  documentation:
+    rules: []
+  required_tests: []
+  compatible_postgresql: '>=15.18,<=15.19'
+
+# PLV8 is explicitly disabled by request; the source-pinned recipe remains available.
+# To opt in, add this entry to spec.components:
+# - ../../components/managed15/plv8.yaml

@@ -199,11 +199,12 @@ diagnostic_rule["allOf"] = [
 ]
 diagnostics = obj({"warnings_as_errors": B, "rules": arr(diagnostic_rule)}, [])
 diagnostic_policy = document("pg_maker/diagnostics/v1", "DiagnosticPolicy", diagnostics)
-packaging = obj({"server_dev_files": B}, [])
+packaging = obj({"server_dev_files": B, "standard_contrib": B}, [])
 validation = obj(
     {
         "profile": {"enum": ["smoke", "full", "release"]},
         "run_db_tests": B,
+        "run_package_tests": B,
         "warnings_as_errors": B,
         "diagnostics": diagnostics,
         "test_suites": {
@@ -224,7 +225,10 @@ execution = obj(
         "build_user": {"type": "string", "pattern": "^[1-9][0-9]*:[1-9][0-9]*$"},
         "limits": obj({"memory_bytes": P, "min_free_disk_bytes": P, "stage_timeout_seconds": P}),
         "keep_failed_environment": B,
-    }
+        "checkpoints": {"enum": ["final", "milestones", "all"]},
+        "workspace_retention": {"enum": ["on-failure", "keep"]},
+    },
+    ["runner", "max_parallel_targets", "build_user", "limits", "keep_failed_environment"],
 )
 vendor = document(
     "pg_maker/vendor/v1",
@@ -498,6 +502,9 @@ component = document(
             "conflicts": arr(),
             "source_directory": S,
             "build_dependencies": arr(),
+            "test_dependencies": arr(),
+            "documentation_dependencies": arr(),
+            "extra_source_roles": mapping({"enum": ["build", "test", "documentation"]}),
             "runtime_dependencies": arr(),
             "configure_args": arr(),
             "build_commands": arr(
@@ -510,7 +517,7 @@ component = document(
             "sql_extension_versions": mapping(S),
             "extra_sources": mapping(source),
             "extra_source_catalogs": arr(S),
-            "source_patches": arr(S),
+            "source_patches": arr({"oneOf": [S, obj({"path": S, "compatible_postgresql": S})]}),
             "make_targets": arr(),
             "test_targets": arr(),
             "test_make_args": arr(),
@@ -686,7 +693,7 @@ postgresql_major = obj(
         "meson_minimum": {"type": ["string", "null"]},
         "unavailable_options": arr(),
         "extra_tests": arr(),
-        "db_test_adapter": {"enum": ["unavailable", "pg16", "pg17", "pg18"]},
+        "db_test_adapter": {"enum": ["unavailable", "pg15", "pg16", "pg17", "pg18"]},
         "long_tests": arr(),
         "long_test_evidence": mapping(arr()),
         "documentation_input": {"enum": ["direct-entities", "expanded-xml"]},
@@ -990,6 +997,7 @@ plan_spec = obj(
     }
 )
 plan_spec["properties"]["components"] = {"anyOf": [arr(), {"type": "null"}]}
+plan_spec["properties"]["run_package_tests"] = B
 definitions.update(
     {
         "Submodule": submodule,

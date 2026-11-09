@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/apache/age/tar.gz/806fa2ebdb300b3e76ef30cdba61803babbf2683
     sha256: sha256:a88e8e4a0594f9aad6d94d2f59b979d649a15480060b25efb8563cdb86853b7f
     strip_components: 1
-  compatible_postgresql: '>=18.6,<19'
+  compatible_postgresql: '>=18.4,<19'
   requires: []
   conflicts: []
   build_dependencies: []

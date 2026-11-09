@@ -9,7 +9,7 @@ spec:
     kind: git
     repository: https://github.com/ClickHouse/pg_clickhouse.git
     ref: 4e05bffcae7db4a2a73eca0ca7d95e6c55ddd5c4
-  compatible_postgresql: '>=18.6,<19'
+  compatible_postgresql: '>=18.4,<19'
   requires: []
   conflicts: []
   build_dependencies:
@@ -52,3 +52,5 @@ spec:
     - '{prefix}'
     - '{jobs}'
     success_pattern: All (?P<count>\d+) tests passed\.
+  extra_source_roles:
+    clickhouse: test

@@ -55,6 +55,12 @@ def execute_component(branch, component, *, run_tests):
     )
     prefix = branch.root / "prefix"
     workspace = branch.root / "components" / identifier
+    if hasattr(branch, "workspace"):
+        # Retained objects and owned installed files supersede copied component snapshots.
+        branch.workspace.prepare_component(component)
+        branch.prepare()
+        build_components(branch, [component], run_tests=run_tests)
+        return
     if store and not run_tests:
         store.pin(branch.context.directory, key)
         try:

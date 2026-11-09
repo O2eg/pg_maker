@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/HypoPG/hypopg/tar.gz/97026c0bff16b905c555acdd82e15979fa6b9781
     sha256: sha256:673b57301b7f231e9751b71cf94761dea1c08386be582b4dc3ab1ce1a50210d2
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires: []
   conflicts: []
   build_dependencies: []

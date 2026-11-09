@@ -8,6 +8,7 @@ import datetime as dt
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -47,6 +48,8 @@ def clock_fixture(library, runner=None):
     """
     offset = (dt.date(2026, 5, 15) - dt.datetime.now(dt.timezone.utc).date()).days
     data = Path("pg-maker-clock-data").resolve()
+    if data.exists():
+        shutil.rmtree(data)
     env = {
         **os.environ,
         "LD_PRELOAD": str(Path(library).resolve()),
@@ -138,6 +141,8 @@ def main():
             prove(path)
 
     tablespace = (Path.cwd() / "pg-maker-tablespace").resolve()
+    if tablespace.exists():
+        shutil.rmtree(tablespace)
     tablespace.mkdir()
     sql("CREATE TABLESPACE mytablespace LOCATION '" + str(tablespace).replace("'", "''") + "'")
     prove(root / "test_native/test_tablespace/test-time-daily-native-tablespace-pg12.sql")

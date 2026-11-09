@@ -4,7 +4,7 @@ metadata:
   id: yc17-icu70
   revision: 1
 spec:
-  description: PostgreSQL 17.11 with private ICU 70.1 and the managed PG17 extension inventory
+  description: PostgreSQL 17 with private ICU 70.1 and the managed PG17 extension inventory
   numeric_id: null
   changes: []
   components:
@@ -48,4 +48,4 @@ spec:
   documentation:
     rules: []
   required_tests: []
-  compatible_postgresql: ==17.11
+  compatible_postgresql: '>=17.10,<=17.11'

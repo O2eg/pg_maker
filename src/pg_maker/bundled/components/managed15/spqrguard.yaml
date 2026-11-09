@@ -1,0 +1,35 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc15-spqrguard
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: archive
+    location: https://codeload.github.com/pg-sharding/spqrguard/tar.gz/207d46c91141c0e67bcf09432fbd9c760bd6b57f
+    strip_components: 1
+    sha256: sha256:3409497da4ff4c4eac21b67cfc62fba8060ae5ebb0903ced4df10ea22b9911e6
+  compatible_postgresql: '>=15.18,<16'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets:
+  - installcheck
+  test_make_args:
+  - TAP_TESTS=
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: spqrguard
+  runtime_files:
+  - lib/postgresql/spqrguard.so
+  - share/postgresql/extension/spqrguard.control
+  - share/postgresql/extension/spqrguard--*.sql
+  sql_extension_versions:
+    spqrguard: 2.4.2
+  preload:
+  - spqrguard

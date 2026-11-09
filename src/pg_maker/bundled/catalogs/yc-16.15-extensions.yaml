@@ -1,5 +1,5 @@
-source_host: rc1d-kp80p78vpf7pi1pd.mdb.yandexcloud.net
-database: ad_analytics
+source_host: managed-pg16.example.invalid
+database: reference
 observed_at: '2026-11-02'
 coverage: available extensions, not installed extensions; upstream builds are not
   vendor binary equivalence
@@ -541,3 +541,9 @@ extensions:
   source_url: https://github.com/pgvector/pgvector.git
   source_release: v0.8.2
   status: selected-unverified
+
+binary_compatibility:
+  required: true
+  status: not-verified
+  physical_replay_tested: false
+  qualification_note: Build and package tests do not establish complete managed vendor binary compatibility.

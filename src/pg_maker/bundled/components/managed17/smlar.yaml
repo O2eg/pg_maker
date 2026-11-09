@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/jirutka/smlar/tar.gz/6259352edd179544c6f0e7c81bb68dcb81317f8c
     sha256: sha256:419dfa34123364ace0765e2fe8a3188d4b5f00cc8d0fee9012efb569f63184cf
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires: []
   conflicts: []
   build_dependencies: []

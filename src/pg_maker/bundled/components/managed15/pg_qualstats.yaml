@@ -1,0 +1,35 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc15-pg-qualstats
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: archive
+    location: https://codeload.github.com/powa-team/pg_qualstats/tar.gz/effe43b2c9f4c85822a98a09eac3681341a8fd86
+    strip_components: 1
+    sha256: sha256:5f84e5a6407b2bfe32202e4fd6b9ef4b2184a3877aa9fd608362095fcb644811
+  compatible_postgresql: '>=15.18,<16'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets:
+  - installcheck
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: pg_qualstats
+  runtime_files:
+  - lib/postgresql/pg_qualstats.so
+  - share/postgresql/extension/pg_qualstats.control
+  - share/postgresql/extension/pg_qualstats--*.sql
+  sql_extension_versions:
+    pg_qualstats: 2.0.4
+  preload:
+  - pg_qualstats
+  test_settings:
+    pg_qualstats.sample_rate: '1'

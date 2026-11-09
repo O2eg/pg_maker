@@ -161,6 +161,7 @@ class DockerRunner:
         memory_bytes: int | None = None,
         cpu_jobs: int | None = None,
         prefix_mount: tuple[Path, str] | None = None,
+        toolchain_cache: Path | None = None,
         capabilities: tuple[str, ...] = (),
     ) -> EnvironmentHandle:
         self._require_local_daemon()
@@ -222,6 +223,13 @@ class DockerRunner:
                 raise ValidationError("Docker bind path must not contain commas")
             mount = f"type=bind,src={source},dst=/work/{part}"
             command += ["--mount", mount + (",readonly" if part == "source" else "")]
+        if toolchain_cache is not None:
+            if toolchain_cache.absolute() != toolchain_cache.resolve() or "," in str(
+                toolchain_cache
+            ):
+                raise ValidationError("invalid toolchain cache path")
+            ensure_directory(toolchain_cache)
+            command += ["--mount", f"type=bind,src={toolchain_cache},dst=/work/cache"]
         command += [environment.image, "infinity"]
         # Creating the writable layer of a large build image can exceed the
         # short metadata-query timeout on network-backed VM disks.

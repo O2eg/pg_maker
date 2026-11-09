@@ -1,0 +1,31 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc15-jsquery
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: archive
+    location: https://codeload.github.com/postgrespro/jsquery/tar.gz/40b1db58b3f3f4b315a6f606ba88752c0f8b6aaf
+    strip_components: 1
+    sha256: sha256:6e0a7c46a6a277f096298f85418d5ad78b7026dd82a7bbac83e262be9ff5b2ef
+  compatible_postgresql: '>=15.18,<16'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets:
+  - installcheck
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: jsquery
+  runtime_files:
+  - lib/postgresql/jsquery.so
+  - share/postgresql/extension/jsquery.control
+  - share/postgresql/extension/jsquery--*.sql
+  sql_extension_versions:
+    jsquery: '1.1'

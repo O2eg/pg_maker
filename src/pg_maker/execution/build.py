@@ -73,7 +73,7 @@ class BuildBranch:
         )
         self.step = step
 
-    def begin(self):
+    def begin(self, *, complete_checkpoint=False):
         cache_producer = self.report.get("cache_producer")
         for path in (self.root, self.obj, self.output):
             ensure_directory(path)
@@ -86,6 +86,35 @@ class BuildBranch:
         self.report.update(
             lock_hash=self.request.lock["lock_hash"], plan_hash=self.request.plan["plan_hash"]
         )
+        if complete_checkpoint:
+            # Recovery after the final durable snapshot only finishes the operation.
+            # Its verified package/test records must survive finalization.
+            return
+        component_ids = {c["metadata"]["id"] for c in self.feature["spec"]["components"]}
+        self.report["components"] = [
+            c for c in self.report.get("components", []) if c["id"] in component_ids
+        ]
+        self.report.update(
+            status="running",
+            qualification="unverified",
+            publication_eligible=False,
+            db_tests="pending" if self.request.plan["spec"]["run_db_tests"] else "skipped",
+            steps=[],
+        )
+        self.report.pop("error", None)
+        for name in (
+            "artifact_manifest",
+            "verification",
+            "packages",
+            "install_tree",
+            "package_tests",
+            "verified_test_ids",
+            "test_policy",
+            "source_test_scope",
+            "core_tests",
+            "world_tests",
+        ):
+            self.report.pop(name, None)
         self.counter = max(
             (int(p.stem) for p in (self.output / "commands").glob("*.json")), default=0
         )
@@ -102,6 +131,7 @@ class BuildBranch:
             memory_bytes=self.step["resources"]["memory_bytes"],
             cpu_jobs=self.step["resources"]["cpu_jobs"],
             prefix_mount=(self.root / "prefix", self.prefix),
+            toolchain_cache=Path(self.request.input_store) / "toolchains",
         )
         self.record_resource()
         self.command(["id", "-un"])
@@ -133,11 +163,28 @@ class BuildBranch:
     ):
         self.context.check()
         self.counter += 1
+        tool_env = {}
+        for component in self.step.get("parameters", {}).get("components", []):
+            if not isinstance(component, dict):
+                continue  # Packaging stages carry selected IDs, not component recipes.
+            extra = component["spec"].get("extra_sources", {})
+            if {"rustc", "rust-std", "cargo", "cargo-pgrx"} <= extra.keys():
+                key = content_hash(
+                    {
+                        "inputs": {k: v["source_hash"] for k, v in extra.items()},
+                        "image": self.step["image_id"],
+                        "build": self.variant["build"],
+                        "postgresql": self.config["postgresql"],
+                        "prefix": self.prefix,
+                        "helper": file_hash(self.helper / "upstream-tests/vectorscale.py"),
+                    }
+                )
+                tool_env["PG_MAKER_RUST_CACHE"] = "/work/cache/" + key[7:]
         command = CommandSpec(
             self.id + "." + str(self.counter),
             tuple(argv),
             cwd=cwd or self.container_root + "/obj",
-            env={**self.step["env"], **(env or {})},
+            env={**self.step["env"], **tool_env, **(env or {})},
             timeout_seconds=timeout or self.step["timeout_seconds"],
         )
         result = self.runner.execute(self.handle, command)
@@ -277,7 +324,24 @@ class BuildBranch:
                         )
                     versions[module] = {"version": actual, "libdir": libdir}
             self.report["library_versions"] = versions
-            write_json(self.output / "library-files.json", inventory(self.root / "prefix"))
+            library_files = {
+                name
+                for library in step["parameters"]["components"]
+                for name in read_json(
+                    self.root / "install-owners" / (library["metadata"]["id"] + ".json")
+                )["files"]
+            }
+            installed = inventory(self.root / "prefix")
+            installed["entries"] = [
+                entry
+                for entry in installed["entries"]
+                if entry["path"] in library_files
+                or (
+                    entry["type"] == "directory"
+                    and any(name.startswith(entry["path"] + "/") for name in library_files)
+                )
+            ]
+            write_json(self.output / "library-files.json", installed)
         elif kind in {"build_and_test_tools", "build_tools"}:
             from pg_maker.execution.component_cache import execute_component
 
@@ -340,7 +404,13 @@ class BuildBranch:
             package(self)
             from pg_maker.validation.packages import runtime_repository
 
-            runtime_repository(self)
+            if (
+                self.request.plan["spec"].get(
+                    "run_package_tests", self.request.plan["spec"]["run_db_tests"]
+                )
+                or self.config["documentation"]["enabled"]
+            ):
+                runtime_repository(self)
         elif kind == "test_installed_packages":
             from pg_maker.validation.packages import validate_packages
 
@@ -362,6 +432,9 @@ class BuildBranch:
             if kind in {"test_core", "test_source_world"}:
                 phase = "core" if kind == "test_core" else "world"
                 tap = self.output / phase / "tap"
+                from pg_maker.execution.workspace import archive_evidence
+
+                archive_evidence(self, self.output / phase)
                 ensure_directory(tap)
                 env.update(
                     PERL5LIB="/work/source",
@@ -405,6 +478,11 @@ class BuildBranch:
                             e for e in core["entries"] if e["path"] not in library_paths
                         ]
                     write_json(self.output / "core-files.json", core)
+                if kind == "install_components":
+                    from pg_maker.packaging.contrib import capture, enabled
+
+                    if enabled(self.config):
+                        capture(self, env)
                 warnings = []
                 for path in (result.stdout_log, result.stderr_log):
                     for line in Path(path).read_text(errors="replace").splitlines():
@@ -493,12 +571,27 @@ def execute_build(directory, token):
                 failure = None
                 try:
                     context.check()
+                    from pg_maker.execution.workspace import WorkspaceJournal, compact_success
+
+                    branch.workspace = WorkspaceJournal(branch)
                     checkpoints = Checkpoints(branch, branch_steps)
-                    restored = checkpoints.restore()
-                    branch.begin()
+                    restored = (
+                        checkpoints.restore()
+                        if (not branch.workspace.reused and any(checkpoints.index.glob("*.json")))
+                        else -1
+                    )
+                    if restored >= 0 and restored != len(branch_steps) - 1:
+                        branch.workspace = WorkspaceJournal(branch)
+                    branch.begin(complete_checkpoint=restored == len(branch_steps) - 1)
                     for index, step in enumerate(branch_steps):
                         context.check()
-                        if index <= restored:
+                        if index <= restored and not checkpoints.journal_restored:
+                            context.advance(
+                                "step_reused", step_id=step["id"], target_id=step["target_id"]
+                            )
+                            continue
+                        if branch.workspace.can_reuse(step):
+                            branch.report["steps"].append({"id": step["id"], "status": "reused"})
                             context.advance(
                                 "step_reused", step_id=step["id"], target_id=step["target_id"]
                             )
@@ -508,7 +601,9 @@ def execute_build(directory, token):
                             "step_started", step_id=step["id"], target_id=step["target_id"]
                         )
                         progress.info("Starting " + step["id"])
+                        branch.workspace.start(step)
                         branch.execute(step)
+                        branch.workspace.complete(step)
                         checkpoints.save(index)
                         context.advance(
                             "step_completed", step_id=step["id"], target_id=step["target_id"]
@@ -520,6 +615,7 @@ def execute_build(directory, token):
                     render_report(branch)
                     if restored != len(branch_steps) - 1:
                         checkpoints.save(len(branch_steps) - 1, complete=True)
+                    compact_success(branch)
                     succeeded += 1
                 except MakerError as exc:
                     failure = exc
@@ -537,6 +633,8 @@ def execute_build(directory, token):
                     except MakerError as exc:
                         failure = failure or exc
                     if failure:
+                        if hasattr(branch, "workspace"):
+                            branch.workspace.fail(branch.step, failure)
                         branch.report.update(status="failed", error=failure.as_dict())
                         write_json(branch.output / "report.json", branch.report)
                         render_report(branch)

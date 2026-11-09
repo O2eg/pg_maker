@@ -1,0 +1,31 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc15-pg-uuidv7
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: archive
+    location: https://codeload.github.com/fboulnois/pg_uuidv7/tar.gz/0396caaa8269a899826a9195f72c42a845d656a7
+    strip_components: 1
+    sha256: sha256:fec5c9a3a7e3117fc2e1319fde06a964e649c845cbc3eaf500c3b35289f7a8f3
+  compatible_postgresql: '>=15.18,<16'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets:
+  - installcheck
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: pg_uuidv7
+  runtime_files:
+  - lib/postgresql/pg_uuidv7.so
+  - share/postgresql/extension/pg_uuidv7.control
+  - share/postgresql/extension/pg_uuidv7--*.sql
+  sql_extension_versions:
+    pg_uuidv7: '1.5'

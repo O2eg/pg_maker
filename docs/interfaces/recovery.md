@@ -14,33 +14,61 @@ Edited development sources require a new iteration, never a changed resume input
 
 ## Checkpoints and reusable results
 
-`Checkpoints(branch, steps).save(index, complete=False)` captures completed source,
-configure, compile, install, component, collection, dependency and package boundaries,
-plus documentation preparation and per-language translation/render steps. Results
-are verified before snapshot/index/event publication. Restore verifies plan/stage
-keys, manifest and bytes/modes/links. Invalid snapshots fall back to earlier boundaries.
-Existing scratch is archived under attempts/N/previous; restore uses fresh roots.
-A successful branch of a partial matrix can restore completely. In full-test mode,
-an unfinished branch restores before the first test and reruns tests.
+Normal recovery uses `workspace-journal.json`: compilation keys, stage statuses,
+producer provenance and installed-file hashes. Core/contrib and each external
+component have separate build directories. Exact-run resume preserves those trees;
+`build NEW_LOCK --reuse-from OLD_RUN` acquires the old owner lock and renames its
+workspace into the new run without copying objects. Old inputs and evidence stay
+immutable. Source-only extension edits synchronize changed/removed sources with
+fresh timestamps. Recipe, dependency, image or compiler changes invalidate the
+appropriate component; core changes invalidate dependents conservatively.
 
-SnapshotStore provides capture/verify/restore/lookup/pin/prune under flock with SHA256
-and atomic writes. Manifests contain relative paths, file bytes/modes/mtimes or link
-targets. Restore does not follow links or overwrite existing roots. Special files
-are rejected. Shared core snapshots contain source/obj/prefix/output after world-bin
-with tests disabled. Restored objects are private copies with preserved timestamps.
+Only matching successful compilation steps are skipped. Tests, collection,
+dependency analysis and packaging run again. Ordinary make failures retain partial
+objects; interrupted/ambiguous components are cleaned before retry. Installation
+uses isolated DESTDIR directories and durable per-component ownership records.
+Partial staging never enters the shared prefix; interrupted publication is replayed
+before work resumes. Removed component files are retired. Before retrying a suite,
+old test evidence moves to `attempts/N/previous-evidence`; only fresh output counts
+as the new result.
 
-Core keys contain compilation inputs, image, flags, paths and implementation identity.
-External components have separate install/evidence/workspace snapshots keyed by own
-sources, recipes, core and dependencies. A different lock alone does not invalidate
-compatible compilation. Exact-run resume checkpoints still require the original plan.
-Test results are never reused from the shared compilation cache. Artifact manifests
-distinguish current packaging producer, core build producer and component producers.
+`execution.checkpoints` selects `final` (default), `milestones` or `all`. Final
+snapshots hold prefix and output/evidence. Milestones additionally save the completed
+core/contrib boundary. All saves each eligible compile/install/package boundary.
+Intermediate snapshots include core source/objects and install/journal metadata,
+not external component build trees or Rust toolchains. Intermediate recovery uses
+the restored journal and reruns every test; legacy snapshots without a journal
+restore before the first test. A fully completed exact-plan checkpoint can finish interrupted operation finalization with its verified evidence.
 
-Cache defaults to operations/.cache; --cache-store selects another store. --no-cache
-disables shared reuse, keeping private checkpoints. Entry and pin publish together.
-Operation pins conservatively retain referenced data, including interrupted/completed
-runs. Prune removes only unreferenced CAS objects. Private checkpoints, InputStore,
-Docker images, packages and reports are not removed automatically.
+SnapshotStore verifies plan/stage keys, SHA256, modes and links before restoring into
+fresh roots under flock. Invalid checkpoints fall back to earlier ones. Normal
+workspace recovery does not copy or archive the tree; snapshot fallback may archive
+invalid scratch. Successful package/verified operations remove compiler scratch and
+archived build trees and validation scratch by default (`workspace_retention: on-failure`). Failed or
+build-only runs keep it; `keep` also retains successful package workspaces.
+
+Prepared image records are keyed by base image ID, target architecture, selected
+packages/tools/locales, builder user and preparation adapter. Reuse verifies the
+record hash and that Docker still has the exact image ID. Changing requested inputs
+or removing that image forces preparation. Mutable apt repositories are not polled
+on a cache hit; update the base/input recipe to request a new environment.
+
+Rust/pgrx toolchains and vendored crates are shared under `InputStore/toolchains`.
+Keys contain pinned extra-source hashes (including compiler/stdlib architecture),
+build image, PostgreSQL/build settings, prefix and helper identity. A lock serializes
+creation/use; file hashes and modes are checked before reuse. Corruption rebuilds
+the cache. Cargo build artifacts remain in the component workspace and are cleaned
+with it. Immutable input digests are memoized within a process by device, inode,
+size, nanosecond mtime/ctime and mode; subsequent checks still walk metadata and
+rehash changed entries. Same-size/mtime-restored edits are detected by ctime.
+
+The legacy shared SnapshotStore remains available for old runs and explicit prune.
+`--no-cache` disables that shared snapshot cache, not explicit workspace reuse or
+input/toolchain/image caches. New workspace recovery does not publish full component
+object trees into it. Pins retain referenced legacy data until lifecycle cleanup.
+InputStore and Docker garbage collection remain explicit; packages/reports are
+never automatically deleted. Artifact manifests distinguish current packaging
+producer from core/component compilation producers.
 
 ```bash
 pg-maker resume operations/RUN --plan-hash sha256:FULL_HASH --detach

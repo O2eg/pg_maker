@@ -186,6 +186,31 @@ class Harness:
                             "installed ELF dependency is missing or uses the build tree"
                         )
         self.check("installed-inventory-and-loader")
+        self.contrib_inventory()
+
+    def contrib_inventory(self):
+        document = self.config.get("standard_contrib")
+        if not document or "server" not in self.config["roles"]:
+            return
+        # Independent upstream installation inventory, not the package's selected files.
+        for entry in document["entries"]:
+            relative = entry["path"]
+            if entry["type"] == "directory" or relative.startswith(
+                ("include/", "share/doc/", "share/man/")
+            ):
+                continue
+            if relative.endswith((".a", ".la")) or "pgxs" in Path(relative).parts:
+                continue
+            path = Path(self.service["prefix"]) / relative
+            if entry["type"] == "symlink":
+                valid = path.is_symlink() and os.readlink(path) == entry["target"]
+            else:
+                valid = (
+                    path.is_file()
+                    and "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest() == entry["sha256"]
+                )
+            self.check("standard-contrib-file:" + relative, valid)
+        self.check("complete-standard-contrib", modules=document["modules"])
 
     def extension_sdk(self):
         """Compile, install and load an external extension using only installed packages."""
@@ -628,6 +653,9 @@ class Harness:
         self.systemctl("reload")
         self.check("service-start-status-reload")
         self.extension_sdk()
+        if self.config.get("standard_contrib"):
+            self.sql("LOAD 'auto_explain'")
+            self.check("auto-explain-loads")
         self.default_socket()
         self.sql('ALTER USER "' + self.service["user"] + "\" PASSWORD 'pg_maker_disposable_test'")
         self.check(

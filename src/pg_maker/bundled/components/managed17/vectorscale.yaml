@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/timescale/pgvectorscale/tar.gz/c66cae4b621664b68546587da9fafd80b791e643
     sha256: sha256:ed8347b7a5fe62763ecc13fafac04289b50615e284ffc297f9cc0f195a878906
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires:
   - yc17-vector
   conflicts: []
@@ -18,10 +18,6 @@ spec:
   - libclang-dev
   - libssl-dev
   - pkg-config
-  - python3-psycopg2
-  - python3-pytest
-  - python3-numpy
-  - python3-pytest-timeout
   runtime_dependencies: []
   make_targets: []
   test_targets: []
@@ -83,3 +79,8 @@ spec:
     - '{jobs}'
     - '{source:cargo-pgrx}'
     success_pattern: ^PG_MAKER_VECTORSCALE_TESTS_PASSED=(?P<count>\d+)$
+  test_dependencies:
+  - python3-psycopg2
+  - python3-pytest
+  - python3-numpy
+  - python3-pytest-timeout

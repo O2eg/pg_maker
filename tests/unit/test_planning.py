@@ -595,6 +595,9 @@ def select_changes(project, references):
 
 
 def test_change_order_baseline_and_frozen_files(project):
+    manifest = load_yaml(project / "build.yaml")
+    manifest["spec"]["validation"]["run_db_tests"] = True
+    write_yaml(project / "build.yaml", manifest)
     first = add_change(project, "first", requires=["last"], acceptance=True)
     middle = add_change(project, "middle")
     last = add_change(project, "last")
@@ -824,10 +827,33 @@ def test_fast_build_skips_db_tests_and_baseline_but_keeps_build_steps(project):
         build_plan(lock, goal="verified", run_db_tests=False)
 
 
+def test_package_checks_can_run_without_source_suites(project):
+    manifest = load_yaml(project / "build.yaml")
+    manifest["spec"]["validation"].update(run_db_tests=False, run_package_tests=True)
+    write_yaml(project / "build.yaml", manifest)
+    config = load_config(project / "build.yaml").data
+    requirements = environment_requirements(config)["environments"]
+    assert {r["role"] for r in requirements} == {"build", "test"}
+    assert next(r for r in requirements if r["role"] == "build")["runtime_packages"]
+    state, lock = resolved(project)
+    assert state["status"] == "succeeded"
+    plan = build_plan(lock, goal="package")
+    assert not plan["spec"]["run_db_tests"] and plan["spec"]["run_package_tests"]
+    kinds = {s["kind"] for s in plan["spec"]["steps"]}
+    assert "test_installed_packages" in kinds
+    assert not {"test_core", "test_source_world", "verify_source", "build_and_test_tools"} & kinds
+    exported = next(s for s in plan["spec"]["steps"] if s["kind"] == "export")
+    assert exported["parameters"]["qualification_ceiling"] == "unverified"
+    assert not exported["parameters"]["publication_eligible"]
+
+
 @pytest.mark.parametrize("goal", ["build", "package"])
 def test_build_preserves_supplied_test_mode_and_rejects_conflicting_override(
     project, monkeypatch, goal
 ):
+    manifest = load_yaml(project / "build.yaml")
+    manifest["spec"]["validation"]["run_db_tests"] = True
+    write_yaml(project / "build.yaml", manifest)
     state, lock = resolved(project)
     assert state["status"] == "succeeded"
     plan = build_plan(lock, goal=goal, run_db_tests=True)
@@ -842,7 +868,7 @@ def test_build_preserves_supplied_test_mode_and_rejects_conflicting_override(
     with pytest.raises(PreconditionError, match="differs"):
         service.build(project / "lock.json", plan=project / "plan.json", run_db_tests=False)
     with pytest.raises(PreconditionError, match="plan hash"):
-        service.build(project / "lock.json", plan_hash=plan["plan_hash"])
+        service.build(project / "lock.json", plan_hash=plan["plan_hash"], run_db_tests=False)
     assert len(requests) == 1
 
 
@@ -882,6 +908,7 @@ def test_tests_and_clean_package_installation_are_enabled_by_default(project):
 @pytest.mark.parametrize("enabled", [False, True])
 def test_package_plan_declares_the_effective_server_development_payload(project, enabled):
     manifest = load_yaml(project / "build.yaml")
+    manifest["spec"]["validation"]["run_db_tests"] = True
     manifest["spec"]["packaging"] = {"server_dev_files": enabled}
     write_yaml(project / "build.yaml", manifest)
     state, lock = resolved(project)

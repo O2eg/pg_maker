@@ -1,5 +1,5 @@
-source_host: rc1a-novptt4hkfpbodb6.mdb.yandexcloud.net
-database: db1
+source_host: managed-pg18.example.invalid
+database: reference
 observed_at: '2026-11-05'
 coverage: Available non-contrib SQL extensions; matching public versions do not establish vendor binary
   or physical replication equivalence.
@@ -735,3 +735,9 @@ additional_modules:
   source_ref: d90081773b5809f4138157e40f722a511cedb4e1
   managed_version: null
   status: selected-unverified
+
+binary_compatibility:
+  required: true
+  status: not-verified
+  physical_replay_tested: false
+  qualification_note: Build and package tests do not establish complete managed vendor binary compatibility.

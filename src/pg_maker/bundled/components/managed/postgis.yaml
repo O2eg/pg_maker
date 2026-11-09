@@ -30,7 +30,6 @@ spec:
   - docbook-xml
   - xsltproc
   - docbook-xsl
-  - libcunit1-dev
   runtime_dependencies:
   - libgeos-c1t64
   - libproj25
@@ -79,3 +78,5 @@ spec:
     - '{jobs}'
     - check
     success_pattern: 'Run tests: (?P<count>\d+)\nFailed: 0'
+  test_dependencies:
+  - libcunit1-dev

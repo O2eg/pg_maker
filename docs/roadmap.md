@@ -12,7 +12,7 @@ Implementation and executed validation are recorded separately. See the
 | 5. Distribution | InstallTree, server/client/libpq DEBs, installation/lifecycle checks, manifests and reports implemented for the initial platform. |
 | 6. Recovery and CI | Verified resume, attempts, caches, resource guards and portable exports implemented; workflows prepared. Remote CI status must be checked separately. |
 | 7. Documentation | Structural writer, translation bundles, DocBook/Sphinx, HTML/man/PDF, docs DEB and independent validation implemented. No complete Russian manual translation is bundled. |
-| 8. Version/platform matrix | YAML catalog for PostgreSQL 14–19, toolchain checks and beta/RC identities implemented. Database-test adapters support 16/17/18. Remaining work: adapters for 14/15/19, broader minor/toolchain coverage, additional OS targets, bundled ARM64 profiles, RPM, tar and Debian source packages. Runtime OCI image handoff is implemented; general image-distribution support remains separate. |
+| 8. Version/platform matrix | YAML catalog for PostgreSQL 14–19, toolchain checks and beta/RC identities implemented. Database-test adapters support 15/16/17/18. Remaining work: adapters for 14/19, broader minor/toolchain coverage, additional OS targets, bundled ARM64 profiles, RPM, tar and Debian source packages. Runtime OCI image handoff is implemented; general image-distribution support remains separate. |
 | 9. Integration and development | pg_play CLI/MCP, runtime image handoff, experiment maker phase, ChangeSet workspaces and cleanup implemented. Git sessions add patch stacks, rebase, selected component builds, debug commands, reuse explanations and iteration retention. |
 | 10. Distribution publication | Signatures, APT/RPM/Nexus publishing, partial-upload recovery and exact published-version checks remain future work. |
 
@@ -25,7 +25,7 @@ which concerns publishing the PostgreSQL distributions it builds. See
 The implemented target is local Linux Docker, Debian 13 / x86_64 / DEB. Inputs can
 be Git, archives or filesystem snapshots. Source/build/package/docs goals work
 without database tests. Database tests default to enabled; evidence adapters support
-majors 16, 17 and 18. Tested builds of 14/15/19 fail explicitly until their adapters
+majors 15, 16, 17 and 18. Tested builds of 14/19 fail explicitly until their adapters
 exist. The local PG18 ARM64 case used extra recipes/helper changes, not a bundled
 ARM profile. A catalog entry alone is not proof of a completed build; see
 [major-version evidence](validation/postgresql-majors.md).
@@ -47,7 +47,7 @@ platform adapters, reproducibility analysis and remote execution. HTML run repor
 already exist for build operations.
 
 Product decisions: configuration and file logs live in PGDATA; headers/PGXS may ship
-in the server package via server_dev_files (enabled in all three YC profiles). ECPG
+in the server package via server_dev_files (enabled in all YC profiles). ECPG
 binaries/libraries remain excluded; there is no separate client installer or devel
 package. Documentation Suggests is emitted only with documentation enabled.
 

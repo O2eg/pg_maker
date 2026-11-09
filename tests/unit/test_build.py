@@ -264,14 +264,25 @@ def test_fast_component_build_installs_without_inventory_or_cluster(tmp_path):
     source.mkdir()
     (source / "Makefile").write_text("all install:\n\ttrue\n")
     commands = []
+
+    def command(argv, **kw):
+        commands.append(argv)
+        if argv[-1] == "install":
+            dest = next(a.removeprefix("DESTDIR=") for a in argv if a.startswith("DESTDIR="))
+            target = tmp_path / "work" / dest.removeprefix("/work/build/fixture/")
+            target /= "opt/fixture/lib/probe.so"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("installed fixture")
+
     branch = SimpleNamespace(
         root=tmp_path / "work",
+        output=tmp_path / "output",
         container_root="/work/build/fixture",
         prefix="/opt/fixture",
         inputs=SimpleNamespace(tree=lambda digest: source),
         variant={"build": {"jobs": 1}},
         report={},
-        command=lambda argv, **kw: commands.append(argv),
+        command=command,
     )
     component = {
         "metadata": {"id": "probe"},
@@ -291,3 +302,31 @@ def test_fast_component_build_installs_without_inventory_or_cluster(tmp_path):
     report = branch.report["components"][0]
     assert report["built"] and report["tests"] == "skipped"
     assert "passed" not in report and not report["native_targets"]
+
+
+@pytest.mark.parametrize(
+    "tests,docs,repository", [(False, False, False), (True, False, True), (False, True, True)]
+)
+def test_package_stage_exports_runtime_dependencies_only_for_install_tests(
+    tmp_path, monkeypatch, tests, docs, repository
+):
+    from types import SimpleNamespace
+
+    from pg_maker.execution.build import BuildBranch
+    from pg_maker.packaging import deb
+    from pg_maker.validation import packages
+
+    calls = []
+    monkeypatch.setattr(deb, "package", lambda b: calls.append("deb"))
+    monkeypatch.setattr(
+        packages, "runtime_repository", lambda b: calls.append("runtime-repository")
+    )
+    branch = SimpleNamespace(
+        request=SimpleNamespace(plan={"spec": {"run_db_tests": tests}}),
+        config={"documentation": {"enabled": docs}},
+        context=SimpleNamespace(check=lambda: None),
+        report={"steps": []},
+        output=tmp_path,
+    )
+    BuildBranch.execute(branch, {"kind": "package", "id": "package"})
+    assert calls == (["deb", "runtime-repository"] if repository else ["deb"])

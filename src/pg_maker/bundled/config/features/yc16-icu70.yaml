@@ -4,7 +4,7 @@ metadata:
   id: yc16-icu70
   revision: 2
 spec:
-  description: PostgreSQL 16.15 with private ICU 70.1 and a managed extension inventory
+  description: PostgreSQL 16 with private ICU 70.1 and a managed extension inventory
   numeric_id: null
   changes: []
   components:
@@ -42,4 +42,4 @@ spec:
   documentation:
     rules: []
   required_tests: []
-  compatible_postgresql: ==16.15
+  compatible_postgresql: '>=16.14,<=16.15'

@@ -1,10 +1,11 @@
 # YC package build, upload and installation
 
-The bundled `yc-16.15-icu70`, `yc-17.11-icu70` and `yc-18.6-icu70` profiles target
-Debian 13 **amd64**. This example uses PostgreSQL 18.6. A native ARM64 build needs a
+The bundled YC profiles listed in the [profile table](../README.md#choose-and-configure-a-profile)
+target Debian 13 **amd64**. This example uses PostgreSQL 18.6. A native ARM64 build needs a
 separate platform recipe mapping `aarch64` to Debian `arm64`, ARM compiler flags,
-ARM Rust archives and vectorscale helper changes. The local ARM64 build on 2026-11-06
-used those adaptations; they are not a bundled ARM profile. Changing only the DEB
+ARM Rust archives. The vectorscale helper supports native x86-64 and AArch64,
+applying AVX2/FMA flags only on x86-64. Local ARM builds use a project platform
+recipe and pinned ARM Rust archives; there is no bundled ARM profile. Changing only the DEB
 filename or target architecture does not port a build.
 
 ## Install and initialize

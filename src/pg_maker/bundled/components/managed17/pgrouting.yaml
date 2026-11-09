@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/pgRouting/pgrouting/tar.gz/24d25b3e2ebfb1780d9fe92baff446e64fddc8b3
     sha256: sha256:16eb950677ae598c6b53c119ebdb78c36510e1289062b38a999701c54a9c103f
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires:
   - yc17-postgis
   conflicts: []

@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/fboulnois/pg_uuidv7/tar.gz/0396caaa8269a899826a9195f72c42a845d656a7
     sha256: sha256:fec5c9a3a7e3117fc2e1319fde06a964e649c845cbc3eaf500c3b35289f7a8f3
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires: []
   conflicts: []
   build_dependencies: []

@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc18-timescaledb
-  revision: 4
+  revision: 5
 spec:
   type: library
   source:
@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/timescale/timescaledb/tar.gz/ba5dcfd1c69f3529d0cc9de3028e1a12a36042ba
     sha256: sha256:dbf6f09402e805e824c92242ecad01a18363816e48676b1f53ad3d2a788d00fe
     strip_components: 1
-  compatible_postgresql: '>=18.6,<19'
+  compatible_postgresql: '>=18.4,<19'
   requires: []
   conflicts: []
   build_dependencies:
@@ -67,8 +67,10 @@ spec:
     success_pattern: All (?P<count>\d+) tests passed\.
   source_patches:
   - ../../patches/timescaledb-2.23-archive-metadata.patch
-  - ../../patches/timescaledb-2.23-pg18-output-plugin.patch
-  - ../../patches/timescaledb-2.23-pg18-copy-tests.patch
+  - path: ../../patches/timescaledb-2.23-pg18-output-plugin.patch
+    compatible_postgresql: '>=18.6,<19'
+  - path: ../../patches/timescaledb-2.23-pg18-copy-tests.patch
+    compatible_postgresql: '>=18.6,<19'
   installed_checks:
   - argv:
     - '{prefix}/bin/psql'

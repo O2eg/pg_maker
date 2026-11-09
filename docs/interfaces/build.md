@@ -20,11 +20,21 @@ acceptance and baseline, and reports unverified, db_tests=skipped and
 publication_eligible=false. `--run-db-tests`/true forces tests. None inherits a supplied
 plan or locked default. YAML changes require resolve. The effective boolean enters
 BuildPlan and its hash; a flag conflicting with a supplied plan fails before startup.
-Source evidence adapters support PostgreSQL 16, 17 and 18. Other catalog majors require
+Source evidence adapters support PostgreSQL 15, 16, 17 and 18. Other catalog majors require
 an explicit unverified development build until their adapters are implemented.
 
+For an explicitly requested fast rebuild with installed-package checks, set
+`spec.validation.run_db_tests: false` and `spec.validation.run_package_tests: true`
+before environment preparation and resolve. Goal `package` then skips source/core/
+contrib/extension regression suites and runs the normal isolated DEB installation,
+database/extension startup, SDK, remove/reinstall/purge checks. The prepared runtime
+repository and test image remain mandatory. Source-test dependencies stay excluded.
+The report retains `db_tests: skipped`, `qualification: unverified` and
+`publication_eligible: false`; successful package checks are separate evidence in
+`package-tests.json`. The default tested build behavior is unchanged.
+
 `pg-maker test-full LOCK` (or `build LOCK --goal test-full`) runs all standard source
-suites and the expensive core extras: `wal_consistency_checking` for PostgreSQL 16/17/18,
+suites and the expensive core extras: `wal_consistency_checking` for PostgreSQL 15/16/17/18,
 and `xid_wraparound` for PostgreSQL 17/18. PostgreSQL 16 has no xid_wraparound module.
 `validation.test_suites` defaults to `[standard]`. Selecting `[standard, long]` also
 requires the long suites for ordinary build/package/verified goals. `test-full` rejects skipped tests,

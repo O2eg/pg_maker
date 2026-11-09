@@ -80,6 +80,7 @@ def execute_preparation(directory, token):
                 raise PreconditionError("operation input hash changed")
             request = parse_request(payload)
             context.offline = request.offline
+            context.input_store = Path(request.input_store)
             limits = request.config["defaults"]["execution"]["limits"]
             context.timeout = limits["stage_timeout_seconds"]
             if shutil.disk_usage(directory).free < limits["min_free_disk_bytes"]:

@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/postgis/h3-pg/tar.gz/a6d98a41ebf9cb3b0c91dedfa6e248e72b27aed3
     sha256: sha256:a42c39f272de28a9562dc7251bb55b6b0319a4ddacb3f9925c5af8483b6261b9
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires:
   - yc17-postgis
   conflicts: []

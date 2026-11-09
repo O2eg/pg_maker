@@ -46,6 +46,9 @@ def build_plan(
         run_db_tests = config["defaults"]["validation"].get("run_db_tests", True)
     if components is not None and run_db_tests:
         raise ValidationError("component selection requires DB tests disabled")
+    run_package_tests = goal in {"package", "verified"} and (
+        run_db_tests or config["defaults"]["validation"].get("run_package_tests", False)
+    )
     if spec.get("development") and run_db_tests:
         raise PreconditionError(
             "development snapshots are unverified; "
@@ -72,6 +75,7 @@ def build_plan(
     steps = []
     limits = config["defaults"]["execution"]["limits"]
     server_dev_files = config["defaults"].get("packaging", {}).get("server_dev_files", False)
+    standard_contrib = config["defaults"].get("packaging", {}).get("standard_contrib", False)
     for variant in config["variants"]:
         feature = next(f for f in config["features"] if f["metadata"]["id"] == variant["feature"])
         for branch in (
@@ -323,6 +327,7 @@ def build_plan(
                 "install_components",
                 argv=[*make, "install-world-bin"],
                 env=env,
+                checks=["complete-standard-contrib-inventory"] if standard_contrib else [],
             )
             if run_db_tests and branch == "candidate":
                 add(
@@ -365,6 +370,7 @@ def build_plan(
                     "identity": variant["identity"],
                     "components": [c["metadata"]["id"] for c in feature["spec"]["components"]],
                     "server_dev_files": server_dev_files,
+                    "standard_contrib": standard_contrib,
                     "exclude": ["ecpg"] if server_dev_files else ["headers", "pgxs", "ecpg"],
                     "configuration": "initdb-in-pgdata",
                     "file_logs": "pgdata",
@@ -383,7 +389,7 @@ def build_plan(
                 },
                 checks=["package-metadata"],
             )
-            if goal == "package" and not run_db_tests:
+            if goal == "package" and not run_package_tests:
                 if config["documentation"]["enabled"]:
                     add(
                         "test_documentation_packages",
@@ -423,7 +429,7 @@ def build_plan(
                     "reinstall",
                 ],
             )
-            if tests:
+            if tests and run_db_tests:
                 add(
                     "acceptance",
                     role="test",
@@ -433,13 +439,16 @@ def build_plan(
             add(
                 "export",
                 parameters={
-                    "publication_eligible": branch == "candidate"
+                    "publication_eligible": run_db_tests
+                    and branch == "candidate"
                     and config["defaults"]["validation"]["profile"] in {"full", "release"},
-                    "qualification_ceiling": "release-qualified"
+                    "qualification_ceiling": "unverified"
+                    if not run_db_tests
+                    else "release-qualified"
                     if branch == "candidate"
                     and config["defaults"]["validation"]["profile"] == "release"
                     else "package-verified",
-                    "requires_verification_evidence": True,
+                    "requires_verification_evidence": run_db_tests,
                 },
                 outputs=[{"root": "output", "path": prefix + "/report.json"}],
             )
@@ -450,6 +459,7 @@ def build_plan(
             "lock_hash": lock["lock_hash"],
             "goal": goal,
             "run_db_tests": run_db_tests,
+            "run_package_tests": run_package_tests,
             "components": components,
             "implementation": spec["implementation"],
             "execution_available": True,

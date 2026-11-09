@@ -246,6 +246,9 @@
               "type": "null"
             }
           ]
+        },
+        "run_package_tests": {
+          "type": "boolean"
         }
       },
       "required": [

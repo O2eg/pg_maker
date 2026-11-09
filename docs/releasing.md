@@ -15,11 +15,11 @@ ruff check .
 ruff format --check .
 python tools/generate_planning_schemas.py
 git diff --exit-code -- src/pg_maker/schemas
-python tools/check_release.py --tag v0.4.1
+python tools/check_release.py --tag v0.5.0
 python -m pytest -q tests/unit tests/contracts
 python -m build
 python -m twine check --strict dist/*
-python tools/check_release.py --dist dist --tag v0.4.1
+python tools/check_release.py --dist dist --tag v0.5.0
 python tools/smoke_wheel.py dist/*.whl
 ```
 
@@ -61,8 +61,8 @@ version tag matching the package:
 
 ```bash
 git push origin main
-git tag -a v0.4.1 -m "pg-maker 0.4.1"
-git push origin v0.4.1
+git tag -a v0.5.0 -m "pg-maker 0.5.0"
+git push origin v0.5.0
 ```
 
 publish.yml calls the same tests workflow on the tag. Both Python jobs validate

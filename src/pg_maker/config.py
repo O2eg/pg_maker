@@ -99,7 +99,7 @@ def platform_recipe(reference: str, base: Path, config_dir: Path | None) -> tupl
 def _unmanaged(arguments: list[str], pointer: str) -> None:
     managed = re.compile(
         r"^(--(?:prefix|exec-prefix|[a-z]*dir|with(?:out)?-(?:llvm|ssl|openssl|icu|lz4|zstd|"
-        r"libxml|libxslt|pam|systemd|uuid|perl|python|tcl|ldap|gssapi)|"
+        r"libxml|libxslt|pam|systemd|uuid|selinux|perl|python|tcl|ldap|gssapi)|"
         r"(?:enable|disable)-(?:debug|cassert|nls|tap-tests)))(?:=|$)|"
         r"^(?:-[Oog]|-m(?:arch|cpu|tune)|-flto|-D_FORTIFY_SOURCE|(?:C|CPP|CXX|LD)FLAGS=)"
     )
@@ -124,6 +124,15 @@ def build_flags(defaults: dict, feature: dict, target: dict, recipe: dict, extra
     build = copy.deepcopy(defaults["build"])
     additions = feature["spec"]["build_options"]
     build["options"].update(additions.get("options", {}))
+    if defaults.get("packaging", {}).get("standard_contrib"):
+        from pg_maker.packaging.contrib import REQUIRED_OPTIONS
+
+        missing = [name for name in REQUIRED_OPTIONS if not build["options"].get(name)]
+        if missing:
+            raise ValidationError(
+                "standard contrib requires all optional module dependencies",
+                details={"missing_options": missing},
+            )
     if build["backend"] not in recipe["backends"]:
         raise UnsupportedError("build backend is not supported by platform")
     if build["backend"] != "autotools" or build["flags"]["lto"]:
@@ -270,6 +279,17 @@ def load_config(
         compatible(version, fs.get("compatible_postgresql", ">=14"), fid)
         changes, file_bindings = load_changes(fs["changes"], path.parent, version)
         components, component_bindings = load_components(fs["components"], path.parent, version)
+        for component in components:
+            component_spec = component["spec"]
+            roles = component_spec.get("extra_source_roles", {})
+            if "extra_sources" in component_spec:
+                component_spec["extra_sources"] = {
+                    name: source
+                    for name, source in component_spec["extra_sources"].items()
+                    if roles.get(name, "build") == "build"
+                    or (roles[name] == "test" and defaults["validation"].get("run_db_tests", True))
+                    or (roles[name] == "documentation" and docs["enabled"])
+                }
         bindings.update({fid + "/" + key: val for key, val in file_bindings.items()})
         bindings.update({fid + "/" + key: val for key, val in component_bindings.items()})
         feature["spec"]["changes"], feature["spec"]["components"] = changes, components
@@ -444,6 +464,10 @@ def load_config(
 
 def environment_requirements(config: dict) -> dict:
     result = []
+    tests_enabled = config["defaults"]["validation"].get("run_db_tests", True)
+    package_tests = tests_enabled or config["defaults"]["validation"].get(
+        "run_package_tests", False
+    )
     for target in config["targets"]:
         recipe = target["platform"]
         rs = recipe["spec"]
@@ -458,6 +482,8 @@ def environment_requirements(config: dict) -> dict:
             for f in config["features"]
         }
         for role in ("build", "test"):
+            if role == "test" and not package_tests and not config["documentation"]["enabled"]:
+                continue
             definition = rs["environments"][role]
             packages = set(definition["packages"])
             if role == "test" and config["defaults"].get("packaging", {}).get("server_dev_files"):
@@ -496,8 +522,12 @@ def environment_requirements(config: dict) -> dict:
                             packages.update(rs["option_dependencies"][option])
                 for component in components:
                     packages.update(component["spec"]["build_dependencies"])
+                    if tests_enabled:
+                        packages.update(component["spec"].get("test_dependencies", []))
+                    if docs["enabled"]:
+                        packages.update(component["spec"].get("documentation_dependencies", []))
             runtime_packages = set()
-            if role == "build":
+            if role == "build" and (package_tests or config["documentation"]["enabled"]):
                 for dependencies in rs["runtime_dependencies"].values():
                     runtime_packages.update(dependencies)
                 for dependencies in rs.get("service_dependencies", {}).values():

@@ -179,6 +179,9 @@ def validate_packages(branch, *, run_database=True):
             ],
             "acceptance": acceptance,
             "run_database": run_database,
+            "standard_contrib": read_json(branch.output / "contrib-files.json")
+            if branch.config["defaults"].get("packaging", {}).get("standard_contrib", False)
+            else None,
             "server_dev_files": branch.config["defaults"]
             .get("packaging", {})
             .get("server_dev_files", False),

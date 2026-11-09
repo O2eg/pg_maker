@@ -4,7 +4,7 @@ metadata:
   id: yc18-icu70
   revision: 2
 spec:
-  description: PostgreSQL 18.6 with private ICU 70.1 and the managed PG18 extension inventory
+  description: PostgreSQL 18 with private ICU 70.1 and the managed PG18 extension inventory
   numeric_id: null
   changes: []
   components:
@@ -49,4 +49,4 @@ spec:
   documentation:
     rules: []
   required_tests: []
-  compatible_postgresql: ==18.6
+  compatible_postgresql: '>=18.4,<=18.6,!=18.5'

@@ -14,6 +14,35 @@ workspaces, documentation output, recovery checkpoints, shared caches, previous
 attempt archives, exported results and Docker images/build cache. `--no-cache`
 disables shared reuse, but keeps private checkpoints for resume.
 
+The normal policy is configured in the manifest, before resolve:
+
+```yaml
+spec:
+  execution:
+    checkpoints: final          # final | milestones | all
+    workspace_retention: on-failure  # on-failure | keep
+```
+
+Stage receipts and retained objects provide ordinary failure recovery without
+copying the build tree at each boundary. `final` saves the installed prefix and
+output/evidence once. `milestones` additionally saves the core/contrib boundary;
+`all` saves every eligible boundary. Intermediate snapshots contain core sources,
+objects, prefix, ownership records and receipts, never external component object
+trees, Rust toolchains or test clusters. The legacy environment variable
+`PG_MAKER_NO_INTERMEDIATE_CHECKPOINTS=1` can still suppress intermediate snapshots.
+
+Successful package/verified goals with `on-failure` remove their compiler workspace
+and archived build trees/validation copies, retaining DEBs, reports, command/test logs and the final
+checkpoint. Failed and build-only runs retain scratch for repair. `keep` retains
+successful package scratch too; use it while measuring repeated builds. A new run
+with `--reuse-from` moves the stopped workspace under the old owner's lock, keeping
+one tree and preserving object inodes. Old attempt evidence remains available.
+
+InputStore sources, prepared Docker images and keyed Rust toolchains are shared
+across builds rather than duplicated in each completed operation. Different
+versions/architectures can occupy distinct cache entries; their garbage collection
+is explicit, not a global Docker prune or automatic deletion of locked inputs.
+
 `execution.limits.min_free_disk_bytes` is a free-space reserve checked before steps
 and checkpoint creation. Development snapshot/copy paths also estimate their copy
 size. This is a preflight guard, not a filesystem quota: a compiler or renderer can

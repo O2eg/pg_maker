@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pg-maker"
-version = "0.4.1"
+version = "0.5.0"
 description = "Build PostgreSQL distributions, documentation and patches in isolated environments"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -62,6 +62,7 @@ pg_maker = [
   "bundled/patches/*.patch", "recipes/platforms/*.yaml",
   "bundled/components/*.yaml", "bundled/documentation/*.yaml",
   "bundled/components/managed/*.yaml", "bundled/components/libraries/*.yaml",
+  "bundled/components/managed15/*.yaml",
   "bundled/components/managed17/*.yaml", "bundled/components/managed18/*.yaml",
   "bundled/catalogs/*.yaml", "bundled/profiles/*.yaml",
   "bundled/documentation/*.sgml", "bundled/documentation/*.md",

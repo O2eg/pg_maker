@@ -10,7 +10,6 @@ spec:
     repository: https://github.com/pgpartman/pg_partman.git
     ref: 2330063ad29a65d169b1947ac35705a237774fb6
   source_patches:
-  # Correct half-minute expectations: floor(seconds / 30), not floor(minutes / 30).
   - ../../patches/pg-partman-30sec-tests.patch
   - ../../patches/pg-partman-native-fk-tests.patch
   compatible_postgresql: '>=16,<17'
@@ -18,7 +17,6 @@ spec:
   conflicts: []
   build_dependencies:
   - libtap-parser-sourcehandler-pgtap-perl
-  - python3-psycopg2
   runtime_dependencies: []
   make_targets:
   - all
@@ -44,7 +42,11 @@ spec:
       repository: https://github.com/theory/pgtap.git
       ref: 968eb53a33114e83042b3bdb0c664b5b80cf8bdf
   test_setup:
-  - [make, -C, '{source:faketime}/src', -j, '{jobs}']
+  - - make
+    - -C
+    - '{source:faketime}/src'
+    - -j
+    - '{jobs}'
   - - make
     - -C
     - '{source:pgtap}'
@@ -61,3 +63,5 @@ spec:
     success_pattern: ^PG_MAKER_PARTMAN_TESTS_PASSED=(?P<count>\d+)$
   preload:
   - pg_partman_bgw
+  test_dependencies:
+  - python3-psycopg2

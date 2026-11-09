@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/RhodiumToad/ip4r/tar.gz/261341b1a4119226d22c2758f38bf63ac9e3a446
     sha256: sha256:491d6003431ab0fa5106f408e2a536382043f35814090b5b740950de24d827a2
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires: []
   conflicts: []
   build_dependencies: []

@@ -21,9 +21,21 @@ ownership is root/root, never the host build UID. Inventory is checked before/af
 packaging and compared with finished DEB payload bytes/modes/links. Escaping links,
 links to excluded files, setuid/setgid and special files are rejected.
 
-Core inventory is captured immediately after make install. Payload includes core and
-explicit runtime_files of selected components; install-world-bin does not ship every
-contrib automatically. Components cannot overwrite core runtime files. By default,
+Core inventory is captured immediately after make install. All new bundled profiles,
+including the generic profile, enable `spec.packaging.standard_contrib: true`.
+This requires OpenSSL, XML/XSLT, UUID, SELinux, Perl and Python build options. After
+install-world-bin, the controller compares the configured contrib SUBDIRS with every
+upstream contrib directory containing a Makefile. An omitted optional module fails
+the build. A separate contrib install into an empty DESTDIR produces
+`contrib-files.json` before external components run. Its complete runtime inventory,
+including auto_explain, SQL/control files, dictionaries and contrib programs, is
+included in the server package along with selected external runtime_files. Missing
+or overwritten contrib files fail packaging. The inventory participates in cache
+identity and export evidence; it is required even when DB tests are disabled.
+An explicit `standard_contrib: false` supports intentionally minimal custom builds;
+no bundled profile opts out. Existing initialized projects must update their own
+configuration and resolve again; changing the installed utility does not rewrite
+locked projects. Components cannot overwrite core runtime files. By default,
 headers, PGXS, pkgconfig, static libraries and the development libpq.so link are
 excluded with reasons. `spec.packaging.server_dev_files: true` delivers these files
 in the server package, including installed development files of selected components.
@@ -32,6 +44,12 @@ pkg-config metadata remain excluded.
 The private prefix supports PGXS compilation regardless of this delivery setting.
 Upstream COPYRIGHT and discovered selected-component licenses are included.
 Configuration and file logs belong in PGDATA.
+
+The sepgsql binary and installation SQL are included. Upstream's separate SELinux
+policy test requires an enforcing SELinux host, test policy and an explicit
+`PG_TEST_EXTRA=sepgsql` opt-in. Its exact upstream skip reason is recorded when that
+fixture is not enabled; it is not reported as an executed passing test. Enabling
+the fixture removes that skip permission. This does not disable other contrib tests.
 
 When server development files are enabled, collection requires server/client headers,
 PGXS and the libpq linker symlink. The test image includes a compiler and make (plus

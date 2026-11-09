@@ -1,4 +1,4 @@
-"""Autotools execution policy and PostgreSQL 16/17/18 DB-test evidence adapters."""
+"""Autotools execution policy and PostgreSQL 15/16/17/18 DB-test evidence adapters."""
 
 from __future__ import annotations
 
@@ -73,7 +73,7 @@ def verify_configure(argv, settings: str, header: str, output: str) -> dict:
     """Check the effective Autoconf result before any compilation."""
     if re.search(r"unrecognized (?:options?|arguments?)", output, re.I):
         raise PreconditionError("configure reported unrecognized options")
-    values = dict(re.findall(r"^([A-Za-z_]+)\s*:?=\s*(.*?)\s*$", settings, re.M))
+    values = dict(re.findall(r"^([A-Za-z_]+)[ \t]*:?=[ \t]*(.*?)[ \t]*$", settings, re.M))
     macros = set(re.findall(r"^#define ([A-Z_0-9]+)\s+1$", header, re.M))
     expected = {"enable_tap_tests": "yes"}
     macro_options = {
@@ -144,7 +144,7 @@ def validate_build(config: dict, goal: str, *, run_db_tests: bool = True) -> Non
     if (
         run_db_tests
         and goal != "source"
-        and config["postgresql_recipe"]["db_test_adapter"] not in {"pg16", "pg17", "pg18"}
+        and config["postgresql_recipe"]["db_test_adapter"] not in {"pg15", "pg16", "pg17", "pg18"}
     ):
         raise UnsupportedError(
             "DB-test evidence adapter is not implemented for this PostgreSQL major; "
@@ -213,6 +213,13 @@ def schedule_tests(path: Path) -> list[str]:
 
 
 def skip_policy(path: str, source: str, config: dict) -> str | None:
+    sepgsql_reason = "Potentially unsafe test sepgsql not enabled in PG_TEST_EXTRA"
+    if (
+        path == "contrib/sepgsql/t/001_sepgsql.pl"
+        and sepgsql_reason in source
+        and "sepgsql" not in config.get("PG_TEST_EXTRA", "").split()
+    ):
+        return sepgsql_reason
     if (
         path == "src/test/modules/test_cloexec/t/001_cloexec.pl"
         and config.get("PORTNAME") == "linux"
@@ -251,7 +258,9 @@ def expected_inventory(source: Path, obj: Path, query, *, test_extra="") -> dict
     """Follow configured SUBDIRS, rather than a guessed list of directories in the checkout."""
     config = dict(
         re.findall(
-            r"^([A-Za-z_]+)\s*=\s*(.*?)\s*$", (obj / "src/Makefile.global").read_text(), re.M
+            r"^([A-Za-z_]+)[ \t]*=[ \t]*(.*?)[ \t]*$",
+            (obj / "src/Makefile.global").read_text(),
+            re.M,
         )
     )
     config["PG_TEST_EXTRA"] = test_extra

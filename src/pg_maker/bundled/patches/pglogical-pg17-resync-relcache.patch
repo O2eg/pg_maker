@@ -1,0 +1,104 @@
+--- a/pglogical_functions.c
++++ b/pglogical_functions.c
+@@ -926,7 +926,12 @@
+ 	rel = table_open(reloid, AccessShareLock);
+ 
+ 	nspname = get_namespace_name(RelationGetNamespace(rel));
+-	relname = RelationGetRelationName(rel);
++	/*
++	 * Keep our own name: truncate_table waits for AccessExclusiveLock after
++	 * table_close below. Processing invalidations during that wait can free
++	 * the relation's rd_rel storage and invalidate RelationGetRelationName.
++	 */
++	relname = pstrdup(RelationGetRelationName(rel));
+ 
+ 	/* Reset sync status of the table. */
+ 	oldsync = get_table_sync_status(sub->id, nspname, relname, true);
+--- /dev/null
++++ b/t/042_resync_relcache.pl
+@@ -0,0 +1,85 @@
++use strict;
++use warnings;
++use PostgreSQL::Test::Cluster;
++use PostgreSQL::Test::Utils;
++use Test::More;
++
++my $provider = PostgreSQL::Test::Cluster->new('race_provider');
++my $subscriber = PostgreSQL::Test::Cluster->new('race_subscriber');
++for my $node ($provider, $subscriber)
++{
++    $node->init();
++    $node->append_conf('postgresql.conf', qq[
++shared_preload_libraries = 'pglogical'
++wal_level = logical
++max_wal_senders = 10
++max_replication_slots = 10
++track_commit_timestamp = on
++pglogical.synchronous_commit = true
++log_min_messages = debug1
++]);
++    $node->start();
++    if ($node->safe_psql('postgres', q[SELECT count(*) FROM pg_settings WHERE name='output_plugin_libraries']) eq '1')
++    {
++        $node->append_conf('postgresql.conf', q[output_plugin_libraries = 'pgoutput, test_decoding, pglogical_output']);
++        $node->reload();
++    }
++    my $dsn = $node->connstr('postgres');
++    $dsn =~ s/'/''/g;
++    my $name = $node->name;
++    $node->safe_psql('postgres', qq[
++CREATE EXTENSION pglogical;
++CREATE TABLE race_rows (id integer, payload text);
++SELECT pglogical.create_node(node_name := '$name', dsn := '$dsn');
++]);
++}
++$provider->safe_psql('postgres', q[
++SELECT pglogical.replication_set_add_table('default_insert_only', 'race_rows', false);
++]);
++my $dsn = $provider->connstr('postgres');
++$dsn =~ s/'/''/g;
++$subscriber->safe_psql('postgres', qq[
++SELECT pglogical.create_subscription(subscription_name := 'race_sub',
++    provider_dsn := '$dsn', replication_sets := '{default_insert_only}',
++    synchronize_structure := false, synchronize_data := false);
++]);
++$subscriber->poll_query_until('postgres', q[
++SELECT EXISTS (SELECT 1 FROM pglogical.show_subscription_status()
++               WHERE subscription_name = 'race_sub' AND status = 'replicating');
++]) or BAIL_OUT('subscription did not start');
++$provider->safe_psql('postgres', q[INSERT INTO race_rows VALUES (0, 'initial');]);
++$subscriber->poll_query_until('postgres', q[SELECT count(*) = 1 FROM race_rows;])
++    or BAIL_OUT('initial row did not replicate');
++
++# Invalidate the table relcache while resync waits for its TRUNCATE lock.
++# Updating reltuples exercises the same invalidation as an ANALYZE statistics update.
++my $blocker = $subscriber->background_psql('postgres');
++$blocker->query_safe(q[BEGIN; LOCK TABLE race_rows IN ROW EXCLUSIVE MODE;]);
++my $resync = $subscriber->background_psql('postgres');
++$resync->query_until(qr/resync-started/, q[
++\echo resync-started
++SELECT pglogical.alter_subscription_resynchronize_table('race_sub', 'race_rows');
++]);
++ok($subscriber->poll_query_until('postgres', q[
++SELECT EXISTS (SELECT 1 FROM pg_locks WHERE relation='race_rows'::regclass
++               AND mode='AccessExclusiveLock' AND NOT granted);
++]), 'resync waits for the truncate lock');
++$blocker->query_safe(q[
++UPDATE pg_class SET reltuples = reltuples + 1 WHERE oid='race_rows'::regclass;
++COMMIT;
++]);
++$blocker->quit();
++$resync->query_safe('SELECT 1;');
++$resync->quit();
++$subscriber->safe_psql('postgres', q[
++SET statement_timeout='60s';
++SELECT pglogical.wait_for_table_sync_complete('race_sub', 'race_rows');
++]);
++is($subscriber->safe_psql('postgres', 'SELECT count(*) FROM race_rows;'),
++   '1', 'resync still truncates after relcache invalidation');
++is($subscriber->safe_psql('postgres', 'SELECT id,payload FROM race_rows ORDER BY id,payload;'),
++   $provider->safe_psql('postgres', 'SELECT id,payload FROM race_rows ORDER BY id,payload;'),
++   'resynchronized contents match after relcache invalidation');
++$subscriber->stop();
++$provider->stop();
++done_testing();

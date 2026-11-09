@@ -1,0 +1,31 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: yc15-orafce
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: archive
+    location: https://codeload.github.com/orafce/orafce/tar.gz/33cea9cd5ef6f839d0fcd9336a6767733a515c6e
+    strip_components: 1
+    sha256: sha256:e3169c45dba536ac801155aa0a6ed6e9cef076e5712ad6124800304a1e4e094d
+  compatible_postgresql: '>=15.18,<16'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets:
+  - all
+  test_targets:
+  - installcheck
+  install_targets:
+  - install
+  required_tests: []
+  sql_extension: orafce
+  runtime_files:
+  - lib/postgresql/orafce.so
+  - share/postgresql/extension/orafce.control
+  - share/postgresql/extension/orafce--*.sql
+  sql_extension_versions:
+    orafce: '4.1'

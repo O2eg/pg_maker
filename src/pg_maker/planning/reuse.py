@@ -30,6 +30,7 @@ def compilation_inputs(lock, feature, variant, branch="candidate"):
             if c["spec"].get("build_phase") == "before-postgresql"
         ],
         "build": variant["build"],
+        "standard_contrib": config["defaults"].get("packaging", {}).get("standard_contrib", False),
         "diagnostics": policy_from_config(config),
         "image": image["image_id"],
         "target": variant["target"],

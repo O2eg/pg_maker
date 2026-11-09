@@ -456,6 +456,9 @@
                 "run_db_tests": {
                   "type": "boolean"
                 },
+                "run_package_tests": {
+                  "type": "boolean"
+                },
                 "warnings_as_errors": {
                   "type": "boolean"
                 },
@@ -618,6 +621,9 @@
               "properties": {
                 "server_dev_files": {
                   "type": "boolean"
+                },
+                "standard_contrib": {
+                  "type": "boolean"
                 }
               },
               "required": [],
@@ -662,6 +668,19 @@
                 },
                 "keep_failed_environment": {
                   "type": "boolean"
+                },
+                "checkpoints": {
+                  "enum": [
+                    "final",
+                    "milestones",
+                    "all"
+                  ]
+                },
+                "workspace_retention": {
+                  "enum": [
+                    "on-failure",
+                    "keep"
+                  ]
                 }
               },
               "required": [
@@ -2495,6 +2514,9 @@
                 "run_db_tests": {
                   "type": "boolean"
                 },
+                "run_package_tests": {
+                  "type": "boolean"
+                },
                 "warnings_as_errors": {
                   "type": "boolean"
                 },
@@ -2657,6 +2679,9 @@
               "properties": {
                 "server_dev_files": {
                   "type": "boolean"
+                },
+                "standard_contrib": {
+                  "type": "boolean"
                 }
               },
               "required": [],
@@ -2701,6 +2726,19 @@
                 },
                 "keep_failed_environment": {
                   "type": "boolean"
+                },
+                "checkpoints": {
+                  "enum": [
+                    "final",
+                    "milestones",
+                    "all"
+                  ]
+                },
+                "workspace_retention": {
+                  "enum": [
+                    "on-failure",
+                    "keep"
+                  ]
                 }
               },
               "required": [],
@@ -3288,6 +3326,28 @@
                 "type": "string"
               }
             },
+            "test_dependencies": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "documentation_dependencies": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "extra_source_roles": {
+              "type": "object",
+              "additionalProperties": {
+                "enum": [
+                  "build",
+                  "test",
+                  "documentation"
+                ]
+              }
+            },
             "runtime_dependencies": {
               "type": "array",
               "items": {
@@ -3428,7 +3488,27 @@
             "source_patches": {
               "type": "array",
               "items": {
-                "type": "string"
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string"
+                      },
+                      "compatible_postgresql": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "path",
+                      "compatible_postgresql"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
               }
             },
             "make_targets": {
@@ -4504,6 +4584,7 @@
                   "db_test_adapter": {
                     "enum": [
                       "unavailable",
+                      "pg15",
                       "pg16",
                       "pg17",
                       "pg18"
@@ -5450,6 +5531,7 @@
             "db_test_adapter": {
               "enum": [
                 "unavailable",
+                "pg15",
                 "pg16",
                 "pg17",
                 "pg18"
@@ -6190,6 +6272,9 @@
                 "run_db_tests": {
                   "type": "boolean"
                 },
+                "run_package_tests": {
+                  "type": "boolean"
+                },
                 "warnings_as_errors": {
                   "type": "boolean"
                 },
@@ -6352,6 +6437,9 @@
               "properties": {
                 "server_dev_files": {
                   "type": "boolean"
+                },
+                "standard_contrib": {
+                  "type": "boolean"
                 }
               },
               "required": [],
@@ -6396,6 +6484,19 @@
                 },
                 "keep_failed_environment": {
                   "type": "boolean"
+                },
+                "checkpoints": {
+                  "enum": [
+                    "final",
+                    "milestones",
+                    "all"
+                  ]
+                },
+                "workspace_retention": {
+                  "enum": [
+                    "on-failure",
+                    "keep"
+                  ]
                 }
               },
               "required": [
@@ -7438,6 +7539,28 @@
                               "type": "array",
                               "items": {
                                 "type": "string"
+                              }
+                            },
+                            "test_dependencies": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "documentation_dependencies": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "extra_source_roles": {
+                              "type": "object",
+                              "additionalProperties": {
+                                "enum": [
+                                  "build",
+                                  "test",
+                                  "documentation"
+                                ]
                               }
                             },
                             "runtime_dependencies": {

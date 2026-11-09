@@ -84,3 +84,34 @@ def test_pg16_upstream_disabled_tests_require_matching_source_and_platform():
     source = "plan skip_all => 'test is Windows-specific';"
     assert skip_policy(windows, source, {"PORTNAME": "linux"}) == "test is Windows-specific"
     assert skip_policy(windows, source, {"PORTNAME": "win32"}) is None
+
+
+def test_rust_toolchain_cache_reuse_and_tamper_rebuild(tmp_path, monkeypatch):
+    import json
+
+    from pg_maker.validation.upstream import vectorscale
+
+    root, extra, shared = (tmp_path / name for name in ("component", "extra", "cache"))
+    root.mkdir()
+    (extra / "cargo-pgrx").mkdir(parents=True)
+    for path in (root / "Cargo.lock", extra / "cargo-pgrx/Cargo.lock"):
+        path.write_text("package = []\n")
+    toolchain = shared / "toolchain"
+    calls = []
+
+    def install(argv, **kwargs):
+        calls.append(argv)
+        (toolchain / "bin").mkdir(parents=True, exist_ok=True)
+        for name in ("rustc", "cargo", "cargo-pgrx"):
+            (toolchain / "bin" / name).write_text("pinned compiler")
+
+    monkeypatch.setenv("PG_MAKER_RUST_CACHE", str(shared))
+    monkeypatch.setattr(vectorscale, "run", install)
+    assert not vectorscale.prepare(root, extra, toolchain)
+    assert len(calls) == 4
+    (shared / "ready.json").write_text(json.dumps(vectorscale.cache_manifest(shared)))
+    assert vectorscale.prepare(root, extra, toolchain)
+    assert len(calls) == 4
+    (toolchain / "bin/rustc").write_text("changed bytes")
+    assert not vectorscale.prepare(root, extra, toolchain)
+    assert len(calls) == 8

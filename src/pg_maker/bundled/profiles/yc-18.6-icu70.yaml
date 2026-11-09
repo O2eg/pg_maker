@@ -1,3 +1,5 @@
+# Candidate profile: managed physical binary compatibility is required but not verified.
+# See docs/yc-clone-compatibility.md; a successful build does not remove catalog blockers.
 api_version: pg_maker/v1
 kind: PostgreSQLBuild
 metadata:
@@ -36,6 +38,7 @@ spec:
     profile: full
     baseline: false
   packaging:
+    standard_contrib: true
     server_dev_files: true
   build:
     options:

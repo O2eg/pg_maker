@@ -38,6 +38,8 @@ def cluster(branch, name, *, database="postgres", preload=(), settings=None):
     if not re.fullmatch(r"[A-Za-z0-9_.-]+", name):
         raise ValidationError("invalid cluster identifier")
     root = branch.root / "clusters" / name
+    if root.exists():
+        shutil.rmtree(root)
     root.mkdir(parents=True)
     container = branch.container_root + "/clusters/" + name
     data = container + "/data"
@@ -135,11 +137,19 @@ def verify_extension_versions(branch, spec):
 
 def build_components(branch, components, *, run_tests=True):
     from pg_maker.builders import native_tests
+    from pg_maker.execution.install import ComponentInstall
+    from pg_maker.execution.workspace import archive_evidence
 
     reports = []
     for component in components:
         spec, identifier = component["spec"], component["metadata"]["id"]
         kind = spec["type"]
+        branch.report["components"] = [
+            r for r in branch.report.get("components", []) if r["id"] != identifier
+        ]
+        evidence = branch.output / "components" / identifier
+        archive_evidence(branch, evidence)
+        installation = ComponentInstall(branch, identifier).begin()
         if kind in {"contrib", "source-tree"}:
             relative = spec.get("source_directory", "contrib/" + identifier)
             if not (branch.source / relative / "Makefile").is_file():
@@ -182,10 +192,14 @@ def build_components(branch, components, *, run_tests=True):
                         [native_tests.render(arg, values) for arg in command["argv"]],
                         cwd=cwd,
                         env={
-                            k: native_tests.render(v, values)
-                            for k, v in command.get("env", {}).items()
+                            "DESTDIR": installation.container,
+                            **{
+                                k: native_tests.render(v, values)
+                                for k, v in command.get("env", {}).items()
+                            },
                         },
                     )
+                installation.commit()
                 verify_extension_versions(branch, spec)
                 reports.append(
                     native_tests.run(branch, component, cwd)
@@ -218,7 +232,12 @@ def build_components(branch, components, *, run_tests=True):
                     ],
                     cwd=cwd,
                 )
-                branch.command(["cmake", "--install", build_path], cwd=cwd)
+                branch.command(
+                    ["cmake", "--install", build_path],
+                    cwd=cwd,
+                    env={"DESTDIR": installation.container},
+                )
+                installation.commit()
                 verify_extension_versions(branch, spec)
                 reports.append(
                     native_tests.run(branch, component, cwd)
@@ -244,9 +263,13 @@ def build_components(branch, components, *, run_tests=True):
             make += ["USE_PGXS=1", "PG_CONFIG=" + branch.prefix + "/bin/pg_config"]
         elif kind in {"utility", "library"}:
             make += ["prefix=" + branch.prefix, "PG_CONFIG=" + branch.prefix + "/bin/pg_config"]
-        for targets in (spec["make_targets"], spec["install_targets"]):
-            if targets:
-                branch.command([*make, *targets], cwd=cwd)
+        if spec["make_targets"]:
+            branch.command([*make, *spec["make_targets"]], cwd=cwd)
+        if spec["install_targets"]:
+            branch.command(
+                [*make, "DESTDIR=" + installation.container, *spec["install_targets"]], cwd=cwd
+            )
+        installation.commit()
         verify_extension_versions(branch, spec)
         if not run_tests:
             reports.append(

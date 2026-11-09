@@ -11,7 +11,7 @@ spec:
     location: https://codeload.github.com/citusdata/pg_cron/tar.gz/5cedfa472ccc83567aa23ec645925ed8489a7797
     sha256: sha256:cba185da9308d2c624ded35a596937ce391badd60665ab6badc55bd8e78a1e94
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires: []
   conflicts: []
   build_dependencies: []

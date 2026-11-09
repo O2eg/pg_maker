@@ -2,7 +2,7 @@ api_version: pg_maker/platform/v1
 kind: PlatformRecipe
 metadata:
   id: debian-13
-  revision: 5
+  revision: 6
 spec:
   os: {id: debian, version: '13'}
   architectures: [x86_64]
@@ -33,6 +33,7 @@ spec:
     pam: [true, false]
     systemd: [true, false]
     uuid: [true, false]
+    selinux: [true, false]
     perl: [true, false]
     python: [true, false]
     tcl: [true, false]
@@ -49,6 +50,7 @@ spec:
     pam: {enabled: --with-pam, disabled: --without-pam}
     systemd: {enabled: --with-systemd, disabled: --without-systemd}
     uuid: {enabled: --with-uuid=e2fs, disabled: --without-uuid}
+    selinux: {enabled: --with-selinux, disabled: --without-selinux}
     perl: {enabled: --with-perl, disabled: --without-perl}
     python: {enabled: --with-python, disabled: --without-python}
     tcl: {enabled: --with-tcl, disabled: --without-tcl}
@@ -65,6 +67,7 @@ spec:
     pam: [libpam0g-dev]
     systemd: [libsystemd-dev]
     uuid: [uuid-dev]
+    selinux: [libselinux1-dev]
     perl: [libperl-dev]
     python: [python3-dev]
     tcl: [tcl-dev]
@@ -81,6 +84,7 @@ spec:
     pam: [libpam0g]
     systemd: [libsystemd0]
     uuid: [libuuid1]
+    selinux: [libselinux1]
     perl: [libperl5.40]
     python: [libpython3.13]
     tcl: [libtcl8.6]

@@ -3,6 +3,8 @@
 import re
 from pathlib import Path
 
+from packaging.specifiers import InvalidSpecifier, SpecifierSet
+
 from pg_maker.documents import relative_output, validate_document
 from pg_maker.errors import ValidationError
 from pg_maker.planning.graph import ordered_ids
@@ -118,13 +120,23 @@ def load_components(references: list[str], base: Path, version: str) -> tuple[li
             raise ValidationError("component source patches require an external source")
         patches = []
         for index, reference in enumerate(spec.get("source_patches", [])):
+            if isinstance(reference, dict):
+                try:
+                    applies = SpecifierSet(reference["compatible_postgresql"]).contains(
+                        version, prereleases=True
+                    )
+                except InvalidSpecifier as exc:
+                    raise ValidationError("invalid source patch PostgreSQL compatibility") from exc
+                if not applies:
+                    continue
+                reference = reference["path"]
             source = (path.parent / reference).resolve()
             if not source.is_file():
                 raise ValidationError("component source patch is missing")
             key = "components/" + identifier + "/source-patches/" + str(index)
             patches.append({"input": key, "sha256": file_hash(source)})
             bindings[key] = str(source)
-        if patches:
+        if "source_patches" in spec:
             spec["source_patches"] = patches
         if spec.get("extra_sources") and spec["type"] in {"contrib", "source-tree"}:
             raise ValidationError("extra_sources require an external build directory")

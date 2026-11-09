@@ -7,7 +7,7 @@ editing core/extension code and maintaining patch series.
 
 The bundled platform is **Debian 13 / amd64** with Autotools and release/debug builds.
 The PostgreSQL catalog covers **14–19**; database-test evidence adapters support
-**16, 17 and 18**. Catalog support does not establish qualification of every build.
+**15, 16, 17 and 18**. Catalog support does not establish qualification of every build.
 ARM64 requires additional platform/component adaptations; RPM, remote execution and
 built-in APT/Nexus publication are not implemented. See [implementation limits](docs/roadmap.md).
 
@@ -51,11 +51,24 @@ and the normalized wheel filename. Pip supplies the TOML reader needed by Python
 | `init` option | PostgreSQL | Contents |
 | --- | --- | --- |
 | No `--profile` | 18.1 | `my-feature`, system ICU, pg_stat_statements, pg_stat_kcache 2.3.2 and pg_wait_sampling 1.1.11 |
+| `--profile yc-15.18-icu70` | 15.18 | Same ICU and extension recipes as `yc-15.19-icu70` |
+| `--profile yc-15.19-icu70` | 15.19 | Private ICU 70.1 and the [PG15 extension catalog](docs/managed-15-icu70.md) |
+| `--profile yc-16.14-icu70` | 16.14 | Same ICU and extension recipes as `yc-16.15-icu70` |
 | `--profile yc-16.15-icu70` | 16.15 | Private ICU 70.1 and the [PG16 extension catalog](docs/managed-16-icu70.md) |
+| `--profile yc-17.10-icu70` | 17.10 | Same ICU and extension recipes as `yc-17.11-icu70` |
 | `--profile yc-17.11-icu70` | 17.11 | Private ICU 70.1 and the [PG17 extension catalog](docs/managed-17-icu70.md) |
+| `--profile yc-18.4-icu70` | 18.4 | Same ICU and extension recipes as `yc-18.6-icu70` |
 | `--profile yc-18.6-icu70` | 18.6 | Private ICU 70.1 and the [PG18 extension catalog](docs/managed-18-icu70.md) |
 
-All bundled profiles target amd64. PLV8 is disabled in all three YC profiles. Their
+Every YC profile targets managed physical binary compatibility, which remains
+**unverified**. See the [compatibility contract](docs/yc-clone-compatibility.md);
+successful build/package tests do not certify vendor equivalence.
+
+Within each YC major, maintenance-version profiles differ only in the PostgreSQL
+version, source archive URL/SHA256 and manifest name. Component versions, patches,
+build options, package revision, paths and default test policy stay the same.
+
+All bundled profiles target amd64. PLV8 is disabled in all YC profiles. Their
 catalogs record unavailable extensions and qualification limits; matching SQL extension
 versions does not establish managed-vendor binary or physical-replication compatibility.
 The [package walkthrough](docs/yc-clone-packages.md) also describes the ARM64 boundary.
@@ -208,9 +221,15 @@ the operation's exit code; a waiting timeout or closing the CLI does not cancel 
 
 `resume` retries the original inputs with the original plan/input hash. Changed code
 needs a new build or development iteration. Prepared images, cached inputs, matching
-core/component outputs and private checkpoints accelerate later runs. `--no-cache`
-disables shared reuse but keeps private checkpoints. Export before cleanup; preview/apply
-commands remove only owned scratch. See [recovery](docs/interfaces/recovery.md),
+core/component outputs and private checkpoints accelerate later runs. Use
+`build NEW_LOCK --reuse-from operations/FAILED_RUN` after correcting and resolving
+inputs: it transfers the stopped workspace without copying object files. Development
+iterations select their previous run automatically. Tests and packaging run again.
+`execution.checkpoints` accepts `final` (default), `milestones` or `all`;
+`execution.workspace_retention` defaults to `on-failure`, removing compiler scratch
+after successful packaging. Set `keep` for repeated development builds. `--no-cache`
+disables the legacy shared snapshot cache; it does not disable explicit workspace
+reuse, input/toolchain caches or private checkpoints. See [recovery](docs/interfaces/recovery.md),
 [development reuse](docs/development.md) and [disk management](docs/development-storage.md).
 
 ## Develop core and extension patches

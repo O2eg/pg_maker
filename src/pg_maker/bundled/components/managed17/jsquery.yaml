@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/postgrespro/jsquery/tar.gz/f43eabd5c5dad311894fb131a62999928743c726
     sha256: sha256:6039151dac9abe2f7ee86e544aa50771f111578c529627b1494672c7c9bcdb2b
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires: []
   conflicts: []
   build_dependencies: []

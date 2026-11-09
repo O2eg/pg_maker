@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc17-pglogical
-  revision: 3
+  revision: 4
 spec:
   type: pgxs
   source:
@@ -14,7 +14,10 @@ spec:
   - ../../patches/pglogical-pg17-tests.patch
   - ../../patches/pglogical-pg17-sync.patch
   - ../../patches/pglogical-pg17-ddl-fixture.patch
-  compatible_postgresql: '>=17.11,<18'
+  - path: ../../patches/pglogical-pg17-before-output-plugin.patch
+    compatible_postgresql: '>=17.10,<17.11'
+  - ../../patches/pglogical-pg17-resync-relcache.patch
+  compatible_postgresql: '>=17.10,<18'
   requires: []
   conflicts: []
   build_dependencies: []

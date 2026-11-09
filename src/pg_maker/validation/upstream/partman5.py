@@ -3,6 +3,7 @@
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -54,6 +55,8 @@ def main():
             prove(path)
 
     tablespace = (Path.cwd() / "pg-maker-tablespace").resolve()
+    if tablespace.exists():
+        shutil.rmtree(tablespace)
     tablespace.mkdir()
     sql("CREATE TABLESPACE mytablespace LOCATION '" + str(tablespace).replace("'", "''") + "'")
     for path in sorted((root / "test_tablespace").glob("*.sql")):

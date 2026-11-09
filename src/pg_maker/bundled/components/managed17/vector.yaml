@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/pgvector/pgvector/tar.gz/cab9da72c04353f143bb06b42ab70a403daac64a
     sha256: sha256:0af705b6c9b2a3a1fd1f6fd991425c125387d3c8edc68b75ef027d2e0a05e57a
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires: []
   conflicts: []
   build_dependencies: []

@@ -10,7 +10,7 @@ spec:
     location: https://download.osgeo.org/postgis/source/postgis-3.4.3.tar.gz
     sha256: sha256:f8ded505daeb8f57659da2b9e577ff71e183aaa094708d2eece2c56d93361f62
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires:
   - fuzzystrmatch
   conflicts: []
@@ -28,7 +28,6 @@ spec:
   - docbook-xml
   - xsltproc
   - docbook-xsl
-  - libcunit1-dev
   runtime_dependencies:
   - libgeos-c1t64
   - libproj25
@@ -77,3 +76,5 @@ spec:
     - '{jobs}'
     - check
     success_pattern: 'Run tests: (?P<count>\d+)\nFailed: 0'
+  test_dependencies:
+  - libcunit1-dev

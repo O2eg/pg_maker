@@ -54,15 +54,21 @@ Core/contrib edits currently invalidate the combined world-bin build conservativ
 Components run as separate steps. Verified successful outputs can cross lock
 boundaries. Failed results never count as successful build evidence. Partial objects
 may accelerate a new make invocation; changed source timestamps are refreshed and
-incompatible environments/dependencies prevent object reuse. Cached component install
-files cannot overwrite another component's or core's files. Component caches also
-retain private-copy build workspaces for subsequent debugging and edits.
+incompatible environments/dependencies prevent object reuse. The next iteration
+moves the inactive workspace under exclusive ownership; core and external components
+keep their own object directories and unchanged files retain inodes and timestamps.
+No tree snapshot/copy is required between successive extension builds. A normal
+compiler failure preserves partial objects; an interrupted/ambiguous component is
+cleaned independently before retry. Core/configuration changes conservatively reset
+the branch. Installation uses per-component DESTDIR and durable ownership records;
+only a completed installation is published, and retired files are removed.
 
 `dev build --component ID` includes selected components and transitive dependencies;
 selection is restricted to build goals with tests off. Package/docs use the complete
 feature. `dev explain` compares keys and explains changed inputs; unchanged inputs
 mean a reuse opportunity, not a guaranteed cache hit. Opening a failed run can reuse
-its verified core checkpoint and compatible component results.
+its retained workspace and compatible completed steps. A prior run whose workspace
+was transferred retains evidence, but no longer owns the moved mutable files.
 
 `dev exec` runs argv in a separate owned operation, with a copy of the chosen stopped
 iteration's workspace and its build environment. It never edits immutable inputs.

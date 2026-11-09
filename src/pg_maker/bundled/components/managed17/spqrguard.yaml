@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/pg-sharding/spqrguard/tar.gz/207d46c91141c0e67bcf09432fbd9c760bd6b57f
     sha256: sha256:3409497da4ff4c4eac21b67cfc62fba8060ae5ebb0903ced4df10ea22b9911e6
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires: []
   conflicts: []
   build_dependencies: []

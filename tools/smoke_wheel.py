@@ -37,9 +37,17 @@ def main():
         assert response["status"] == "succeeded", response
         run([binaries / "pg-maker", "init", directory / "project", "--with-doc"])
         run([binaries / "pg-maker", "validate", directory / "project/build.yaml"])
-        managed = directory / "yc16"
-        run([binaries / "pg-maker", "init", managed, "--profile", "yc-16.15-icu70"])
-        run([binaries / "pg-maker", "validate", managed / "build.yaml"])
+        profiles = json.loads(
+            run(
+                [
+                    binaries / "python",
+                    "-c",
+                    "import json; from pg_maker.assets import BUILD_PROFILES; "
+                    "print(json.dumps(BUILD_PROFILES))",
+                ]
+            )
+        )
+        versions = [profile.removeprefix("yc-").removesuffix("-icu70") for profile in profiles]
         profile_check = """
 import sys
 from pathlib import Path
@@ -47,13 +55,14 @@ from pg_maker.config import load_config
 from pg_maker.yamlio import load_yaml
 root = Path(sys.argv[1])
 config = load_config(root / 'build.yaml').data
-assert config['postgresql']['version'] == '16.15'
+version = sys.argv[2]
+assert config['postgresql']['version'] == version
 variant = config['variants'][0]
 assert variant['identity']['paths']['runtime_prefix'] == '/opt/postgresql-yc-clone/16'
 assert variant['identity']['paths']['data_directory'] == '/var/lib/postgresql-yc-clone/16/data'
 assert variant['identity']['service'] == 'postgresql-yc-clone-16'
-assert variant['identity']['product_version'] == '16.15'
-assert all(p['deb_version'] == '16.15-1.deb13' for p in variant['identity']['packages'])
+assert variant['identity']['product_version'] == version
+assert all(p['deb_version'] == version + '-1.deb13' for p in variant['identity']['packages'])
 assert {p['role']: p['name'] for p in variant['identity']['packages']} == {
     'server': 'postgresql-16-yc-clone',
     'client': 'postgresql-client-16-yc-clone',
@@ -66,6 +75,9 @@ assert components['icu70']['build_phase'] == 'before-postgresql'
 assert components['icu70']['pkg_config_versions'] == {'icu-i18n': '70.1', 'icu-uc': '70.1'}
 assert config['defaults']['validation']['run_db_tests'] is True
 assert config['defaults']['packaging']['server_dev_files'] is True
+assert config['defaults']['packaging']['standard_contrib'] is True
+from pg_maker.packaging.contrib import REQUIRED_OPTIONS
+assert all(variant['build']['options'][name] for name in REQUIRED_OPTIONS)
 assert config['postgresql_recipe']['db_test_adapter'] == 'pg16'
 assert all(c['test_targets'] or c.get('test_commands') for c in components.values())
 from pg_maker.config import resource_path
@@ -91,12 +103,54 @@ assert components['yc-jsquery']['source']['ref'] == '40b1db58b3f3f4b315a6f606ba8
 assert components['yc-pg-cron']['source']['ref'] == '0cb8118e8dfda30af58a65e14e2b7fe73ec6c931'
 assert 'yc-plv8' not in components
 assert next(e for e in entries if e['name'] == 'plv8')['status'] == 'disabled'
-print('OK: installed managed profile: PostgreSQL 16.15, Debian 13 amd64, '
+print('OK: installed managed profile: PostgreSQL ' + version + ', Debian 13 amd64, '
       'ICU 70.1, 33 selected extensions; PLV8 disabled')
 """
-        print(run([binaries / "python", "-c", profile_check, managed]).strip())
-        for version in ("17.11", "18.6"):
-            managed = directory / ("yc" + version.split(".")[0])
+        for version in (v for v in versions if v.startswith("16.")):
+            managed = directory / ("yc" + version)
+            run([binaries / "pg-maker", "init", managed, "--profile", "yc-" + version + "-icu70"])
+            run([binaries / "pg-maker", "validate", managed / "build.yaml"])
+            print(run([binaries / "python", "-c", profile_check, managed, version]).strip())
+        for version in (v for v in versions if v.startswith("15.")):
+            managed = directory / ("yc" + version)
+            run([binaries / "pg-maker", "init", managed, "--profile", "yc-" + version + "-icu70"])
+            run([binaries / "pg-maker", "validate", managed / "build.yaml"])
+            print(
+                run(
+                    [
+                        binaries / "python",
+                        "-c",
+                        """
+import sys
+from pathlib import Path
+from pg_maker.config import load_config, resource_path
+from pg_maker.builders.autotools import validate_build
+from pg_maker.yamlio import load_yaml
+root = Path(sys.argv[1])
+c = load_config(root / 'build.yaml').data
+validate_build(c, 'verified')
+assert c['postgresql']['version'] == sys.argv[2]
+assert c['postgresql_recipe']['db_test_adapter'] == 'pg15'
+assert c['defaults']['packaging']['standard_contrib'] is True
+assert c['defaults']['validation']['run_db_tests'] is True
+components = {x['metadata']['id']: x['spec'] for x in c['features'][0]['spec']['components']}
+assert 'yc15-plv8' not in components
+assert sum(len(x.get('sql_extension_versions', {})) for x in components.values()) == 32
+catalog = load_yaml(root / 'catalogs/yc-15.19-extensions.yaml')
+assert len(catalog['extensions']) == 36
+assert catalog['binary_compatibility']['status'] == 'not-verified'
+assert resource_path('validation', 'upstream', 'pglogical.py').is_file()
+assert resource_path('bundled', 'patches', 'pgrouting-3.4.1-gcc14.patch').is_file()
+assert c['variants'][0]['identity']['paths']['runtime_prefix'] == '/opt/postgresql-yc-clone/15'
+print('OK: installed PG' + sys.argv[2] + ' candidate profile, full contrib, ICU70, PLV8 disabled')
+""",
+                        managed,
+                        version,
+                    ]
+                ).strip()
+            )
+        for version in (v for v in versions if v.startswith(("17.", "18."))):
+            managed = directory / ("yc" + version)
             run([binaries / "pg-maker", "init", managed, "--profile", "yc-" + version + "-icu70"])
             run([binaries / "pg-maker", "validate", managed / "build.yaml"])
             print(
@@ -114,8 +168,13 @@ c = load_config(root / 'build.yaml').data
 version = sys.argv[2]
 major = version.split('.')[0]
 assert c['postgresql']['version'] == version
+assert c['defaults']['packaging']['standard_contrib'] is True
+from pg_maker.packaging.contrib import REQUIRED_OPTIONS
+assert all(c['variants'][0]['build']['options'][name] for name in REQUIRED_OPTIONS)
 assert c['postgresql_recipe']['db_test_adapter'] == 'pg' + major
 identity = c['variants'][0]['identity']
+assert identity['product_version'] == version
+assert all(p['deb_version'] == version + '-1.deb13' for p in identity['packages'])
 assert identity['paths']['runtime_prefix'] == '/opt/postgresql-yc-clone/' + major
 assert identity['paths']['data_directory'] == '/var/lib/postgresql-yc-clone/' + major + '/data'
 assert identity['service'] == 'postgresql-yc-clone-' + major
@@ -126,10 +185,12 @@ rust_inputs = components['yc' + major + '-vectorscale']['extra_sources']
 assert len(rust_inputs) == 626 and 'rustfmt' in rust_inputs
 assert len([name for name in rust_inputs if name.startswith('crate-')]) == 621
 assert sum(len(x.get('sql_extension_versions', {})) for x in components.values()) == 39
-assert len(load_yaml(root / ('catalogs/yc-' + version + '-extensions.yaml'))['extensions']) == 44
+catalog_version = {'17': '17.11', '18': '18.6'}[major]
+catalog = load_yaml(root / ('catalogs/yc-' + catalog_version + '-extensions.yaml'))
+assert len(catalog['extensions']) == 44
 for helper in ('vectorscale', 'partman5', 'lwaldump'):
     assert resource_path('validation', 'upstream', helper + '.py').is_file()
-print('OK: installed PG' + major + ' profile, ICU70.1, frozen Cargo inputs, PLV8 disabled')
+print('OK: installed PG' + version + ' profile, ICU70.1, frozen Cargo inputs, PLV8 disabled')
     """,
                         managed,
                         version,
@@ -145,6 +206,8 @@ print('OK: installed PG' + major + ' profile, ICU70.1, frozen Cargo inputs, PLV8
         assert (manuals / "README.md").is_file()
         assert (manuals / "docs/interfaces/development.md").is_file()
         assert (manuals / "docs/managed-16-icu70.md").is_file()
+        assert (manuals / "docs/managed-15-icu70.md").is_file()
+        assert (manuals / "docs/yc-clone-compatibility.md").is_file()
         assert (manuals / "docs/managed-17-icu70.md").is_file()
         assert (manuals / "docs/managed-18-icu70.md").is_file()
         assert (manuals / "docs/yc-clone-packages.md").is_file()

@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/powa-team/pg_stat_kcache/tar.gz/2f1a1f53f1bf50452afae8450f99839e01eb6617
     sha256: sha256:920480541ca0a7f75519822da3a7acb6fb38e3aa58fe895ba834862394071d33
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires:
   - pg-stat-statements
   conflicts: []

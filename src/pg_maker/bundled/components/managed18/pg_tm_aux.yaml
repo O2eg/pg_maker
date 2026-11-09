@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/x4m/pg_tm_aux/tar.gz/857b9173069068741a52e8343bc532bd094fa2b9
     sha256: sha256:407223cb976bbfb537eeaf92c6eb3410ff781dee8c5ab1e64f2e2f18ab122abc
     strip_components: 1
-  compatible_postgresql: '>=18.6,<19'
+  compatible_postgresql: '>=18.4,<19'
   requires: []
   conflicts: []
   build_dependencies: []

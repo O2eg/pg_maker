@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.5.0 — 2026-11-10
+
+- Include the full standard PostgreSQL contrib by default, including optional
+  modules and auto_explain. Check its install inventory independently of the
+  managed extension catalog and include it in the server DEB.
+- Add yc-15.18-icu70, yc-15.19-icu70, yc-16.14-icu70, yc-17.10-icu70 and
+  yc-18.4-icu70 profiles. Keep private ICU 70.1, PostgreSQL-style versions,
+  revision 1 and disabled PLV8. Record unavailable vendor sources and unverified
+  physical compatibility explicitly for every managed profile.
+- Resume builds in retained component workspaces with input/dependency receipts.
+  Stage each component installation separately, track owned files, remove retired
+  outputs and recover interrupted installs. Preserve unchanged objects and rebuild
+  affected components and dependents.
+- Add final/milestones/all checkpoint policies and workspace retention controls.
+  Reuse prepared environments and validated Rust toolchains, avoid repeated source
+  hashing within a process, and omit test/documentation inputs when disabled.
+- Allow explicit package-only validation with run_db_tests: false and
+  run_package_tests: true. Require successful installed-package checks without
+  granting source qualification; ordinary builds still run source tests by default.
+- Adapt PostgreSQL 15 test support and managed extension recipes to Debian 13.
+  Backport the PostGIS 3.3.3 GIDX accessors to 3.3.2 and compare GiST, SP-GiST and
+  BRIN results with sequential scans for 2D/3D/4D geometries in package checks.
+- Remove environment-specific database addresses and workstation paths from public
+  documentation/catalogs; keep credentials, build outputs and operational reports
+  outside Git and Python distributions.
+
+Validation: seven Debian 13 amd64 profile builds produced 21 DEBs and passed
+separate libpq/client/server checks in fresh containers. Source database suites
+were explicitly skipped for those builds; vendor physical compatibility remains
+unverified. The Python utility passed 444 unit/contract tests, two Docker workspace
+recovery tests, Ruff, wheel/sdist content checks and isolated wheel installation
+with all eight bundled YC profiles.
+
 ## 0.4.1 — 2026-11-06
 
 - Fix the offline package-install integration fixture: supply the required

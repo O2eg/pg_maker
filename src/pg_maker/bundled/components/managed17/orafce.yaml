@@ -10,7 +10,7 @@ spec:
     location: https://codeload.github.com/orafce/orafce/tar.gz/2b21feead86de9d26f21becff2daf4fdafd9f3bf
     sha256: sha256:3b7bfaca9ee4c8aee4b1d4d9aa28537f2d51bd1c6d0cea0acc4badd7d26eea4f
     strip_components: 1
-  compatible_postgresql: '>=17.11,<18'
+  compatible_postgresql: '>=17.10,<18'
   requires: []
   conflicts: []
   build_dependencies: []

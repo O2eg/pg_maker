@@ -144,6 +144,11 @@ def parser() -> Parser:
     build.add_argument("--detach", action="store_true")
     build.add_argument("--cache-store", type=Path)
     build.add_argument("--no-cache", action="store_true")
+    build.add_argument(
+        "--reuse-from",
+        type=Path,
+        help="take ownership of a stopped run's workspace without copying objects",
+    )
     build_docs = build.add_mutually_exclusive_group()
     build_docs.add_argument("--with-doc", dest="with_doc", action="store_true", default=None)
     build_docs.add_argument("--without-doc", dest="with_doc", action="store_false")
@@ -480,6 +485,7 @@ def main(argv: list[str] | None = None) -> int:
                     run_db_tests=args.run_db_tests,
                     input_store=args.input_store,
                     cache_store=args.cache_store,
+                    reuse_from=getattr(args, "reuse_from", None),
                     use_cache=not args.no_cache,
                     operation_id=args.operation_id,
                     request_id=request_id,

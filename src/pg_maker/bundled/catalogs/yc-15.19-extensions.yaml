@@ -1,0 +1,477 @@
+source_host: managed-pg15.example.invalid
+database: reference
+observed_at: '2026-11-09T22:50:41.613723+03:00'
+managed_version: PostgreSQL 15.19 (Ubuntu 15.19-201-yandex.55987.e48409f053) on x86_64-pc-linux-gnu, compiled
+  by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+coverage: Available extensions outside upstream contrib and standard procedural languages; full contrib
+  remains enabled.
+binary_compatibility:
+  required: true
+  status: not-verified
+  vendor_sources_available: false
+  icu_library_version_confirmed: false
+  candidate_icu_version: '70.1'
+  physical_replay_tested: false
+  standard_extension_version_differences:
+  - name: amcheck
+    managed: '1.4'
+    community: '1.3'
+  - name: pageinspect
+    managed: '1.12'
+    community: '1.11'
+extensions:
+- name: address_standardizer
+  managed_default_version: 3.3.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.3.2
+  - 3.3.2next
+  recipe: ../components/managed15/postgis.yaml
+  component_id: yc15-postgis
+  source_url: https://download.osgeo.org/postgis/source/postgis-3.3.2.tar.gz
+  source_sha256: sha256:9a2a219da005a1730a39d1959a1c7cec619b1efb009b65be80ffc25bad299068
+  status: selected-unverified
+- name: address_standardizer_data_us
+  managed_default_version: 3.3.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.3.2
+  - 3.3.2next
+  recipe: ../components/managed15/postgis.yaml
+  component_id: yc15-postgis
+  source_url: https://download.osgeo.org/postgis/source/postgis-3.3.2.tar.gz
+  source_sha256: sha256:9a2a219da005a1730a39d1959a1c7cec619b1efb009b65be80ffc25bad299068
+  status: selected-unverified
+- name: anon
+  managed_default_version: 1.3.2.1
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.3.2.1
+  status: blocked
+  reason: The exact managed variant 1.3.2.1 and vendor patches have not been obtained; upstream 1.3.2
+    is not substituted.
+- name: clickhouse_fdw
+  managed_default_version: '1.4'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.4'
+  recipe: ../components/managed15/clickhouse_fdw.yaml
+  component_id: yc15-clickhouse-fdw
+  source_url: https://codeload.github.com/adjust/clickhouse_fdw/tar.gz/a2cd63da0fbdd10be8e2948494e6cdc8bfc88016
+  source_sha256: sha256:22d15fc4125fb394f017aaeb5d7f5162ba17cd4c60b28fa8c52c4ce0d174950c
+  status: selected-unverified
+  source_ref: a2cd63da0fbdd10be8e2948494e6cdc8bfc88016
+- name: hypopg
+  managed_default_version: 1.3.1
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.3.1
+  recipe: ../components/managed15/hypopg.yaml
+  component_id: yc15-hypopg
+  source_url: https://codeload.github.com/HypoPG/hypopg/tar.gz/57d711bc4e37164c8edac81580a5f477e2a33d86
+  source_sha256: sha256:ba5bde531eec58a4a74668e7d46baf14e40418368c4998ef1961b5036a871072
+  status: selected-unverified
+  source_ref: 57d711bc4e37164c8edac81580a5f477e2a33d86
+- name: jsquery
+  managed_default_version: '1.1'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.1'
+  recipe: ../components/managed15/jsquery.yaml
+  component_id: yc15-jsquery
+  source_url: https://codeload.github.com/postgrespro/jsquery/tar.gz/40b1db58b3f3f4b315a6f606ba88752c0f8b6aaf
+  source_sha256: sha256:6e0a7c46a6a277f096298f85418d5ad78b7026dd82a7bbac83e262be9ff5b2ef
+  status: selected-unverified
+  source_ref: 40b1db58b3f3f4b315a6f606ba88752c0f8b6aaf
+- name: logerrors
+  managed_default_version: '2.1'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '1.1'
+  - '2.0'
+  - '2.1'
+  recipe: ../components/managed15/logerrors.yaml
+  component_id: yc15-logerrors
+  source_url: https://codeload.github.com/munakoiso/logerrors/tar.gz/9ea8b0134ecf4217cc7e7e7abff736db779a9713
+  source_sha256: sha256:fb78c9e399962de92332286c713d438d2d2f15b962c3848a97a9288c62f22677
+  status: selected-unverified
+  source_ref: 9ea8b0134ecf4217cc7e7e7abff736db779a9713
+- name: lwaldump
+  managed_default_version: '1.0'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  recipe: ../components/managed15/lwaldump.yaml
+  component_id: yc15-lwaldump
+  source_url: https://codeload.github.com/munakoiso/lwaldump/tar.gz/91d7a88e35fc75b5e04b68cc34d2b9a56ca7b34e
+  source_sha256: sha256:62d7b7471a3f02811316f32e8f6eb02dc37933e2d20409d8755163b0ea347a35
+  status: selected-unverified
+  source_ref: 91d7a88e35fc75b5e04b68cc34d2b9a56ca7b34e
+- name: oracle_fdw
+  managed_default_version: '1.2'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.2'
+  status: blocked
+  reason: Requires a separately provisioned Oracle Instant Client SDK/runtime; source alone is insufficient.
+- name: orafce
+  managed_default_version: '4.1'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '4.1'
+  recipe: ../components/managed15/orafce.yaml
+  component_id: yc15-orafce
+  source_url: https://codeload.github.com/orafce/orafce/tar.gz/33cea9cd5ef6f839d0fcd9336a6767733a515c6e
+  source_sha256: sha256:e3169c45dba536ac801155aa0a6ed6e9cef076e5712ad6124800304a1e4e094d
+  status: selected-unverified
+  source_ref: 33cea9cd5ef6f839d0fcd9336a6767733a515c6e
+- name: pg_cron
+  managed_default_version: '1.5'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '1.1'
+  - '1.2'
+  - '1.3'
+  - '1.4'
+  - 1.4-1
+  - '1.5'
+  recipe: ../components/managed15/pg_cron.yaml
+  component_id: yc15-pg-cron
+  source_url: https://codeload.github.com/citusdata/pg_cron/tar.gz/0cb8118e8dfda30af58a65e14e2b7fe73ec6c931
+  source_sha256: sha256:611ad2f424a9721182b97aae5abd2dcfa624cd9f8ec81836bfccb9d49208bef6
+  status: selected-unverified
+  source_ref: 0cb8118e8dfda30af58a65e14e2b7fe73ec6c931
+- name: pg_hint_plan
+  managed_default_version: '1.5'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.3.0
+  - 1.3.1
+  - 1.3.2
+  - 1.3.3
+  - 1.3.4
+  - 1.3.5
+  - 1.3.6
+  - 1.3.7
+  - 1.3.8
+  - '1.4'
+  - 1.4.1
+  - '1.5'
+  recipe: ../components/managed15/pg_hint_plan.yaml
+  component_id: yc15-pg-hint-plan
+  source_url: https://codeload.github.com/ossc-db/pg_hint_plan/tar.gz/69747ab73062d763391ef6fc0ab17db49673ee74
+  source_sha256: sha256:9bc252b61472a2808fe4f62c2410a6e982485e41f13b8364f9cbaab4d2314aab
+  status: selected-unverified
+  source_ref: 69747ab73062d763391ef6fc0ab17db49673ee74
+- name: pg_partman
+  managed_default_version: 4.7.4
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 4.7.4
+  recipe: ../components/managed15/pg_partman.yaml
+  component_id: yc15-pg-partman
+  source_url: https://codeload.github.com/pgpartman/pg_partman/tar.gz/2330063ad29a65d169b1947ac35705a237774fb6
+  source_sha256: sha256:551c584f6b178d744a1c936ab5bef20e1c3283e98e803297dbc991ca1682bd56
+  status: selected-unverified
+  source_ref: 2330063ad29a65d169b1947ac35705a237774fb6
+- name: pg_qualstats
+  managed_default_version: 2.0.4
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 2.0.4
+  recipe: ../components/managed15/pg_qualstats.yaml
+  component_id: yc15-pg-qualstats
+  source_url: https://codeload.github.com/powa-team/pg_qualstats/tar.gz/effe43b2c9f4c85822a98a09eac3681341a8fd86
+  source_sha256: sha256:5f84e5a6407b2bfe32202e4fd6b9ef4b2184a3877aa9fd608362095fcb644811
+  status: selected-unverified
+  source_ref: effe43b2c9f4c85822a98a09eac3681341a8fd86
+- name: pg_repack
+  managed_default_version: 1.5.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.5.3
+  recipe: ../components/managed15/pg_repack.yaml
+  component_id: yc15-pg-repack
+  source_url: https://codeload.github.com/reorg/pg_repack/tar.gz/6902ab313aeb49227867087dca99cf107f7be23b
+  source_sha256: sha256:8dae055868982913728152bc8dd51e6ba74764bb25aba323d73dc20d277dfc49
+  status: selected-unverified
+  source_ref: 6902ab313aeb49227867087dca99cf107f7be23b
+- name: pg_stat_kcache
+  managed_default_version: 2.2.1
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 2.1.0
+  - 2.1.1
+  - 2.1.2
+  - 2.1.3
+  - 2.2.0
+  - 2.2.1
+  recipe: ../components/managed15/pg_stat_kcache.yaml
+  component_id: yc15-pg-stat-kcache
+  source_url: https://codeload.github.com/powa-team/pg_stat_kcache/tar.gz/08a2f0f05ec42d08bda21805e88cc098c729b700
+  source_sha256: sha256:2313b9ce9fda36369812268474baa8c305ac7e46ca193dde6519695dd13b2bad
+  status: selected-unverified
+  source_ref: 08a2f0f05ec42d08bda21805e88cc098c729b700
+- name: pg_stat_query_plans
+  managed_default_version: '1.0'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  recipe: ../components/managed15/pg_stat_query_plans.yaml
+  component_id: yc15-pg-stat-query-plans
+  source_url: https://codeload.github.com/postgredients/pg_stat_query_plans/tar.gz/f296839e3fd772a21b01c487e66d31e1e7b45ae0
+  source_sha256: sha256:226c66991adc644d9c4a89ffd576928197918962fd9ddcc1e50c718e955715d0
+  status: selected-unverified
+  source_ref: f296839e3fd772a21b01c487e66d31e1e7b45ae0
+- name: pg_tm_aux
+  managed_default_version: 1.1.1
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '1.1'
+  - 1.1.1
+  recipe: ../components/managed15/pg_tm_aux.yaml
+  component_id: yc15-pg-tm-aux
+  source_url: https://codeload.github.com/x4m/pg_tm_aux/tar.gz/857b9173069068741a52e8343bc532bd094fa2b9
+  source_sha256: sha256:407223cb976bbfb537eeaf92c6eb3410ff781dee8c5ab1e64f2e2f18ab122abc
+  status: selected-unverified
+  source_ref: 857b9173069068741a52e8343bc532bd094fa2b9
+- name: pg_uuidv7
+  managed_default_version: '1.5'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.5'
+  recipe: ../components/managed15/pg_uuidv7.yaml
+  component_id: yc15-pg-uuidv7
+  source_url: https://codeload.github.com/fboulnois/pg_uuidv7/tar.gz/0396caaa8269a899826a9195f72c42a845d656a7
+  source_sha256: sha256:fec5c9a3a7e3117fc2e1319fde06a964e649c845cbc3eaf500c3b35289f7a8f3
+  status: selected-unverified
+  source_ref: 0396caaa8269a899826a9195f72c42a845d656a7
+- name: pgaudit
+  managed_default_version: '1.7'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.7'
+  recipe: ../components/managed15/pgaudit.yaml
+  component_id: yc15-pgaudit
+  source_url: https://codeload.github.com/pgaudit/pgaudit/tar.gz/8349710fbbe38ca9518ebe753a528b94f5ab2c19
+  source_sha256: sha256:a56127954647632edc74a2add93f02504cac7fd21386a26c61d90035cb28d6e9
+  status: selected-unverified
+  source_ref: 8349710fbbe38ca9518ebe753a528b94f5ab2c19
+- name: pglogical
+  managed_default_version: 2.4.4
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.0.0
+  - 1.0.1
+  - 1.1.0
+  - 1.1.1
+  - 1.1.2
+  - 1.2.0
+  - 1.2.1
+  - 1.2.2
+  - 2.0.0
+  - 2.0.1
+  - 2.1.0
+  - 2.1.1
+  - 2.2.0
+  - 2.2.1
+  - 2.2.2
+  - 2.3.0
+  - 2.3.1
+  - 2.3.2
+  - 2.3.3
+  - 2.3.4
+  - 2.4.0
+  - 2.4.1
+  - 2.4.2
+  - 2.4.3
+  - 2.4.4
+  recipe: ../components/managed15/pglogical.yaml
+  component_id: yc15-pglogical
+  source_url: https://codeload.github.com/2ndQuadrant/pglogical/tar.gz/bff71f2c6b0bd9748ecee15dcc93201cd1a145a0
+  source_sha256: sha256:87f2541c132471a1e3957212b17f08bca78d9998219928b95843e698b18926c7
+  status: selected-unverified
+  source_ref: bff71f2c6b0bd9748ecee15dcc93201cd1a145a0
+- name: pglogical_origin
+  managed_default_version: 1.0.0
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 1.0.0
+  recipe: ../components/managed15/pglogical.yaml
+  component_id: yc15-pglogical
+  source_url: https://codeload.github.com/2ndQuadrant/pglogical/tar.gz/bff71f2c6b0bd9748ecee15dcc93201cd1a145a0
+  source_sha256: sha256:87f2541c132471a1e3957212b17f08bca78d9998219928b95843e698b18926c7
+  status: selected-unverified
+  source_ref: bff71f2c6b0bd9748ecee15dcc93201cd1a145a0
+- name: pgrouting
+  managed_default_version: 3.4.1
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.4.1
+  recipe: ../components/managed15/pgrouting.yaml
+  component_id: yc15-pgrouting
+  source_url: https://codeload.github.com/pgRouting/pgrouting/tar.gz/441037f0c5b2b6fa9d1ff355c845fa15247803dd
+  source_sha256: sha256:16eb442793466db168d072113dbd1dbb1ef03a86c57bae0cb99cf76ccf6278ea
+  status: selected-unverified
+  source_ref: 441037f0c5b2b6fa9d1ff355c845fa15247803dd
+- name: pgvector
+  managed_default_version: 0.8.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 0.8.2
+  status: blocked
+  reason: Managed alias has no verified matching upstream control/SQL package; vector 0.8.2 is selected
+    separately.
+- name: plv8
+  managed_default_version: 3.2.3
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.2.3
+  recipe: ../components/managed15/plv8.yaml
+  component_id: yc15-plv8
+  source_url: https://codeload.github.com/plv8/plv8/tar.gz/eef5d3a3b9235f947eb729b3d12a2dd148f6eba9
+  source_sha256: sha256:d3962d80e7896fc849d23e6130e8526c10f04d819075665018c4c2b53c0d8320
+  status: disabled
+  source_ref: eef5d3a3b9235f947eb729b3d12a2dd148f6eba9
+  reason: 'Explicit user instruction: keep PLV8 commented out.'
+- name: postgis
+  managed_default_version: 3.3.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.3.2
+  - 3.3.2next
+  - unpackaged
+  recipe: ../components/managed15/postgis.yaml
+  component_id: yc15-postgis
+  source_url: https://download.osgeo.org/postgis/source/postgis-3.3.2.tar.gz
+  source_sha256: sha256:9a2a219da005a1730a39d1959a1c7cec619b1efb009b65be80ffc25bad299068
+  status: selected-unverified
+- name: postgis_raster
+  managed_default_version: 3.3.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.3.2
+  - 3.3.2next
+  - unpackaged
+  recipe: ../components/managed15/postgis.yaml
+  component_id: yc15-postgis
+  source_url: https://download.osgeo.org/postgis/source/postgis-3.3.2.tar.gz
+  source_sha256: sha256:9a2a219da005a1730a39d1959a1c7cec619b1efb009b65be80ffc25bad299068
+  status: selected-unverified
+- name: postgis_sfcgal
+  managed_default_version: 3.3.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.3.2
+  - 3.3.2next
+  - unpackaged
+  recipe: ../components/managed15/postgis.yaml
+  component_id: yc15-postgis
+  source_url: https://download.osgeo.org/postgis/source/postgis-3.3.2.tar.gz
+  source_sha256: sha256:9a2a219da005a1730a39d1959a1c7cec619b1efb009b65be80ffc25bad299068
+  status: selected-unverified
+- name: postgis_tiger_geocoder
+  managed_default_version: 3.3.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.3.2
+  - 3.3.2next
+  recipe: ../components/managed15/postgis.yaml
+  component_id: yc15-postgis
+  source_url: https://download.osgeo.org/postgis/source/postgis-3.3.2.tar.gz
+  source_sha256: sha256:9a2a219da005a1730a39d1959a1c7cec619b1efb009b65be80ffc25bad299068
+  status: selected-unverified
+- name: postgis_topology
+  managed_default_version: 3.3.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 3.3.2
+  - 3.3.2next
+  - unpackaged
+  recipe: ../components/managed15/postgis.yaml
+  component_id: yc15-postgis
+  source_url: https://download.osgeo.org/postgis/source/postgis-3.3.2.tar.gz
+  source_sha256: sha256:9a2a219da005a1730a39d1959a1c7cec619b1efb009b65be80ffc25bad299068
+  status: selected-unverified
+- name: rum
+  managed_default_version: '1.3'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '1.1'
+  - '1.2'
+  - '1.3'
+  recipe: ../components/managed15/rum.yaml
+  component_id: yc15-rum
+  source_url: https://codeload.github.com/postgrespro/rum/tar.gz/6a065fd8dfb280680304991aa30d7f72787fdb04
+  source_sha256: sha256:b9cf6072ca68d42b9bd01eb71856065e2db2cbaf304a3a5ff5d7d4b3700931a0
+  status: selected-unverified
+  source_ref: 6a065fd8dfb280680304991aa30d7f72787fdb04
+- name: smlar
+  managed_default_version: '1.0'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  recipe: ../components/managed15/smlar.yaml
+  component_id: yc15-smlar
+  source_url: https://codeload.github.com/jirutka/smlar/tar.gz/6259352edd179544c6f0e7c81bb68dcb81317f8c
+  source_sha256: sha256:419dfa34123364ace0765e2fe8a3188d4b5f00cc8d0fee9012efb569f63184cf
+  status: selected-unverified
+  source_ref: 6259352edd179544c6f0e7c81bb68dcb81317f8c
+- name: spqrguard
+  managed_default_version: 2.4.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '2.0'
+  - '2.1'
+  - '2.2'
+  - '2.3'
+  - '2.4'
+  - 2.4.1
+  - 2.4.2
+  recipe: ../components/managed15/spqrguard.yaml
+  component_id: yc15-spqrguard
+  source_url: https://codeload.github.com/pg-sharding/spqrguard/tar.gz/207d46c91141c0e67bcf09432fbd9c760bd6b57f
+  source_sha256: sha256:3409497da4ff4c4eac21b67cfc62fba8060ae5ebb0903ced4df10ea22b9911e6
+  status: selected-unverified
+  source_ref: 207d46c91141c0e67bcf09432fbd9c760bd6b57f
+- name: spqrhash
+  managed_default_version: '1.2'
+  managed_installed_version: null
+  managed_catalog_versions:
+  - '1.0'
+  - '1.1'
+  - '1.2'
+  recipe: ../components/managed15/spqrhash.yaml
+  component_id: yc15-spqrhash
+  source_url: https://codeload.github.com/pg-sharding/spqrhash/tar.gz/3f4d326c88a69a4330c8399b4d3c833f25a6cf36
+  source_sha256: sha256:38c2b53670aa23fdf78e357a51224c8f35459d4d8eba4c1cce77cca79667f2a6
+  status: selected-unverified
+  source_ref: 3f4d326c88a69a4330c8399b4d3c833f25a6cf36
+- name: timescaledb
+  managed_default_version: 2.16.1
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 2.16.1
+  - 2.9.2
+  recipe: ../components/managed15/timescaledb.yaml
+  component_id: yc15-timescaledb
+  source_url: https://codeload.github.com/timescale/timescaledb/tar.gz/7c78574c4d42ec7ceb840bd9d55652182221f251
+  source_sha256: sha256:a998200b72ee135d3c5b200c163c01e1a06e420673d4cfe25f5ce62f254a7901
+  status: selected-unverified
+  source_ref: 7c78574c4d42ec7ceb840bd9d55652182221f251
+- name: vector
+  managed_default_version: 0.8.2
+  managed_installed_version: null
+  managed_catalog_versions:
+  - 0.8.2
+  recipe: ../components/managed15/vector.yaml
+  component_id: yc15-vector
+  source_url: https://codeload.github.com/pgvector/pgvector/tar.gz/cab9da72c04353f143bb06b42ab70a403daac64a
+  source_sha256: sha256:0af705b6c9b2a3a1fd1f6fd991425c125387d3c8edc68b75ef027d2e0a05e57a
+  status: selected-unverified
+  source_ref: cab9da72c04353f143bb06b42ab70a403daac64a

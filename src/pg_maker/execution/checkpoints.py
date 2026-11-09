@@ -30,6 +30,7 @@ BOUNDARIES = {
 class Checkpoints:
     def __init__(self, branch, steps):
         self.branch, self.steps = branch, steps
+        self.journal_restored = False
         operation = branch.context.directory
         self.store = SnapshotStore(operation / "checkpoints/store")
         ensure_directory(self.store.directory)
@@ -77,8 +78,11 @@ class Checkpoints:
         destinations = {
             "root": branch.root,
             "source": branch.source,
+            "objects": branch.obj,
             "prefix": branch.root / "prefix",
             "output": branch.output,
+            "owners": branch.root / "install-owners",
+            "journal": branch.root / "workspace-journal.json",
         }
         records = []
         for path in self.index.glob("*.json"):
@@ -95,14 +99,16 @@ class Checkpoints:
                 continue
             if (
                 branch.request.plan["spec"]["run_db_tests"]
+                and not record.get("workspace_journal")
                 and not record["complete"]
                 and i >= self.first_test
             ):
                 continue
             try:
-                self.store.restore(
+                document = self.store.restore(
                     record["snapshot_hash"], destinations, check=branch.context.check
                 )
+                self.journal_restored = any(e["path"] == "journal" for e in document["entries"])
                 branch.context.event("checkpoint_restored", step_id=self.steps[i]["id"])
                 return i
             except (MakerError, OSError, KeyError, ValueError) as exc:
@@ -173,19 +179,33 @@ class Checkpoints:
 
     def save(self, index, *, complete=False):
         branch, step = self.branch, self.steps[index]
+        policy = branch.config["defaults"]["execution"].get("checkpoints", "final")
+        if not complete and (
+            policy == "final" or (policy == "milestones" and step["kind"] != "install_components")
+        ):
+            return
+        if not complete and os.environ.get("PG_MAKER_NO_INTERMEDIATE_CHECKPOINTS") == "1":
+            return
         if not complete and (
             (
                 step["kind"] not in BOUNDARIES
                 and not step["kind"].startswith(("translate_docs_", "build_docs_"))
             )
-            or (branch.request.plan["spec"]["run_db_tests"] and index >= self.first_test)
+            or (
+                not hasattr(branch, "workspace")
+                and branch.request.plan["spec"]["run_db_tests"]
+                and index >= self.first_test
+            )
         ):
             return
-        roots = (
-            {"source": branch.source, "prefix": branch.root / "prefix", "output": branch.output}
-            if complete
-            else {"root": branch.root, "output": branch.output}
-        )
+        roots = {"prefix": branch.root / "prefix", "output": branch.output}
+        if not complete:
+            roots.update(
+                source=branch.source,
+                objects=branch.obj,
+                owners=branch.root / "install-owners",
+                journal=branch.root / "workspace-journal.json",
+            )
         check_resources(branch.context.directory, branch.config["defaults"]["execution"]["limits"])
         metadata = {
             "step_id": step["id"],
@@ -194,13 +214,16 @@ class Checkpoints:
             "complete": complete,
             "index": index,
             "attempt": branch.context.state["attempt"],
+            "workspace_journal": not complete
+            and (branch.root / "workspace-journal.json").is_file(),
         }
         snapshot = self.store.capture(roots, metadata, check=branch.context.check)
         record = {**metadata, "snapshot_hash": snapshot["snapshot_hash"]}
         write_json(self.index / f"{metadata['attempt']:06d}-{index:06d}.json", record)
         branch.context.event("checkpoint_saved", step_id=step["id"])
         if (
-            self.shared
+            not hasattr(branch, "workspace")
+            and self.shared
             and not branch.request.plan["spec"]["run_db_tests"]
             and index == self.build_end
         ):

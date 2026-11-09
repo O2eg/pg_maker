@@ -1,6 +1,7 @@
 """Run pg_clickhouse's native regressions against an isolated pinned ClickHouse."""
 
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -11,6 +12,8 @@ from xml.sax.saxutils import escape
 def main():
     binary = Path(sys.argv[1]) / "usr/bin/clickhouse"
     root = (Path.cwd() / "pg-maker-clickhouse").resolve()
+    if root.exists():
+        shutil.rmtree(root)
     root.mkdir()
     directory = escape(str(root))
     config = root / "config.xml"
@@ -51,8 +54,10 @@ def main():
                 time.sleep(0.5)
             else:
                 raise RuntimeError("ClickHouse did not become ready")
-            subprocess.run(
-                [
+            command = (
+                ["cmake", "--build", sys.argv[4], "--target", "installcheck", "--parallel", "1"]
+                if len(sys.argv) > 4
+                else [
                     "make",
                     "--output-sync=target",
                     "-j",
@@ -60,10 +65,9 @@ def main():
                     "USE_PGXS=1",
                     "PG_CONFIG=" + sys.argv[2] + "/bin/pg_config",
                     "installcheck",
-                ],
-                env=os.environ,
-                check=True,
+                ]
             )
+            subprocess.run(command, env=os.environ, check=True)
         finally:
             process.terminate()
             try:

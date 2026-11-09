@@ -140,6 +140,9 @@ def collect(branch) -> dict:
         raise PreconditionError("installed pg_config version differs from the lock")
     write_json(branch.output / "build-layout.json", dict(zip(keys, values, strict=True)))
     selected = set(core_paths)
+    from pg_maker.packaging.contrib import selected_files
+
+    selected.update(selected_files(branch, files, omit))
     if server_dev_files:
         selected.update(p for p in files if development_file(p) and not omit(p))
     for component in branch.feature["spec"]["components"]:

@@ -1,10 +1,30 @@
 # PostgreSQL 18 managed-compatibility profile
 
+Physical binary compatibility with the managed source is **not verified**.
+The [clone compatibility contract](yc-clone-compatibility.md) applies to this profile
+and to previously built packages; build/package qualification is a separate result.
+
+All maintenance profiles include the complete standard PostgreSQL contrib, including
+optional UUID, SELinux and Perl/Python transform modules. Contrib is inventoried
+independently of the managed extension catalog and delivered in the server DEB;
+`auto_explain.so` does not need a CREATE EXTENSION command. PLV8 stays disabled.
+
+
 `yc-18.6-icu70` builds community PostgreSQL **18.6** for **Debian 13 amd64**,
 with private **ICU 70.1** and the public extension versions observed on
-`rc1a-novptt4hkfpbodb6.mdb.yandexcloud.net` on 2026-11-05. It has independent
+the managed PostgreSQL 18 reference database on 2026-11-05. It has independent
 component recipes; its extension recipes are separate from PostgreSQL 16. All YC profiles share the
 current installation-path policy.
+
+`yc-18.4-icu70` selects PostgreSQL 18.4 with its official archive SHA256 and
+otherwise uses the same settings and component recipes as `yc-18.6-icu70`.
+Version-conditioned patches keep the full extension tests compatible with 18.4:
+the `output_plugin_libraries` GUC and psql COPY error-input adjustments introduced
+in 18.6 are not applied to 18.4. The pglogical resynchronization fixes and their
+regression tests remain enabled for both versions.
+The extension catalog remains the audit of the 18.6 source system; examples below
+use 18.6. There is no `yc-18.5-icu70` profile: PostgreSQL 18.5 was never released
+because of a regression, as documented in the [18.6 release notes](https://www.postgresql.org/docs/18/release-18-6.html).
 
 ```bash
 pg-maker init yc18 --profile yc-18.6-icu70
@@ -121,7 +141,7 @@ extension's SQL version alone does not identify the compiled implementation.
 | `prefix` 1.2.0 | Pin public revision `413f00607c3c3446e4f804ef1874a98caefabd4d` with current PostgreSQL APIs; the old 1.2.0 tag only supported PG8/9 |
 | `smlar` 1.0 | Use PostgreSQL 18's inline `TupleDescAttr` accessor instead of shadowing it with the legacy compatibility macro |
 | `pg_hint_plan` 1.8.0 | Run native expected-output tests with the upstream preload configuration; combined preloads are checked separately during package acceptance |
-| `pglogical` 2.4.6 | Port test fixtures to current PostgreSQL Perl/WAL APIs and explicit output-plugin policy; finish idle tablesync after received WAL progress and refresh the resync cache after waiting for a relation lock; compare replicated table contents and test the lock race |
+| `pglogical` 2.4.6 | Port test fixtures to current PostgreSQL Perl/WAL APIs and explicit output-plugin policy; finish idle tablesync after received WAL progress and refresh the resync cache after waiting for a relation lock; retain an owned table name across relcache invalidation during resync; compare replicated table contents and test both lock/invalidation races |
 | `pg_partman` 5.4.3 | Correct 30-second calendar fixtures and derive monthly undo counts from generated input; compare all copied payloads |
 | `pg_textsearch` 1.3.0 | Run shell suites from a short temporary path, set writable test socket directories and preload the library in the stress cluster and fail on client/server SQL errors; backport upstream #405 to protect standalone scoring against concurrent segment recycling, with its dedicated regression test; force replication search/count sessions to exercise BM25 indexes, assert the UPDATE query plan, and count matching fixture documents; assert exact segment-match counts using negative BM25 scores without an arbitrary magnitude cutoff; require positive evidence that TimescaleDB integration scenarios executed rather than silently skipped |
 | `timescaledb` 2.23.0 | Provide pinned archive commit metadata, allow the invalidation output plugin in test clusters, and include/check that plugin in the installed package |

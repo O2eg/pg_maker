@@ -1,6 +1,7 @@
 """Real make/Docker/worker recovery with tiny source fixtures, without a database."""
 
 import os
+import shutil
 from pathlib import Path
 
 import pytest
@@ -78,8 +79,8 @@ extension.o: extension.c stable.o
 \t! grep -q BROKEN $<
 \tcp $< $@
 install: all
-\tmkdir -p $(prefix)/lib
-\tcp extension.o $(prefix)/lib/COMPONENT.so
+\tmkdir -p $(DESTDIR)$(prefix)/lib
+\tcp extension.o $(DESTDIR)$(prefix)/lib/COMPONENT.so
 """
 
 
@@ -90,6 +91,7 @@ def make_project(tmp_path, image):
         {
             "spec": {
                 "common_changes": [],
+                "packaging": {"standard_contrib": False},
                 "build": {"jobs": 1},
                 "execution": {
                     "build_user": current_user(),
@@ -124,7 +126,7 @@ def make_project(tmp_path, image):
                     "exclude": [],
                 },
                 "compatible_postgresql": ">=18,<19",
-                "requires": [],
+                "requires": ["one"] if identifier == "two" else [],
                 "conflicts": [],
                 "build_dependencies": [],
                 "runtime_dependencies": [],
@@ -172,6 +174,8 @@ def test_failed_component_edit_resume_cache_objects_debug_and_prune(tmp_path):
     root1 = run1 / "workspace/build" / branch_id
     assert (root1 / "prefix/lib/one.so").exists()
     assert (root1 / "components/two/stable.o").exists()
+    core_inode = (root1 / "obj/core.bin").stat().st_ino
+    stable_inode = (root1 / "components/two/stable.o").stat().st_ino
     resumed = service.resume(run1, plan_hash=first["plan_hash"])
     assert resumed["attempt"] == 2
     assert service.wait(run1, timeout_seconds=90)["status"] == "failed"
@@ -187,13 +191,16 @@ def test_failed_component_edit_resume_cache_objects_debug_and_prune(tmp_path):
     complete = service.wait(run2, timeout_seconds=90)
     assert complete["status"] == "succeeded", complete
     report = read_json(run2 / "workspace/output" / branch_id / "report.json")
-    assert report["cache_producer"]["run_id"] == run1.name
-    one = next(c for c in report["components"] if c["id"] == "one")
-    assert one["cache_producer"]["run_id"] == run1.name
-    assert report["incremental_components"] == ["two"]
     root2 = run2 / "workspace/build" / branch_id
+    assert not root1.exists()
+    assert (root2 / "obj/core.bin").stat().st_ino == core_inode
+    assert (root2 / "components/two/stable.o").stat().st_ino == stable_inode
+    assert any(
+        s["id"].endswith("component-one") and s["status"] == "reused" for s in report["steps"]
+    )
     assert (root2 / "components/two/compile.log").read_text().splitlines() == [
         "stable",
+        "extension",
         "extension",
         "extension",
     ]
@@ -216,7 +223,59 @@ def test_failed_component_edit_resume_cache_objects_debug_and_prune(tmp_path):
     preview = session.prune(keep_last=1)
     assert preview["bytes"] > 0
     session.prune(keep_last=1, apply=preview)
-    assert root1.exists() and not root2.exists() and (run3 / "workspace/build").exists()
+    assert not root1.exists() and not root2.exists() and (run3 / "workspace/build").exists()
+    # Changing a dependency rebuilds the dependent component, preserving core
+    # and unchanged object files of the directly edited component.
+    root3 = run3 / "workspace/build" / branch_id
+    one_inode = (root3 / "components/one/stable.o").stat().st_ino
+    source_one = Path(opened["trees"]["component:one"]["source"])
+    (source_one / "extension.c").write_text("dependency changed\n")
+    session.patch("commit", scope="component:one", identifier="change-dependency")
+    fourth = session.build()
+    run4 = Path(fourth["operation_directory"])
+    assert service.wait(run4, timeout_seconds=90)["status"] == "succeeded"
+    root4 = run4 / "workspace/build" / branch_id
+    assert (root4 / "obj/core.bin").stat().st_ino == core_inode
+    assert (root4 / "components/one/stable.o").stat().st_ino == one_inode
+    assert (root4 / "components/two/compile.log").read_text().splitlines() == [
+        "stable",
+        "extension",
+    ]
     assert (source / "extension.c").read_text() == "fixed extension\n"
     with pytest.raises(PreconditionError, match="scratch was cleaned"):
         service.resume(run2, plan_hash=second["plan_hash"])
+
+
+def test_minimal_checkpoint_recovers_lost_workspace_with_file_ownership(tmp_path):
+    image = os.environ.get("PG_MAKER_DEVELOPMENT_IMAGE")
+    if not image:
+        pytest.skip("set PG_MAKER_DEVELOPMENT_IMAGE")
+    project = make_project(tmp_path, image)
+    defaults = load_yaml(project / "config/defaults.yaml")
+    defaults["spec"]["execution"]["checkpoints"] = "all"
+    write_yaml(project / "config/defaults.yaml", defaults)
+    service = MakerService(project / "operations")
+    started = service.prepare(
+        project / "build.yaml",
+        output=project / "lock.json",
+        input_store=project / "inputs",
+        environments=project / "env.json",
+        offline=True,
+    )
+    assert service.wait(service.directory / started["operation_id"])["status"] == "succeeded"
+    started = service.build(
+        project / "lock.json", goal="build", use_cache=False, run_db_tests=False
+    )
+    run = service.directory / started["operation_id"]
+    assert service.wait(run)["status"] == "failed"
+    root = run / "workspace/build/my-feature.debian13-x64.candidate"
+    shutil.rmtree(root)  # Simulate lost/corrupted compiler scratch, not saved evidence.
+    from pg_maker.models import parse_request
+
+    service.resume(run, plan_hash=parse_request(read_json(run / "input.json")).plan["plan_hash"])
+    assert service.wait(run)["status"] == "failed"  # Same intentionally broken source.
+    assert (root / "prefix/lib/one.so").read_text() == "working\n"
+    assert (root / "install-owners/one.json").is_file()
+    assert (root / "obj/compile.log").read_text().splitlines() == ["core"]
+    assert not (root / "components/one").exists()  # Not copied into the checkpoint.
+    assert '"type":"checkpoint_restored"' in (run / "events.jsonl").read_text()

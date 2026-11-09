@@ -1,0 +1,72 @@
+--- a/regress-postgresql.conf
++++ b/regress-postgresql.conf
+@@ -1,6 +1,5 @@
+ # Configuration that affects behaviour being tested:
+ shared_preload_libraries = 'pglogical'
+-output_plugin_libraries = 'pgoutput, test_decoding, pglogical_output'
+ wal_level = logical
+ max_wal_senders = 20
+ max_replication_slots = 20
+--- a/t/011_pglogical_cascade_sub.pl
++++ b/t/011_pglogical_cascade_sub.pl
+@@ -19,7 +19,6 @@
+ max_wal_senders = 12
+ max_connections = 200
+ shared_preload_libraries = 'pglogical'
+-output_plugin_libraries = 'pgoutput, test_decoding, pglogical_output'
+ track_commit_timestamp = on
+ pglogical.synchronous_commit = true
+ ]);
+@@ -32,7 +31,6 @@
+ $node_b->init();
+ $node_b->append_conf('postgresql.conf', qq[
+ shared_preload_libraries = 'pglogical'
+-output_plugin_libraries = 'pgoutput, test_decoding, pglogical_output'
+ wal_level = logical
+ max_wal_senders = 10
+ max_replication_slots = 10
+@@ -49,7 +47,6 @@
+ $node_c->init();
+ $node_c->append_conf('postgresql.conf', qq[
+ shared_preload_libraries = 'pglogical'
+-output_plugin_libraries = 'pgoutput, test_decoding, pglogical_output'
+ wal_level = logical
+ max_wal_senders = 10
+ max_replication_slots = 10
+--- a/t/040_pglogical_sync_during_write.pl
++++ b/t/040_pglogical_sync_during_write.pl
+@@ -32,7 +32,6 @@
+ max_connections = 200
+ log_line_prefix = '%t %p '
+ shared_preload_libraries = 'pglogical'
+-output_plugin_libraries = 'pgoutput, test_decoding, pglogical_output'
+ track_commit_timestamp = on
+ pglogical.synchronous_commit = true
+ ]);
+@@ -44,7 +43,6 @@
+ $node_subscriber->init();
+ $node_subscriber->append_conf('postgresql.conf', qq[
+ shared_preload_libraries = 'pglogical'
+-output_plugin_libraries = 'pgoutput, test_decoding, pglogical_output'
+ wal_level = logical
+ max_wal_senders = 10
+ max_replication_slots = 10
+--- a/t/041_resync_lock_race.pl
++++ b/t/041_resync_lock_race.pl
+@@ -11,7 +11,6 @@
+     $node->init();
+     $node->append_conf('postgresql.conf', qq[
+ shared_preload_libraries = 'pglogical'
+-output_plugin_libraries = 'pgoutput, test_decoding, pglogical_output'
+ wal_level = logical
+ max_wal_senders = 10
+ max_replication_slots = 10
+--- a/t/perl-95-postgresql.conf
++++ b/t/perl-95-postgresql.conf
+@@ -1,6 +1,5 @@
+ # Configuration that affects behaviour being tested:
+ shared_preload_libraries = 'pglogical'
+-output_plugin_libraries = 'pgoutput, test_decoding, pglogical_output'
+ wal_level = logical
+ max_wal_senders = 10
+ max_replication_slots = 10

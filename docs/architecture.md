@@ -32,7 +32,10 @@ src/pg_maker/
 ```
 
 `execution` contains process streaming and timeouts, a durable event journal,
-resource ownership, immutable checkpoints, component caches and disk preflight.
+resource ownership, per-stage workspace receipts, isolated component staging,
+optional immutable checkpoints and disk preflight. A stopped workspace transfers
+to its next iteration without copying objects; immutable attempt evidence stays
+with its producer. Image and Rust caches use input/version/architecture keys.
 A development iteration creates a new immutable BuildLock/BuildPlan; it does not
 change the inputs of an existing operation. Git checkouts remain private to the
 session and are separate from build scratch directories.
