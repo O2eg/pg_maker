@@ -18,10 +18,7 @@ from pg_maker.runners.docker import DockerRunner
 from pg_maker.storage import content_hash, file_hash, read_json
 
 
-def plan_runtime(directory: Path, profile: dict) -> dict:
-    directory = directory.absolute()
-    manifest = read_json(directory / "artifact-manifest.json")
-    verify_manifest(directory, manifest)
+def _validate_profile(profile: dict) -> None:
     if set(profile) != {
         "base_image",
         "files",
@@ -62,6 +59,89 @@ def plan_runtime(directory: Path, profile: dict) -> dict:
     for key in ("min_free_disk_bytes", "memory_bytes"):
         if type(profile[key]) is not int or profile[key] < 1:
             raise ValidationError("runtime limits must be positive integer bytes")
+
+
+def check_runtime(lock: dict, plan: dict, profile: dict, variant: str) -> dict:
+    """Check a planned distribution against consumer requirements before compilation.
+
+    This checks declared inputs, not the resulting package payload or SQL behavior;
+    plan_runtime still verifies the finished bytes and their evidence.
+    """
+    from pg_maker.planning.documents import store_from_document, verify
+    from pg_maker.planning.plan import build_plan
+
+    _validate_profile(profile)
+    verify(plan, "plan")
+    expected = build_plan(
+        lock, goal=plan["spec"]["goal"], run_db_tests=plan["spec"]["run_db_tests"]
+    )
+    if expected["plan_hash"] != plan["plan_hash"]:
+        raise PreconditionError("runtime build plan differs from locked inputs")
+    config, spec = lock["spec"]["config"], plan["spec"]
+    if spec["goal"] not in {"package", "verified"}:
+        raise ValidationError("runtime handoff requires a package-producing goal")
+    if not (spec["run_package_tests"] or config["documentation"]["enabled"]):
+        raise PreconditionError(
+            "runtime handoff needs a pinned dependency repository; enable "
+            "validation.run_package_tests before prepare/resolve or run DB tests"
+        )
+    selected = next((v for v in config["variants"] if v["id"] + ".candidate" == variant), None)
+    if selected is None:
+        raise ValidationError("runtime handoff requires a selected candidate variant")
+    target = next(t for t in config["targets"] if t["id"] == selected["target"])
+    if (
+        target["platform"]["spec"]["os"] != {"id": "debian", "version": "13"}
+        or target["architecture"] != "x86_64"
+        or "deb" not in target["artifacts"]
+    ):
+        raise ValidationError("runtime v1 requires Debian 13 x86_64 DEBs")
+    prefix = selected["identity"]["paths"]["runtime_prefix"]
+    if not re.fullmatch(r"/opt/[A-Za-z0-9_./+-]+", prefix) or ".." in prefix.split("/"):
+        raise ValidationError("invalid PostgreSQL runtime prefix")
+    feature = next(f for f in config["features"] if f["metadata"]["id"] == selected["feature"])
+    components = [c["spec"] for c in feature["spec"]["components"]]
+    extensions = {c["sql_extension"] for c in components if c.get("sql_extension")}
+    libraries = {c["shared_library"] for c in components if c.get("shared_library")}
+    for component in components:
+        libraries.update(
+            Path(p).stem
+            for p in component.get("runtime_files", [])
+            if p.endswith(".so") and not any(c in p for c in "*?[")
+        )
+    if config["defaults"].get("packaging", {}).get("standard_contrib"):
+        source = store_from_document(lock, None).tree(config["source"]["source_hash"])
+        for name in {*profile["extensions"], *profile["libraries"]}:
+            directory = source / "contrib" / name
+            if (directory / "Makefile").is_file():
+                libraries.add(name)
+                if (directory / (name + ".control")).is_file():
+                    extensions.add(name)
+    missing = (set(profile["extensions"]) - extensions) | (
+        set(profile["extensions"]) | set(profile["libraries"])
+    ) - libraries
+    if missing:
+        raise PreconditionError(
+            "build profile lacks runtime modules; select or update a maker feature before resolve",
+            details={"missing": sorted(missing)},
+        )
+    return {
+        "api_version": "pg_maker/runtime-check/v1",
+        "compatible": True,
+        "variant": variant,
+        "plan_hash": plan["plan_hash"],
+        "profile_hash": content_hash(profile),
+        "prefix": prefix,
+        "postgresql_version": config["postgresql"]["version"],
+        "package_tests": spec["run_package_tests"],
+        "scope": "declared-inputs",
+    }
+
+
+def plan_runtime(directory: Path, profile: dict) -> dict:
+    directory = directory.absolute()
+    manifest = read_json(directory / "artifact-manifest.json")
+    verify_manifest(directory, manifest)
+    _validate_profile(profile)
     packages = [
         a for a in manifest["artifacts"] if a["package_role"] in {"server", "client", "libpq"}
     ]

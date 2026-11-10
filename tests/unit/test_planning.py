@@ -115,6 +115,109 @@ def resolved(project, *, offline=False, request_id=None):
     return state, read_json(project / "lock.json") if (project / "lock.json").is_file() else None
 
 
+@pytest.fixture
+def runtime_inputs(project):
+    defaults = load_yaml(project / "config/defaults.yaml")
+    defaults["spec"]["validation"]["run_package_tests"] = True
+    write_yaml(project / "config/defaults.yaml", defaults)
+    for name in ("pg_buffercache", "auto_explain"):
+        directory = project / "source/contrib" / name
+        directory.mkdir(parents=True)
+        (directory / "Makefile").write_text("# synthetic contrib fixture\n")
+    (project / "source/contrib/pg_buffercache/pg_buffercache.control").write_text("# fixture\n")
+    script = project / "entrypoint"
+    script.write_text("#!/bin/sh\nexit 0\n")
+    state, lock = resolved(project)
+    assert state["status"] == "succeeded", state
+    profile = {
+        "base_image": "sha256:" + "a" * 64,
+        "files": {"entrypoint": {"path": str(script), "sha256": file_hash(script)}},
+        "entrypoint": "entrypoint",
+        "extensions": ["pg_buffercache"],
+        "libraries": ["auto_explain"],
+        "min_free_disk_bytes": 1,
+        "memory_bytes": 1048576,
+    }
+    return lock, build_plan(lock, goal="package"), profile
+
+
+def test_runtime_check_accepts_package_only_tests_and_standard_contrib(runtime_inputs, project):
+    from pg_maker.cli import main
+    from pg_maker.integrations.runtime import check_runtime
+
+    lock, plan, profile = runtime_inputs
+    result = check_runtime(lock, plan, profile, "my-feature.debian13-x64.candidate")
+    assert result["compatible"] and result["package_tests"]
+    assert result["scope"] == "declared-inputs"
+    assert plan["spec"]["run_db_tests"] is False
+    write_json(project / "plan.json", plan)
+    write_json(project / "runtime-profile.json", profile)
+    assert (
+        main(
+            [
+                "--machine",
+                "runtime",
+                "check",
+                str(project / "lock.json"),
+                "--plan",
+                str(project / "plan.json"),
+                "--profile",
+                str(project / "runtime-profile.json"),
+                "--variant",
+                "my-feature.debian13-x64.candidate",
+            ]
+        )
+        == 0
+    )
+
+
+def test_runtime_check_reports_missing_module_without_mutating_profile(runtime_inputs):
+    from pg_maker.integrations.runtime import check_runtime
+
+    lock, plan, profile = runtime_inputs
+    original = copy.deepcopy(lock)
+    profile["extensions"].append("pg_wait_sampling")
+    with pytest.raises(PreconditionError, match="lacks runtime modules") as error:
+        check_runtime(lock, plan, profile, "my-feature.debian13-x64.candidate")
+    assert error.value.details == {"missing": ["pg_wait_sampling"]}
+    assert lock == original
+
+
+def test_runtime_check_requires_dependency_export_and_supported_variant(runtime_inputs):
+    from pg_maker.integrations.runtime import check_runtime
+
+    lock, plan, profile = runtime_inputs
+    with pytest.raises(ValidationError, match="candidate variant"):
+        check_runtime(lock, plan, profile, "my-feature.debian13-x64.baseline")
+    spec = copy.deepcopy(lock["spec"])
+    spec["config"]["defaults"]["validation"]["run_package_tests"] = False
+    untested = seal("lock", spec, lock["transport"])
+    with pytest.raises(PreconditionError, match="pinned dependency repository"):
+        check_runtime(
+            untested,
+            build_plan(untested, goal="package"),
+            profile,
+            "my-feature.debian13-x64.candidate",
+        )
+
+
+def test_runtime_check_rejects_changed_plan_and_mismatched_target(runtime_inputs):
+    from pg_maker.integrations.runtime import check_runtime
+
+    lock, plan, profile = runtime_inputs
+    modified = copy.deepcopy(plan)
+    modified["spec"]["run_db_tests"] = True
+    with pytest.raises(PreconditionError):
+        check_runtime(lock, modified, profile, "my-feature.debian13-x64.candidate")
+    spec = copy.deepcopy(lock["spec"])
+    spec["config"]["targets"][0]["architecture"] = "aarch64"
+    other = seal("lock", spec, lock["transport"])
+    with pytest.raises(ValidationError, match="Debian 13 x86_64"):
+        check_runtime(
+            other, build_plan(other, goal="package"), profile, "my-feature.debian13-x64.candidate"
+        )
+
+
 def test_previous_release_is_hashed_input_and_missing_is_not_a_skip(project):
     manifest = load_yaml(project / "build.yaml")
     packages = []

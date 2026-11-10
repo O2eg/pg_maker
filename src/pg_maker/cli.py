@@ -227,6 +227,11 @@ def parser() -> Parser:
     changes_commands.add_parser("validate").add_argument("file", type=Path)
     runtime = sub.add_parser("runtime", help="Create a pg_stand image from locked DEBs")
     runtime_commands = runtime.add_subparsers(dest="runtime_command", required=True)
+    runtime_check = runtime_commands.add_parser("check", help="check planned runtime prerequisites")
+    runtime_check.add_argument("lock", type=Path)
+    runtime_check.add_argument("--plan", type=Path, required=True)
+    runtime_check.add_argument("--profile", type=Path, required=True)
+    runtime_check.add_argument("--variant", required=True)
     runtime_plan = runtime_commands.add_parser("plan")
     runtime_plan.add_argument("directory", type=Path)
     runtime_plan.add_argument("--profile", type=Path, required=True)
@@ -415,10 +420,21 @@ def main(argv: list[str] | None = None) -> int:
                 else:
                     result = validate_changes(args.file.absolute())
             elif args.command == "runtime":
-                from pg_maker.integrations.runtime import plan_runtime, verify_runtime_plan
+                from pg_maker.integrations.runtime import (
+                    check_runtime,
+                    plan_runtime,
+                    verify_runtime_plan,
+                )
                 from pg_maker.models import RuntimeRequest
 
-                if args.runtime_command == "plan":
+                if args.runtime_command == "check":
+                    result = check_runtime(
+                        read_json(args.lock),
+                        read_json(args.plan),
+                        read_json(args.profile),
+                        args.variant,
+                    )
+                elif args.runtime_command == "plan":
                     result = plan_runtime(args.directory, read_json(args.profile))
                     if args.out:
                         write_json(args.out.absolute(), result)

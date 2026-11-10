@@ -8,6 +8,18 @@ extension/library lists and disk/memory limits. These choices belong to pg_play'
 profile, not hardcoded pg-maker names. pg_play supplies pg_stand files; maker has no
 runtime dependency on either sibling package.
 
+Before compiling, `pg-maker runtime check LOCK --plan BUILD_PLAN --profile FILE
+--variant FEATURE.TARGET.candidate` checks the unchanged lock/plan against the
+consumer's requirements. It verifies that the goal produces packages, the target
+and prefix are supported, dependency export is enabled, and required modules are
+declared by the selected components or included by standard contrib. Missing modules
+must be addressed in the maker feature before preparing/resolving new inputs.
+This command is read-only and does not start containers or alter a profile. Its
+`pg_maker/runtime-check/v1` result has `scope: declared-inputs`: it does not replace
+verification of compiled files, ELF dependencies, SQL behavior or vendor ABI.
+The Python entry point is `check_runtime(lock, plan, profile, variant)` in the same
+module. The machine capabilities document advertises `runtime check` separately.
+
 `pg-maker runtime plan DIR --profile FILE --out PLAN` creates
 `pg_maker/runtime-plan/v1`. Its hash covers inputs and qualification.
 `runtime build PLAN --plan-hash HASH --out DESCRIPTOR --detach` runs a durable

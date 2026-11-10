@@ -51,6 +51,7 @@ COMMANDS = {
     "resume": True,
     "export": True,
     "runtime plan": False,
+    "runtime check": False,
     "runtime build": True,
     "cache prune": True,
     "cleanup": True,
