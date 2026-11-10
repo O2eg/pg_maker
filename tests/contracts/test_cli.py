@@ -7,6 +7,7 @@ from importlib.resources import files
 import pytest
 from jsonschema import Draft202012Validator
 
+from pg_maker import __version__
 from pg_maker.documents import schema, validate_document
 
 
@@ -109,7 +110,7 @@ def test_init_machine_and_module_entrypoint(tmp_path):
     payload = json.loads(result.stdout)
     validate_document(payload, "component-envelope")
     assert payload["request_id"] == "init-1" and payload["result"]["created"]
-    assert cli("--version").stdout.strip() == "pg-maker 0.5.0"
+    assert cli("--version").stdout.strip() == f"pg-maker {__version__}"
 
 
 def test_saved_log_tool_rule_cannot_silently_skip_generated_logs(tmp_path):

@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 — 2026-11-11
+
+- Add read-only runtime preflight for planned PostgreSQL builds through
+  `runtime check`, including machine capabilities for pg-play integration.
 
 - Publish tested DEB/RPM artifacts to configured Nexus APT/YUM/Raw and filesystem
   receivers, directly or automatically after builds. Add durable publication workers,
