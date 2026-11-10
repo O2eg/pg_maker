@@ -64,8 +64,22 @@ def paths(branch):
 
 
 def prepare(branch):
+    from pg_maker.execution.workspace import archive_evidence
+
     branch.prepare()
     root = paths(branch)
+    # Workspace resume preserves compiled objects, but every documentation stage
+    # runs again. Remove partial render trees and archive only prior evidence.
+    for path in (root, branch.output / "docs"):
+        if path.exists():
+            shutil.rmtree(path)
+    for name in ("documentation", "translations", "docs-manifest.json"):
+        archive_evidence(branch, branch.output / name)
+    for archive in branch.output.glob(branch.id + ".*.tar.xz"):
+        archive.unlink()
+    if branch.request.plan["spec"]["goal"] == "docs":
+        archive_evidence(branch, branch.output / "artifact-manifest.json")
+    branch.report.pop("documentation", None)
     root.mkdir(parents=True, exist_ok=True)
     helper = branch.helper / "docs-prerequisites.mk"
     adapter = branch.config["postgresql_recipe"]["documentation"]

@@ -306,6 +306,19 @@ def test_docs_resume_discards_partial_render_and_parallel_runs_are_isolated(tmp_
             assert time.monotonic() < deadline
             assert service.status(directory)["status"] in {"running", "planned"}
             time.sleep(0.05)
+        configured = (
+            directory / "workspace/build/my-feature.debian13-x64.candidate/obj/src/Makefile.global"
+        )
+        configured_inode = configured.stat().st_ino
+        stale_object = marker.parent / "stale-before-resume"
+        stale_object.write_text("partial render\n")
+        stale_render = (
+            directory
+            / "workspace/output/my-feature.debian13-x64.candidate"
+            / "docs/en/html/stale-before-resume.html"
+        )
+        stale_render.parent.mkdir(parents=True, exist_ok=True)
+        stale_render.write_text("partial rendered page\n")
         os.kill(first["owner"]["pid"], signal.SIGKILL)
         deadline = time.monotonic() + 10
         while service.status(directory)["status"] != "interrupted":
@@ -316,8 +329,13 @@ def test_docs_resume_discards_partial_render_and_parallel_runs_are_isolated(tmp_
         _, parallel = wait(service, second)
         assert resumed["attempt"] == 2
         assert parallel["attempt"] == 1
-        assert '"type":"checkpoint_restored"' in (directory / "events.jsonl").read_text()
-        assert list((directory / "attempts/2/previous").rglob("rendering"))
+        events = (directory / "events.jsonl").read_text()
+        assert '"type":"step_reused"' in events
+        assert '"type":"checkpoint_restored"' not in events
+        assert configured.stat().st_ino == configured_inode
+        assert not stale_object.exists() and not stale_render.exists()
+        assert not (directory / "attempts/2/previous").exists()
+        assert list((directory / "attempts/2/previous-evidence").rglob("writer.json"))
         for state in (resumed, parallel):
             output = Path(state["result"]["reports"][0]["path"]).parent
             assert read_json(output / "docs-manifest.json")["languages"]["en"]["validation"][

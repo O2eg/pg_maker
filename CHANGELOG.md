@@ -18,6 +18,9 @@
   caches and native migration versions to the selected modules and original inputs.
 - Install runtime dependencies in extension SDKs, clean owned test tablespaces on
   retry, and preserve live command output through timeouts and cancellation.
+- Fix documentation resume in retained workspaces by clearing partial render output
+  and preserving previous diagnostic evidence. Update integration fixtures for full
+  contrib defaults, component staging, workspace reuse and checkpoint retention.
 
 ## 0.5.0 — 2026-11-10
 

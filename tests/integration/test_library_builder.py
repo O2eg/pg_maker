@@ -40,11 +40,12 @@ def test_cmake_installs_from_frozen_auxiliary_source_and_checks_control(tmp_path
             cwd=kwargs["cwd"],
             check=True,
             capture_output=True,
-            env={**os.environ, "CMAKE_BUILD_PARALLEL_LEVEL": "1"},
+            env={**os.environ, "CMAKE_BUILD_PARALLEL_LEVEL": "1", **kwargs.get("env", {})},
         )
 
     branch = SimpleNamespace(
         root=root,
+        output=tmp_path / "output",
         container_root=str(root),
         prefix=str(prefix),
         inputs=SimpleNamespace(tree=lambda digest: source if digest == "main" else extra),
@@ -65,6 +66,8 @@ def test_cmake_installs_from_frozen_auxiliary_source_and_checks_control(tmp_path
     }
     build_components(branch, [component], run_tests=False)
     assert (prefix / "lib/postgresql/libprobe.so").is_file()
+    assert (root / "install-owners/probe.json").is_file()
+    assert not (root / "install-staging/probe").exists()
     assert branch.report["components"][0]["tests"] == "skipped"
     assert "-DEXTRA_SOURCE=" + str(root / "extra-sources/probe/fixture") in commands[0]
     assert (root / "extra-sources/probe/fixture/probe.c").read_bytes() == (

@@ -43,7 +43,8 @@ def preparation(tmp_path):
     initialize_project(tmp_path)
     recipe = load_yaml(resource_path("recipes/platforms/debian-13.yaml"))
     recipe["spec"]["replace_builtin"] = True
-    recipe["spec"]["option_dependencies"] = {key: [] for key in ("llvm", "openssl", "icu")}
+    recipe["spec"]["option_dependencies"] = {key: [] for key in recipe["spec"]["options"]}
+    recipe["spec"]["option_runtime_dependencies"] = {}
     recipe["spec"]["runtime_dependencies"] = {}
     recipe["spec"]["service_dependencies"] = {}
     for environment in recipe["spec"]["environments"].values():
@@ -52,7 +53,10 @@ def preparation(tmp_path):
     (tmp_path / "config/platforms/debian-13.yaml").write_text(yaml.safe_dump(recipe))
     defaults = {
         "spec": {
-            "execution": {"limits": {"min_free_disk_bytes": 1}},
+            "execution": {
+                "build_user": current_user(),
+                "limits": {"min_free_disk_bytes": 1},
+            },
             "validation": {"database_locales": []},
         }
     }
@@ -108,7 +112,7 @@ def test_preparation_resume_reuses_completed_image(tmp_path):
     initialize_project(tmp_path)
     recipe = load_yaml(resource_path("recipes/platforms/debian-13.yaml"))
     recipe["spec"]["replace_builtin"] = True
-    recipe["spec"]["option_dependencies"] = {k: [] for k in ("llvm", "openssl", "icu")}
+    recipe["spec"]["option_dependencies"] = {key: [] for key in recipe["spec"]["options"]}
     recipe["spec"]["option_runtime_dependencies"] = {}
     recipe["spec"]["runtime_dependencies"] = {}
     recipe["spec"]["service_dependencies"] = {}

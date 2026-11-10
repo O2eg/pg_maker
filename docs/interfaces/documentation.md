@@ -100,6 +100,10 @@ export_documentation. Writer follows core changes/source integration; translatio
 therefore targets the transformed tree. Native Make generates the selected source's
 SGML prerequisites. Each language/feature/target has separate trees and objects.
 Shared engine infrastructure owns commands/logs, cancellation, limits and checkpoints.
+On workspace resume, documentation preparation removes its private source/render
+trees and stale rendered artifacts, then reruns the writer, translation and rendering
+stages. Earlier diagnostic reports move to the attempt's `previous-evidence` directory;
+core source/object directories and command logs remain available for reuse and diagnosis.
 
 DocBook uses native check/html/man/postgres-A4.pdf targets without external website CSS.
 PDF uses local DejaVu fonts, FOP, pdfinfo/pdffonts/pdftotext. Sphinx structurally imports

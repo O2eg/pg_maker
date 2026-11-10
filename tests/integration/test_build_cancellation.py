@@ -65,7 +65,15 @@ def resolve_fixture_lock(service, root):
     shutil.copyfile(output, root / "lock.json")
 
 
-def prepared_build(tmp_path, configure, *, source_files=None, extra_feature=False):
+def prepared_build(
+    tmp_path,
+    configure,
+    *,
+    source_files=None,
+    extra_feature=False,
+    checkpoints="final",
+    workspace_retention="on-failure",
+):
     image = os.environ.get("PG_MAKER_BUILD_IMAGE")
     if not image:
         pytest.skip("set PG_MAKER_BUILD_IMAGE to a prepared image with the build user")
@@ -86,19 +94,33 @@ def prepared_build(tmp_path, configure, *, source_files=None, extra_feature=Fals
         configure
         + """
 mkdir -p src/include
-touch src/include/pg_config.h
+: > src/include/pg_config.h
 for arg do
     case "$arg" in
         --prefix=*) printf 'prefix := %s\\n' "${arg#--prefix=}" >> src/Makefile.global ;;
+        --with-*|--without-*|--enable-*|--disable-*)
+            option=${arg#--}
+            action=${option%%-*}
+            option=${option#*-}
+            name=${option%%=*}
+            value=yes
+            case "$option" in *=*) value=${option#*=} ;; esac
+            case "$action" in without|disable) value=no ;; esac
+            case "$name" in nls) test "$value" = no || value=yes ;; esac
+            category=enable
+            case "$action" in with|without) category=with ;; esac
+            key=$(printf '%s' "$name" | tr '-' '_')
+            echo "${category}_${key} = $value" >> src/Makefile.global
+            macro=
+            case "$name" in
+                lz4) macro=USE_LZ4 ;; zstd) macro=USE_ZSTD ;;
+                pam) macro=USE_PAM ;; cassert) macro=USE_ASSERT_CHECKING ;;
+            esac
+            if test -n "$macro" && test "$value" != no; then
+                echo "#define $macro 1" >> src/include/pg_config.h
+            fi ;;
     esac
 done
-cat >> src/Makefile.global <<'SETTINGS'
-enable_tap_tests = yes
-enable_nls = yes
-with_icu = yes
-with_llvm = yes
-with_ssl = openssl
-SETTINGS
 """
     )
     (source / "configure").chmod(0o755)
@@ -124,10 +146,14 @@ SETTINGS
             {
                 "spec": {
                     "common_changes": [],
+                    # This source fixture has no PostgreSQL contrib tree.
+                    "packaging": {"standard_contrib": False},
                     "validation": {"run_db_tests": False},
                     "build": {"jobs": min(4, len(os.sched_getaffinity(0)))},
                     "execution": {
                         "build_user": current_user(),
+                        "checkpoints": checkpoints,
+                        "workspace_retention": workspace_retention,
                         "limits": {"min_free_disk_bytes": 1},
                     },
                 }
