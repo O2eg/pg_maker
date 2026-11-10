@@ -17,8 +17,13 @@ contracts; they are not runtime dependencies.
 | pg_workload resources | Free disk and available memory checks | cgroup memory limits, CPU affinity and Docker limits |
 | pg_diag release workflows | Pinned actions, Python matrix, wheel smoke and documentation checks | pg-maker resources/CLI, explicit long database suites and PyPI release gate |
 
-Mutable object directories are never shared between runs. Reuse restores immutable
-snapshots into private directories. The small systemctl test harness is an original,
+Mutable object directories have one owner at a time. Normal recovery keeps the
+existing workspace; a new build or development iteration can take ownership of an
+inactive workspace by rename, preserving unchanged objects without copying the tree.
+Stage receipts validate reusable components; changed dependencies invalidate their
+consumers, and tests/packaging run again. Immutable snapshots provide checkpoint
+fallback and legacy cache reuse. See the [recovery contract](interfaces/recovery.md).
+The small systemctl test harness is an original,
 strict implementation for generated units and reports its lifecycle as emulated.
 MCP is provided through pg_play. Workload schedulers, SQL transaction engines and
 configuration DSLs do not become part of the build controller.

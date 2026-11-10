@@ -18,6 +18,12 @@ exact file inventory. Each SQL extension needs library, control and installation
 SQL; upgrade SQL alone is insufficient. Plain libraries such as auto_explain need
 no SQL files.
 
+Database exports include the runtime repository only when package tests or
+documentation were enabled. For a fast rebuild intended for runtime handoff, use
+`run_db_tests: false` with `run_package_tests: true` before preparation/resolve.
+A completely untested binary-only export lacks the required dependency repository;
+see the [test-mode matrix](build.md#test-modes-and-publication).
+
 The worker installs local packages without networking, verifies OS/architecture,
 pg_config, programs and shared libraries, then commits an image ID. Its owned
 container is removed in finally. The `pg_maker/runtime-image/v1` result records image,

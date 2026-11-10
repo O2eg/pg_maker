@@ -258,7 +258,8 @@ Installed-package checks preserve the PostgreSQL startup and collector logs befo
 removing their containers, including failed startups, and apply the configured
 generated-log diagnostic policy to them. The pg_hint_plan recipe preloads only
 pg_hint_plan and pg_stat_statements. Its upstream FDW test creates file_fdw when
-needed; file_fdw is not a required preload or a delivered component of this profile.
+needed. file_fdw is included by the full standard contrib policy; it does not need
+preloading or a separate selected component recipe.
 
 When enabling many preloaded extensions together, size `max_worker_processes` for
 their workers and parallel queries. The all-preload package test recorded a

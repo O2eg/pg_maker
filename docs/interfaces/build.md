@@ -33,6 +33,32 @@ The report retains `db_tests: skipped`, `qualification: unverified` and
 `publication_eligible: false`; successful package checks are separate evidence in
 `package-tests.json`. The default tested build behavior is unchanged.
 
+### Test modes and publication
+
+For a successful database `package` goal, the effective settings have these outcomes:
+
+| Mode | `run_db_tests` | `run_package_tests` | Tests executed | Build qualification | Built-in publication |
+| --- | --- | --- | --- | --- | --- |
+| Standard, default | true | false or true | Core, contrib, components and installed packages | `package-verified` after all required gates | Allowed |
+| Package-test-only rebuild | false | true | Installed packages, including database/extension startup | `unverified`; source tests skipped | Allowed with sealed passing package evidence |
+| Untested packages | false | false | No database or installed-database suites | `unverified` | Rejected |
+
+`run_package_tests` defaults to false, but source tests imply package checks for
+package/verified goals. `--skip-db-tests` changes only `run_db_tests`; it does not
+disable an explicitly enabled `run_package_tests`. Configure these defaults under
+`spec.validation` before environment preparation and resolve. Preparation can omit
+test dependencies and images only when their consumers are disabled at that time.
+Skipping tests later in a plan does not undo already prepared dependencies.
+
+Enabled documentation retains its own checks in every row. Documentation-only
+installation checks use `run_database: false` and cannot satisfy the publication
+gate. The legacy `publication_eligible` flag stays false when source tests are
+skipped; the publisher independently verifies installed-package evidence and hashes.
+Publication success reports `publication-verified` without promoting the source
+build's qualification. See [publication](publication.md#gate-integrity-and-recovery).
+
+### Expensive source suites
+
 `pg-maker test-full LOCK` (or `build LOCK --goal test-full`) runs all standard source
 suites and the expensive core extras: `wal_consistency_checking` for PostgreSQL 15/16/17/18,
 and `xid_wraparound` for PostgreSQL 17/18. PostgreSQL 16 has no xid_wraparound module.

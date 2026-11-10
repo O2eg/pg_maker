@@ -22,12 +22,13 @@ For task-oriented instructions, start with the [documentation index](../README.m
 - [Documentation pipeline](documentation.md)
 - [Build backend, components and test evidence](build.md)
 - [InstallTree, PackageSpec, DEB and installation checks](packaging.md)
+- [Standalone extension packages and target SDKs](extensions.md)
+- [Native package publication and CI/CD receivers](publication.md)
 - [Resume, cache, resource guards and export](recovery.md)
 - [Runtime image handoff](runtime.md)
 - [Scratch cleanup](cleanup.md)
 
-[Distribution publication](publication.md) is a design boundary with no executable
-adapter yet. Python package publication has a separate [release procedure](../releasing.md).
+Python package publication has a separate [release procedure](../releasing.md).
 
 Public behavior changes start with the corresponding MD contract and JSON Schema.
 Document compatibility explicitly. Private helpers need types, docstrings and

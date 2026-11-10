@@ -6,7 +6,9 @@ in `config/defaults.yaml`. The build UID/GID must match the non-root workspace o
 
 Without `--profile`, init selects PostgreSQL 18.1 / Debian 13 / x86_64, `my-feature`,
 and pg_stat_statements, pg_stat_kcache and pg_wait_sampling. YC profiles select
-PostgreSQL 16.15, 17.11 or 18.6 with private ICU 70.1 and their extension catalogs.
+PostgreSQL 15.18/15.19, 16.14/16.15, 17.10/17.11 or 18.4/18.6 with private ICU 70.1
+and their extension catalogs. PostgreSQL test adapters support majors 15/16/17/18;
+catalog majors 14/19 require explicit skipped-test builds.
 Their binaries use `/opt/postgresql-yc-clone/<major>/bin`, PGDATA uses
 `/var/lib/postgresql-yc-clone/<major>/data`, and the unit is
 `postgresql-yc-clone-<major>.service`. Debug adds `-debug` to the major.
@@ -31,11 +33,14 @@ export copies them to `delivery/output/<variant>.candidate/packages/` with repor
 Use a new operation ID for another build.
 
 Database and component tests run by default; package builds also check installation
-in fresh containers. To omit them explicitly, create the plan with `--skip-db-tests`.
-The build inherits that saved setting and reports `unverified`, `db_tests=skipped`
-and `publication_eligible=false`. Enabled documentation retains rendering and installed-doc
-checks without starting PostgreSQL. `test-full` adds expensive core suites. The service
-emulator does not establish native systemd qualification.
+in fresh containers. `--skip-db-tests` omits source suites. Package tests still run
+when `spec.validation.run_package_tests: true` was set before preparation/resolve;
+otherwise they are omitted too. Source-test skips retain `unverified`, `db_tests=skipped`
+and `publication_eligible=false`, even when package tests pass. Built-in publication
+requires successful installed-database package tests and matching artifact hashes.
+Enabled documentation retains its own rendering/installation checks. `test-full`
+adds expensive core suites. The service emulator does not establish native systemd
+qualification.
 
 Configure documentation before environment preparation and resolve. With documentation
 enabled, HTML/PDF go into a fourth DEB; manpages follow their command packages.
@@ -52,8 +57,9 @@ Resume retries the same locked inputs. Changed code/configuration needs a new re
 and build. Repeated init retains identical files and reports conflicts.
 
 Source caches, prepared images and matching component outputs accelerate later builds.
-Shared cache defaults to `operations/.cache`; `--no-cache` disables shared reuse but
-preserves private checkpoints. Export before explicit cleanup. Monitor disk usage;
+The legacy shared snapshot cache defaults to `operations/.cache`; `--no-cache`
+disables that cache, preserving explicit workspace reuse and private checkpoints.
+Export before explicit cleanup. Monitor disk usage;
 global Docker pruning is never automatic.
 
 Pip installs manuals under `<installation-prefix>/share/doc/pg-maker`, including

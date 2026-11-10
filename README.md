@@ -8,8 +8,67 @@ editing core/extension code and maintaining patch series.
 The bundled platform is **Debian 13 / amd64** with Autotools and release/debug builds.
 The PostgreSQL catalog covers **14–19**; database-test evidence adapters support
 **15, 16, 17 and 18**. Catalog support does not establish qualification of every build.
-ARM64 requires additional platform/component adaptations; RPM, remote execution and
-built-in APT/Nexus publication are not implemented. See [implementation limits](docs/roadmap.md).
+ARM64 database builds require additional platform/component adaptations. Standalone
+PGXS extensions support DEB and RPM packaging against an installed PostgreSQL SDK;
+see [extension packages](docs/interfaces/extensions.md). Database RPM distributions
+and remote execution are not implemented. Tested native packages can be published to
+Nexus APT/YUM/Raw or filesystem receivers; see [CI/CD publication](docs/interfaces/publication.md).
+See [implementation limits](docs/roadmap.md).
+
+## How it works
+
+Database distributions and standalone extensions follow the same conceptual lifecycle:
+
+```text
+  Database profile / build.yaml          Extension project / extensions.yaml
+  PostgreSQL + libraries + contrib       Selected modules + target PostgreSQL SDK
+  + additional extensions                            |
+                 |                                   |
+                 +-----------------+-----------------+
+                                   v
+                 +-----------------------------------+
+                 | Prepare environments and inputs   |
+                 | Sources, patches, tools, images   |
+                 | Freeze hashes in a lock; plan     |
+                 +-----------------+-----------------+
+                                   v
+                 +-----------------------------------+
+                 | Build in isolated Docker          |
+                 | Compile offline; stage components |
+                 | Run source tests by default       |
+                 +-----------------+-----------------+
+                                   v
+                 +-----------------------------------+
+                 | Create native packages            |
+                 | Database: DEB                     |
+                 | Standalone extensions: DEB / RPM  |
+                 +-----------------+-----------------+
+                                   v
+                 +-----------------------------------+
+                 | Test packages in fresh containers |
+                 | Install, start/use, remove        |
+                 | Check dependencies and contents   |
+                 +-----------------+-----------------+
+                                   v
+                 +-----------------------------------+
+                 | Host outputs / portable export    |
+                 | Packages + hashes + test evidence |
+                 +-----------------+-----------------+
+                                   | optional, tested artifacts only
+                                   v
+                 +-----------------------------------+
+                 | Publish to configured receivers   |
+                 | Nexus APT/YUM/Raw or directory    |
+                 | Verify bytes and native indexes   |
+                 +-----------------------------------+
+```
+
+The CLI or Python API controls durable operations on the host; containers perform
+compilation and installation checks. Failed stages stop the affected build path.
+Saved state supports status, logs and resume; matching prepared images, inputs and
+component results can be reused. Changed inputs require a new lock and plan.
+Expensive core suites are opt-in through `test-full`. Publication verifies APT/YUM
+indexes for native repositories and file hashes for every receiver.
 
 ## Install
 
@@ -175,14 +234,19 @@ pg-maker wait example/operations/quick
 Build inherits the saved plan's test mode; conflicting flags are rejected. Skipped-test
 results are `unverified`, `db_tests=skipped`, `publication_eligible=false`. Structural
 build/package checks remain; enabled documentation still has rendering and installed-doc
-checks. An external Nexus upload does not change qualification.
+checks. With the default `run_package_tests: false`, this example also skips package
+tests. Set `spec.validation.run_package_tests: true` before preparation/resolve to
+retain them when source tests are disabled. An external Nexus upload does not change qualification. Built-in publication requires
+successful installed-package tests even when source tests were intentionally skipped.
 
 `pg-maker test-full example/lock.json --operations example/operations` adds WAL consistency
 and, for PG17/18, XID wraparound suites. To require these before packaging, set
 `spec.validation.test_suites: [standard, long]` in `build.yaml` before resolve. Mandatory
 extra IDs belong in `spec.validation.required_tests`; missing evidence fails qualification.
-Majors 14/15/19 need explicit skipped-test builds until evidence adapters exist.
+Majors 14/19 need explicit skipped-test builds until evidence adapters exist.
 See [test policy and diagnostics](docs/interfaces/build.md) and [packaging](docs/interfaces/packaging.md).
+The [test-mode matrix](docs/interfaces/build.md#test-modes-and-publication) distinguishes
+standard builds, package-test-only rebuilds and completely untested packages.
 
 ## Build PostgreSQL documentation
 

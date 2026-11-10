@@ -24,6 +24,16 @@ def operation_artifacts(directory: Path, state: dict) -> dict:
 
     add(directory / "state.json", "operation_state")
     add(directory / "events.jsonl", "operation_events")
+    extension_root = directory / "workspace/output"
+    if (extension_root / "extension-manifest.json").is_file():
+        from pg_maker.extensions.verification import verify_extension_output
+
+        verify_extension_output(extension_root)
+        add(extension_root / "extension-manifest.json", "artifact_manifest")
+        for record in read_json(extension_root / "extension-manifest.json")["evidence"]:
+            path = extension_root / record["path"]
+            role = "package" if path.suffix in {".deb", ".rpm"} else "verification"
+            add(path, role)
     for path in sorted((directory / "workspace/output").glob("*/artifact-manifest.json")):
         manifest = read_json(path)
         verify_manifest(path.parent, manifest)

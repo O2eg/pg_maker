@@ -19,6 +19,14 @@ def execute_operation(directory: Path, token: CancellationToken) -> int:
     import os
 
     kind = read_json(directory / "input.json").get("operation_kind")
+    if kind == "publication":
+        from pg_maker.publishing.execution import execute_publication
+
+        return execute_publication(directory, token)
+    if kind in {"extension_prepare", "extension_build"}:
+        from pg_maker.extensions.execution import execute_extensions
+
+        return execute_extensions(directory, token)
     if kind == "build":
         from pg_maker.execution.build import execute_build
 

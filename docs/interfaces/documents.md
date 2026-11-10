@@ -1,7 +1,7 @@
 # Models and schemas
 
-Frozen dataclasses in `models.py` describe commands, environments, operation and
-preparation requests, build/runtime/debug requests, environment handles, command
+Frozen dataclasses in `models.py` describe commands, environments, preparation,
+build/extension/publication/runtime/debug requests, environment handles, command
 results, outputs, artifacts and cancellation. Do not mutate nested dictionaries;
 `start_operation` serializes and validates its own copy.
 
@@ -17,6 +17,11 @@ configuration, bindings, output, input store, environment manifest and offline m
 Build requests contain lock, plan, input store, nullable cache store and optional
 `reuse_from`. Runtime requests contain a verified runtime plan. Development command
 requests contain the source run/input hash, selected step, argv, cwd and timeout.
+Extension requests discriminate `extension_prepare`/`extension_build` and contain
+project configuration, output/input-store paths and, for builds, the prepared SDK lock.
+Publication requests contain source path/input hash, receiver configuration and
+`wait_for_source`. Completed-source requests also bind `source_plan_hash`; waiting
+requests seal the plan when the source becomes available.
 These operation kinds also appear in state/event schemas and engine dispatch.
 
 JSON Schema Draft 2020-12 and semantic validation reject unknown fields, duplicate
@@ -31,7 +36,9 @@ Installed schema resources are available through `documents.schema(name)`.
 
 Planning schemas cover PostgreSQLBuild, vendor/defaults/feature/documentation,
 platform/component recipes, ChangeSet/TextInsertions, environments, locks and plans.
-`tools/generate_planning_schemas.py` regenerates their common definitions. The local
+`tools/generate_planning_schemas.py` regenerates their common definitions and standalone
+extension schemas. Run `tools/generate_publication_schemas.py` afterward to regenerate
+publication configuration/plan/result schemas and their operation-input branch. The local
 registry resolves package references without HTTP. Optional previous-release inputs
 default to an empty list for older effective configurations. Workers verify lock/plan
 semantic hashes and the required DAG.

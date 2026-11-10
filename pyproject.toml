@@ -64,7 +64,7 @@ pg_maker = [
   "bundled/components/managed/*.yaml", "bundled/components/libraries/*.yaml",
   "bundled/components/managed15/*.yaml",
   "bundled/components/managed17/*.yaml", "bundled/components/managed18/*.yaml",
-  "bundled/catalogs/*.yaml", "bundled/profiles/*.yaml",
+  "bundled/catalogs/*.yaml", "bundled/profiles/*.yaml", "bundled/extensions/*.yaml",
   "bundled/documentation/*.sgml", "bundled/documentation/*.md",
   "packaging/templates/*.in",
   "documentation/theme/_templates/*.html", "documentation/theme/_static/*.css",

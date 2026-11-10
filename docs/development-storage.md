@@ -12,7 +12,8 @@ docker ps -a
 Storage grows independently in InputStore, per-feature/language source/object/prefix
 workspaces, documentation output, recovery checkpoints, shared caches, previous
 attempt archives, exported results and Docker images/build cache. `--no-cache`
-disables shared reuse, but keeps private checkpoints for resume.
+disables the legacy shared snapshot cache; explicit workspace reuse, input/image/
+toolchain caches and private checkpoints remain available.
 
 The normal policy is configured in the manifest, before resolve:
 
@@ -61,8 +62,9 @@ pg-maker cleanup operations/RUN --export exported-result --out cleanup.json
 pg-maker cleanup operations/RUN --apply cleanup.json
 ```
 
-The verified preview targets only `workspace/build`, `workspace/source` and
-checkpoints. Packages, logs and reports remain. Resume is rejected after scratch
+The verified preview targets only `workspace/build`, `workspace/source`,
+`workspace/package-test-workspace` and checkpoints. Packages, logs and reports remain.
+Resume is rejected after scratch
 cleanup. Removing InputStore or an image ID referenced by a lock also prevents an
 offline rebuild. Input stores can be shared through `transport.input_store`; inspect
 those references before removing an entire temporary project.
@@ -85,8 +87,10 @@ pg-maker cache prune development/cache --out cache-prune.json
 pg-maker cache prune development/cache --apply cache-prune.json
 ```
 
-Completed ordinary operations retain cache pins until their lifecycle cleanup
-releases them. InputStore garbage collection is not automatic.
+Development pruning releases legacy cache pins for the removed iterations.
+Ordinary-operation `cleanup` does not release those pins, so `cache prune` can
+retain their referenced entries even after scratch removal. There is no public
+ordinary-operation unpin command. InputStore garbage collection is not automatic.
 
 ## Docker storage
 

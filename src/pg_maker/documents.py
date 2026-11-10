@@ -54,9 +54,15 @@ def validate_document(value: Any, name: str) -> None:
     if name == "operation-input" and isinstance(value, dict) and "oneOf" in selected:
         # Select the discriminated branch before validation to keep precise field pointers.
         selected = selected["oneOf"][
-            {"container_commands": 0, "build": 2, "runtime_image": 3, "development_command": 4}.get(
-                value.get("operation_kind"), 1
-            )
+            {
+                "container_commands": 0,
+                "build": 2,
+                "runtime_image": 3,
+                "development_command": 4,
+                "extension_prepare": 5,
+                "extension_build": 5,
+                "publication": 6,
+            }.get(value.get("operation_kind"), 1)
         ]
     errors = sorted(
         Draft202012Validator(selected, registry=schema_registry()).iter_errors(value),

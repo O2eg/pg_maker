@@ -244,6 +244,10 @@ def export_operation(directory: Path, destination: Path, *, include_inputs=False
         raise PreconditionError("export destination already exists")
     ensure_directory(destination.parent)
     output = directory / "workspace/output"
+    if (output / "extension-manifest.json").is_file():
+        from pg_maker.extensions.verification import verify_extension_output
+
+        verify_extension_output(output)
     for path in output.glob("*/artifact-manifest.json"):
         verify_manifest(path.parent, read_json(path))
     with tempfile.TemporaryDirectory(dir=destination.parent, prefix=".pg-maker-export-") as name:
@@ -268,11 +272,28 @@ def export_operation(directory: Path, destination: Path, *, include_inputs=False
             "prepare_environments",
             "resolve_inputs",
             "runtime_image",
+            "extension_prepare",
         } and state.get("result"):
             produced = Path(state["result"]["document"])
             if file_hash(produced) != state["result"]["sha256"]:
                 raise PreconditionError("prepared output changed before export")
             shutil.copyfile(produced, staging / "prepared-document.json")
+        if include_inputs and request["operation_kind"] == "extension_build":
+            store = InputStore(Path(request["input_store"]))
+            locked = request["lock"]["spec"]
+            destination_store = InputStore(staging / "inputs")
+            for component in locked["config"]["extensions"]:
+                source = component["spec"]["source"]
+                destination_store.put_tree(store.tree(source["source_hash"]))
+                if source.get("archive_sha256"):
+                    destination_store.put_blob(store.blob(source["archive_sha256"]))
+                unpatched = component["spec"].get("source_unpatched")
+                if unpatched:
+                    destination_store.put_tree(store.tree(unpatched["source_hash"]))
+                for patch in component["spec"].get("source_patches", []):
+                    destination_store.put_blob(store.blob(patch["sha256"]))
+            for record in [*locked["config"]["target"]["packages"], *locked.get("migration", [])]:
+                destination_store.put_blob(store.blob(record["sha256"]))
         if include_inputs and request["operation_kind"] == "build":
             store = InputStore(Path(request["input_store"]))
             config = request["lock"]["spec"]["config"]
@@ -296,6 +317,8 @@ def export_operation(directory: Path, destination: Path, *, include_inputs=False
                 destination_store.put_blob(store.blob(digest), digest)
         for path in (staging / "output").glob("*/artifact-manifest.json"):
             verify_manifest(path.parent, read_json(path))
+        if (staging / "output/extension-manifest.json").is_file():
+            verify_extension_output(staging / "output")
         contents = inventory(staging)
         write_json(
             staging / "export-manifest.json",

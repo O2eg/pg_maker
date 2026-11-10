@@ -4,7 +4,10 @@ import copy
 import json
 from pathlib import Path
 
+from generate_extension_schemas import generate as generate_extension_schemas
+
 ROOT = Path(__file__).resolve().parents[1] / "src/pg_maker/schemas"
+generate_extension_schemas()
 URI = "urn:pg_maker:schema:planning-common:v1"
 S = {"type": "string"}
 N = {"type": "integer", "minimum": 0}

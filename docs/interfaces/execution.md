@@ -12,7 +12,9 @@ release(handle: EnvironmentHandle, policy: CleanupPolicy) -> None
 
 DockerRunner receives an explicit operation directory, operation ID, owner token
 and cancellation callback. Prepare uses an existing immutable image, exact ownership
-labels, numeric user, `network=none`, `--init` and no-new-privileges. Init reaps orphan
+labels, numeric user, `network=none`, `--init` and no-new-privileges. Explicit extension
+SDK preparation may request bridge networking; compilation and package tests keep
+networking disabled. Init reaps orphan
 processes after worker loss. Read-only source and separate writable build/output
 mounts belong to the operation. The image must contain sleep; runner checks use
 uname/id. The runner neither pulls images nor mounts the Docker socket.
@@ -42,7 +44,8 @@ build mount; the source mount contains read-only helper inputs.
 The runner accepts attempt and an optional workspace inside the operation directory.
 Installation validation uses a separate workspace without build prefix/objects.
 Capabilities default to none with cap-drop ALL. Root validation may request only
-CHOWN, DAC_OVERRIDE, FOWNER, FSETID, SETUID, SETGID and KILL. SYS_ADMIN, privileged
+CHOWN, DAC_OVERRIDE, FOWNER, FSETID, SETUID, SETGID and KILL. RPM installation also
+uses SETFCAP for native dependency packages. SYS_ADMIN, privileged
 mode, host networking and Docker socket access are not used.
 
 A new runner must implement the same ownership/cancellation semantics and tests.

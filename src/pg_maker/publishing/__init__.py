@@ -1,4 +1,1 @@
-"""Reserved project boundary; planned contract: docs/interfaces/publication.md.
-
-Concrete adapters are introduced with their implementation stage.
-"""
+"""Configuration-driven publication of tested native packages to explicit receivers."""

@@ -1,12 +1,23 @@
 # Resume, checkpoints, cache, resources and export
 
 `MakerService.resume(directory, *, plan_hash=None, input_hash=None)` accepts failed,
-cancelled, interrupted and partial operations. Build requires the original plan hash;
-preparation requires the original input hash; runtime uses its runtime plan hash.
-Successful operations need a new run. Arbitrary container commands and development
-debug commands are not replayed automatically.
+cancelled, interrupted and partial operations. The required hash depends on the
+operation kind:
 
-Resume verifies input.json, lock/input/implementation identity and the same DAG.
+| Operation | Resume argument | Hash source |
+| --- | --- | --- |
+| Database/documentation build, including development build iterations | `--plan-hash` | `plan.plan_hash` in the original operation's `input.json` |
+| Runtime image build | `--plan-hash` | Original runtime plan hash |
+| Environment preparation and source resolution | `--input-hash` | `input_hash` in the operation state |
+| Standalone extension preparation/build | `--input-hash` | `input_hash` in the operation state |
+| Publication | `--input-hash` | `input_hash` in the publication operation state |
+
+The input hash is not the BuildLock/ExtensionLock hash. `status --machine` exposes
+it in `result.input_hash`. Successful operations need a new run. Arbitrary container
+commands and development debug commands are not replayed automatically.
+
+Resume verifies input.json and the operation-specific identity: build locks and DAGs,
+extension SDK locks, runtime plans or sealed publication plans and source artifacts.
 Under owner/control locks it cleans only recorded old resources, archives cancel/state,
 increments attempt, rotates the owner token and starts the worker. A competing owner
 gets ownership_error. New attempts write separate logs; history remains intact.
@@ -65,14 +76,17 @@ rehash changed entries. Same-size/mtime-restored edits are detected by ctime.
 The legacy shared SnapshotStore remains available for old runs and explicit prune.
 `--no-cache` disables that shared snapshot cache, not explicit workspace reuse or
 input/toolchain/image caches. New workspace recovery does not publish full component
-object trees into it. Pins retain referenced legacy data until lifecycle cleanup.
+object trees into it. Ordinary `cleanup` does not release legacy shared-cache pins;
+development pruning releases pins for selected iterations. See [cleanup](cleanup.md).
 InputStore and Docker garbage collection remain explicit; packages/reports are
 never automatically deleted. Artifact manifests distinguish current packaging
 producer from core/component compilation producers.
 
 ```bash
 pg-maker resume operations/RUN --plan-hash sha256:FULL_HASH --detach
-pg-maker resume operations/PREP --input-hash sha256:FULL_HASH --detach
+pg-maker resume operations/PREP --input-hash sha256:FULL_INPUT_HASH --detach
+pg-maker resume extensions18/operations/build --input-hash sha256:FULL_INPUT_HASH --detach
+pg-maker resume operations/PUBLICATION --input-hash sha256:FULL_INPUT_HASH --detach
 pg-maker cache prune operations/.cache --out prune.json
 pg-maker cache prune operations/.cache --apply prune.json
 pg-maker export operations/RUN --out delivery --include-inputs
@@ -103,6 +117,13 @@ verify/copy the produced document. ExportManifest inventories the complete deliv
 Include-inputs adds frozen source/component trees and blobs, not Docker images;
 offline rebuild still needs matching local image IDs. Historical diagnostic state may
 contain host paths, but artifact/evidence references do not depend on them.
+
+The workspace/checkpoint details above describe database builds. Standalone
+extensions retain per-component receipts and SDK inputs as described in
+[their contract](extensions.md#dependencies-and-qualification). Publication resumes
+by checking the same tested artifacts and reconciling receiver state, including
+previous uploads; it does not rebuild PostgreSQL. If its source build failed,
+resume that build first, then its publisher. See [publication recovery](publication.md#gate-integrity-and-recovery).
 
 CI uses the public CLI through tools/ci_pipeline.py. Push/PR runs utility checks and
 small Docker fixtures. Manual workflow dispatch builds PostgreSQL with standard

@@ -175,18 +175,70 @@ class DevelopmentCommandRequest:
         }
 
 
+@dataclass(frozen=True)
+class ExtensionRequest:
+    operation_kind: str
+    config: dict
+    output: str
+    input_store: str
+    offline: bool = False
+    lock: dict | None = None
+
+    @property
+    def commands(self):
+        return (self.operation_kind,)
+
+    def to_document(self):
+        return {
+            "api_version": "pg_maker/operation-input/v1",
+            "kind": "OperationInput",
+            **asdict(self),
+        }
+
+
+@dataclass(frozen=True)
+class PublicationRequest:
+    source: str
+    source_input_hash: str
+    config: dict
+    wait_for_source: bool = False
+    operation_kind: str = "publication"
+    source_plan_hash: str | None = None
+
+    @property
+    def commands(self):
+        return ("publication",)
+
+    def to_document(self):
+        return {
+            "api_version": "pg_maker/operation-input/v1",
+            "kind": "OperationInput",
+            **asdict(self),
+        }
+
+
 def parse_request(
     document: dict,
-) -> OperationRequest | PreparationRequest | BuildRequest | RuntimeRequest:
+) -> (
+    OperationRequest
+    | PreparationRequest
+    | BuildRequest
+    | RuntimeRequest
+    | ExtensionRequest
+    | PublicationRequest
+):
     from pg_maker.documents import validate_document
 
     validate_document(document, "operation-input")
     if document["operation_kind"] == "container_commands":
         return OperationRequest.from_document(document)
     request_type = {
+        "publication": PublicationRequest,
         "build": BuildRequest,
         "runtime_image": RuntimeRequest,
         "development_command": DevelopmentCommandRequest,
+        "extension_prepare": ExtensionRequest,
+        "extension_build": ExtensionRequest,
     }.get(document["operation_kind"], PreparationRequest)
     return request_type(
         **{key: value for key, value in document.items() if key not in {"api_version", "kind"}}

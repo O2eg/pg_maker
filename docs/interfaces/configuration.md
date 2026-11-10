@@ -52,9 +52,12 @@ package/verified goals discard compiler scratch after the final checkpoint; fail
 and build-only goals retain it. Set `keep` to retain successful package workspaces
 for later `build --reuse-from`. These settings do not disable tests.
 
-Environment preparation omits the test image and offline runtime repository when
-both database tests and documentation are disabled in the manifest. Component
-`test_dependencies`, `documentation_dependencies` and `extra_source_roles` control
+Environment preparation omits the test image and offline runtime repository only
+when `run_db_tests`, `run_package_tests` and documentation are all disabled in the
+manifest. `run_package_tests` defaults to false; source tests imply package tests
+for package/verified goals. An explicit true preserves package checks even with
+source tests disabled. See the [test-mode matrix](build.md#test-modes-and-publication).
+Component `test_dependencies`, `documentation_dependencies` and `extra_source_roles` control
 optional inputs. This selection happens before resolution: to enable previously
 excluded tests/docs, change the manifest, prepare environments and resolve again.
 A late plan/build flag cannot add dependencies absent from an existing lock.
@@ -65,8 +68,9 @@ named placeholders, with no Python evaluation, conversions or recursive expansio
 Feature numeric IDs are unique. Features on the same target cannot share package
 names, service names or paths. Coinstallation with the same port is rejected.
 
-`init --profile` accepts `yc-16.14-icu70`, `yc-16.15-icu70`, `yc-17.10-icu70`,
-`yc-17.11-icu70`, `yc-18.4-icu70` and `yc-18.6-icu70`. Within each major,
+`init --profile` accepts `yc-15.18-icu70`, `yc-15.19-icu70`, `yc-16.14-icu70`,
+`yc-16.15-icu70`, `yc-17.10-icu70`, `yc-17.11-icu70`, `yc-18.4-icu70` and
+`yc-18.6-icu70`. Within each major,
 these profiles share component recipes, build options, package revision and test
 defaults; only the manifest name, PostgreSQL version and source URL/SHA256 differ.
 All YC profiles merge the

@@ -163,10 +163,20 @@ class DockerRunner:
         prefix_mount: tuple[Path, str] | None = None,
         toolchain_cache: Path | None = None,
         capabilities: tuple[str, ...] = (),
+        network_access: bool = False,
     ) -> EnvironmentHandle:
         self._require_local_daemon()
         handle = self.intended_handle(environment)
-        allowed = {"CHOWN", "DAC_OVERRIDE", "FOWNER", "FSETID", "SETUID", "SETGID", "KILL"}
+        allowed = {
+            "CHOWN",
+            "DAC_OVERRIDE",
+            "FOWNER",
+            "FSETID",
+            "SETUID",
+            "SETGID",
+            "KILL",
+            "SETFCAP",
+        }
         if set(capabilities) - allowed or (capabilities and environment.user != "0:0"):
             raise ValidationError("unsupported container capabilities")
         self._control(["image", "inspect", environment.image, "--format", "{{.Id}}"])
@@ -182,7 +192,7 @@ class DockerRunner:
             handle.name,
             "--init",
             "--network",
-            "none",
+            "bridge" if network_access else "none",
             "--user",
             environment.user,
             "--cap-drop",

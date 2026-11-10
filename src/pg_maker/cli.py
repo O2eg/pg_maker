@@ -32,6 +32,12 @@ def parser() -> Parser:
     from pg_maker.development.cli import add_commands
 
     add_commands(sub)
+    from pg_maker.extensions.cli import add_commands as extension_commands
+
+    extension_commands(sub)
+    from pg_maker.publishing.cli import add_commands as publication_commands
+
+    publication_commands(sub)
     init = sub.add_parser("init", help="create editable YAML configuration and document schemas")
     init.add_argument("directory", type=Path)
     from pg_maker.assets import BUILD_PROFILES
@@ -121,6 +127,7 @@ def parser() -> Parser:
     )
     build = sub.add_parser("build", help="execute a locked source or build graph")
     build.add_argument("lock", type=Path)
+    build.add_argument("--publish-config", type=Path)
     build.add_argument(
         "--goal",
         choices=[
@@ -319,6 +326,10 @@ def main(argv: list[str] | None = None) -> int:
             command += " " + args.changes_command
         if args.command == "dev":
             command += " " + args.dev_command
+        if args.command == "publish":
+            command += " " + args.publish_command
+        if args.command == "extension":
+            command += " " + args.extension_command
         if args.command == "init":
             result = initialize_project(
                 args.directory.expanduser().absolute(),
@@ -373,6 +384,14 @@ def main(argv: list[str] | None = None) -> int:
                     write_json(args.out, result)
                 if not result["passed"]:
                     raise CommandError("blocking log diagnostics")
+            elif args.command == "publish":
+                from pg_maker.publishing.cli import dispatch
+
+                result = dispatch(service, args, request_id)
+            elif args.command == "extension":
+                from pg_maker.extensions.cli import dispatch
+
+                result = dispatch(service, args, request_id=request_id)
             elif args.command == "dev":
                 from pg_maker.development.cli import dispatch
 
@@ -486,6 +505,7 @@ def main(argv: list[str] | None = None) -> int:
                     input_store=args.input_store,
                     cache_store=args.cache_store,
                     reuse_from=getattr(args, "reuse_from", None),
+                    publish_config=getattr(args, "publish_config", None),
                     use_cache=not args.no_cache,
                     operation_id=args.operation_id,
                     request_id=request_id,
@@ -578,7 +598,18 @@ def main(argv: list[str] | None = None) -> int:
                     result = service.wait(directory, timeout_seconds=args.timeout)
                 else:
                     result = getattr(service, args.command)(directory)
-            if args.command == "dev" and args.dev_command in {"build", "exec"}:
+            if (
+                (args.command == "extension" and args.extension_command in {"prepare", "build"})
+                or (args.command == "publish" and args.publish_command == "run")
+                or (args.command == "build" and args.publish_config)
+            ):
+                status = result["status"]
+                error = result.get("error")
+                if status in {"failed", "cancelled", "interrupted", "partial"}:
+                    code = (
+                        5 if status == "partial" else EXIT_CODES.get((error or {}).get("code"), 6)
+                    )
+            elif args.command == "dev" and args.dev_command in {"build", "exec"}:
                 status = result["status"]
                 if not args.detach:
                     error = result.get("error")

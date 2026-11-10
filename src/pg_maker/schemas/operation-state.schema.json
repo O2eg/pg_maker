@@ -20,7 +20,10 @@
         "resolve_inputs",
         "build",
         "runtime_image",
-        "development_command"
+        "development_command",
+        "extension_prepare",
+        "extension_build",
+        "publication"
       ]
     },
     "input_hash": {

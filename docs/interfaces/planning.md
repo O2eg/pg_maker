@@ -41,10 +41,14 @@ not publishable distributions. The implemented platform uses DEB and Autotools.
 `spec.run_db_tests` is part of the plan hash. Build/package inherit the lock default
 when no override is supplied; the default is true. Source always has false.
 Verified/test-full require true and reject an explicit false. The default CLI plan
-goal is build. Without database tests, inventory/test/acceptance steps and baseline
-are absent; component build/install remains enabled.
+goal is build. Without source database tests, source inventory/suite/acceptance
+steps and baseline are absent; component build/install remains enabled.
+For package/verified goals, `spec.run_package_tests` is true when source tests run
+or the locked `validation.run_package_tests` is true. Package-test-only plans retain
+installed-database checks without source qualification. See the
+[test-mode matrix](build.md#test-modes-and-publication).
 
-When documentation is enabled, skipped-test package plans still include
+When documentation is enabled and package tests are disabled, package plans still include
 `test_documentation_packages` with `run_database=false`. This checks installed
 documentation without starting PostgreSQL and does not grant package qualification.
 

@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:pg_maker:schema:extension-plan:v1",
+  "type": "object",
+  "properties": {
+    "api_version": {
+      "const": "pg_maker/extension-plan/v1"
+    },
+    "kind": {
+      "const": "ExtensionPlan"
+    },
+    "spec": {
+      "type": "object",
+      "properties": {
+        "lock_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[^\\u0000\\r\\n]+$"
+              },
+              "kind": {
+                "enum": [
+                  "verify-target",
+                  "build",
+                  "package",
+                  "test-source",
+                  "test-packages",
+                  "manifest"
+                ]
+              },
+              "extension": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[^\\u0000\\r\\n]+$"
+              }
+            },
+            "required": [
+              "id",
+              "kind"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "lock_hash",
+        "steps"
+      ],
+      "additionalProperties": false
+    },
+    "plan_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "created_at": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^\\u0000\\r\\n]+$"
+    }
+  },
+  "required": [
+    "api_version",
+    "kind",
+    "spec",
+    "plan_hash",
+    "created_at"
+  ],
+  "additionalProperties": false
+}

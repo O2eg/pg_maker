@@ -14,7 +14,7 @@ Implementation and executed validation are recorded separately. See the
 | 7. Documentation | Structural writer, translation bundles, DocBook/Sphinx, HTML/man/PDF, docs DEB and independent validation implemented. No complete Russian manual translation is bundled. |
 | 8. Version/platform matrix | YAML catalog for PostgreSQL 14–19, toolchain checks and beta/RC identities implemented. Database-test adapters support 15/16/17/18. Remaining work: adapters for 14/19, broader minor/toolchain coverage, additional OS targets, bundled ARM64 profiles, RPM, tar and Debian source packages. Runtime OCI image handoff is implemented; general image-distribution support remains separate. |
 | 9. Integration and development | pg_play CLI/MCP, runtime image handoff, experiment maker phase, ChangeSet workspaces and cleanup implemented. Git sessions add patch stacks, rebase, selected component builds, debug commands, reuse explanations and iteration retention. |
-| 10. Distribution publication | Signatures, APT/RPM/Nexus publishing, partial-upload recovery and exact published-version checks remain future work. |
+| 10. Distribution publication | Nexus APT/YUM/Raw and filesystem publication, package-test gates, post-build scheduling, request idempotence and partial-upload recovery implemented. Signing, local repository indexes and installation through the published repository remain future work. |
 
 Preparing the Python controller for Git/PyPI release is separate from stage 10,
 which concerns publishing the PostgreSQL distributions it builds. See
@@ -35,11 +35,18 @@ steps and cache entries; a changed extension can reuse the core and independent
 extensions. Core/header/ABI changes invalidate dependent extensions conservatively.
 Development iterations are unverified, even if a previous release build was qualified.
 
-Resume supports build, resolve and environment preparation. Arbitrary container
+Resume supports database/documentation builds, resolve, environment preparation,
+standalone extension preparation/build, runtime images and publication. Arbitrary container
 commands and debug commands are not automatically replayed. Local runtime repositories
 support package checks; the strict systemctl harness does not qualify native
 systemd/cgroup behavior. OCI/rootfs environment archive import is not implemented.
 There is no standalone pg-maker MCP server; pg_play provides MCP tools.
+
+[Standalone extension packages](interfaces/extensions.md) use an existing packaged
+PostgreSQL SDK without compiling the database. The initial PGXS recipes cover
+pg_wait_sampling, pg_stat_kcache and pg_repack. Native DEB/RPM packaging, dependency
+checks and fresh-container qualification are separate from database-distribution
+packaging. Debian 13 and Rocky Linux 10 are the initial validation targets.
 
 Remaining requirements include richer requirement-ID evidence, PG_MAKER_* change
 context, extended acceptance assertions/fixtures, `build --manifest`, additional

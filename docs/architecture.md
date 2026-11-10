@@ -22,6 +22,8 @@ src/pg_maker/
   changes/                  ChangeSets, application receipts and agent workspaces
   builders/                 Autotools and component builders
   packaging/                InstallTree, package roles and DEB output
+  extensions/               Packaged SDKs, standalone PGXS DEB/RPM builds and tests
+  publishing/               Package-test gates, receiver configuration and uploads
   validation/               Source, acceptance and installed-package checks
   documentation/            Structural writer, translations, DocBook/Sphinx and theme
   artifacts/                Manifests, output inventory and reports
@@ -39,6 +41,12 @@ with its producer. Image and Rust caches use input/version/architecture keys.
 A development iteration creates a new immutable BuildLock/BuildPlan; it does not
 change the inputs of an existing operation. Git checkouts remain private to the
 session and are separate from build scratch directories.
+
+Standalone extension jobs reuse the operation/runner infrastructure with their own
+SDK lock and package pipeline; they do not compile PostgreSQL. Publication is another
+durable operation: it consumes successful build outputs and sealed package-test
+evidence, optionally waits for the source build, then verifies configured receivers.
+Neither upload nor extension qualification promotes the database core's qualification.
 
 ## Extension rules
 

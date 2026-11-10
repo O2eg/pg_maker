@@ -199,12 +199,88 @@ print('OK: installed PG' + version + ' profile, ICU70.1, frozen Cargo inputs, PL
             )
         run([binaries / "pg-maker", "dev", "--help"])
         run([binaries / "pg-maker", "test-full", "--help"])
+        run([binaries / "pg-maker", "extension", "--help"])
+        for platform in ("debian-13", "rocky-10"):
+            project = directory / ("extensions-" + platform)
+            run(
+                [
+                    binaries / "pg-maker",
+                    "extension",
+                    "init",
+                    project,
+                    "--platform",
+                    platform,
+                    "--extension",
+                    "pg_wait_sampling",
+                    "--extension",
+                    "pg_stat_kcache",
+                    "--extension",
+                    "pg_repack",
+                ]
+            )
+            run(
+                [
+                    binaries / "python",
+                    "-c",
+                    "from pathlib import Path; import sys; "
+                    "from pg_maker.extensions.config import load_project; "
+                    "c=load_project(Path(sys.argv[1])); assert len(c['extensions']) == 3; "
+                    "assert c['validation']['run_tests']",
+                    project / "extensions.yaml",
+                ]
+            )
+        print(
+            run(
+                [
+                    binaries / "python",
+                    "-c",
+                    """
+import json, subprocess, sys, yaml
+from pathlib import Path
+project = Path(sys.argv[1])
+manifest = project / 'extensions.yaml'
+value = yaml.safe_load(manifest.read_text())
+value['spec']['execution']['min_free_disk_bytes'] = 10**20
+manifest.write_text(yaml.safe_dump(value))
+args = [sys.executable, '-m', 'pg_maker', '--machine', '--request-id', 'wheel-retry',
+        'extension', 'prepare', str(manifest), '--out', str(project / 'lock.json'),
+        '--input-store', str(project / 'inputs'), '--operations', str(project / 'operations'),
+        '--offline']
+results = []
+for _ in range(2):
+    result = subprocess.run(args, capture_output=True, text=True, timeout=30)
+    assert result.returncode == 3, (result.stdout, result.stderr)
+    payload = json.loads(result.stdout)
+    assert payload['status'] == 'failed'
+    assert payload['error']['code'] == 'precondition_failed'
+    assert payload['result']['request_id'] == 'wheel-retry'
+    results.append(payload['result']['operation_id'])
+assert results[0] == results[1]
+print('OK: installed extension CLI waits, propagates failure and reuses request IDs')
+""",
+                    project,
+                ]
+            ).strip()
+        )
+        run([binaries / "pg-maker", "publish", "--help"])
+        run([binaries / "pg-maker", "publish", "run", "--help"])
+        run(
+            [
+                binaries / "python",
+                "-c",
+                "from pg_maker.documents import schema; "
+                "from pg_maker.publishing.receivers import ADAPTERS; "
+                "assert set(ADAPTERS) == {'directory', 'nexus-apt', 'nexus-yum', 'nexus-raw'}; "
+                "[schema(n) for n in ('publication', 'publication-plan', 'publication-result')]",
+            ]
+        )
         run([binaries / "pg-maker", "logs", "verify", "--help"])
         run([binaries / "sgml-writer", "--help"])
         run([binaries / "sgml-translate", "--help"])
         manuals = directory / "venv/share/doc/pg-maker"
         assert (manuals / "README.md").is_file()
         assert (manuals / "docs/interfaces/development.md").is_file()
+        assert (manuals / "docs/interfaces/extensions.md").is_file()
         assert (manuals / "docs/managed-16-icu70.md").is_file()
         assert (manuals / "docs/managed-15-icu70.md").is_file()
         assert (manuals / "docs/yc-clone-compatibility.md").is_file()

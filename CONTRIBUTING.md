@@ -8,11 +8,13 @@ python3 -m venv .venv
 .venv/bin/ruff check .
 .venv/bin/ruff format --check .
 .venv/bin/python tools/generate_planning_schemas.py
+.venv/bin/python tools/generate_publication_schemas.py
 .venv/bin/python tools/check_release.py
 .venv/bin/pytest -q tests/unit tests/contracts
 ```
 
-Review generated schema changes with the matching interface contract. Keep every
+The planning generator includes extension schemas; publication has a separate
+generator. Run both and review generated changes with the matching interface contract. Keep every
 project Markdown file in English, including examples and fixture descriptions.
 PostgreSQL manuals produced by the utility can use configured languages. Preserve
 upstream copyright/license notices in fixtures and generated artifacts.

@@ -9,11 +9,13 @@ tree; a pip release contains the documentation shipped with that version.
 | Task | Guide |
 | --- | --- |
 | Build YC DEBs, upload to Nexus and install on Debian 13 | [Package walkthrough](yc-clone-packages.md) |
+| Configure automatic publication after package checks | [CI/CD publication](interfaces/publication.md) |
+| Package individual PGXS extensions for community or YC PostgreSQL | [Standalone extensions](interfaces/extensions.md) |
 | Select PostgreSQL 15.18/15.19 / ICU 70.1 and extensions | [PG15 profiles](managed-15-icu70.md) |
 | Understand YC clone physical compatibility requirements and gaps | [Compatibility contract](yc-clone-compatibility.md) |
-| Select PostgreSQL 16.15 / ICU 70.1 and extensions | [PG16 profile](managed-16-icu70.md) |
-| Select PostgreSQL 17.11 / ICU 70.1 and extensions | [PG17 profile](managed-17-icu70.md) |
-| Select PostgreSQL 18.6 / ICU 70.1 and extensions | [PG18 profile](managed-18-icu70.md) |
+| Select PostgreSQL 16.14/16.15 / ICU 70.1 and extensions | [PG16 profiles](managed-16-icu70.md) |
+| Select PostgreSQL 17.10/17.11 / ICU 70.1 and extensions | [PG17 profiles](managed-17-icu70.md) |
+| Select PostgreSQL 18.4/18.6 / ICU 70.1 and extensions | [PG18 profiles](managed-18-icu70.md) |
 | Edit core/extensions, maintain patches and rebuild selected components | [Development sessions](development.md) |
 | Export results and reclaim build/cache space | [Disk management](development-storage.md) |
 | Build or translate PostgreSQL documentation | [Documentation pipeline](interfaces/documentation.md) |
@@ -33,8 +35,8 @@ records release and unreleased changes.
 
 Bundled targets are Debian 13 amd64. The catalog includes PostgreSQL 14–19;
 database-test adapters support 15/16/17/18. ARM64 needs additional recipes/helper changes.
-External curl uploads to Nexus are documented, while integrated repository publication
-is unimplemented. A successful skipped-test build remains unverified.
+[Integrated publication](interfaces/publication.md) supports Nexus APT/YUM/Raw and
+filesystem receivers, durable recovery and post-build CI/CD execution. A successful skipped-test build remains unverified.
 
 ## Qualification and historical reports
 
@@ -45,6 +47,8 @@ or architectures. Current YC paths are `/opt/postgresql-yc-clone/<major>` and
 describe earlier artifacts and are not current installation instructions.
 
 - [PG16 qualification, 2026-11-05](managed-16-icu70-qualification-20261105.md).
+- [Standalone DEB/RPM extension qualification, 2026-11-10](validation/standalone-extensions-20261110.md).
+- [Publication qualification and review fixes, 2026-11-10](validation/publication-20261110.md).
 - [PG17 qualification, 2026-11-06](managed-17-icu70.md#native-qualification--2026-11-06).
 - [Core/source checks](validation/stage4.md), [DEB packaging](validation/stage56.md)
   and [documentation packaging](validation/stage7.md), 2026-10-17.

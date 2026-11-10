@@ -16,6 +16,12 @@ EXIT_CODES = {
     "ownership_error": 8,
 }
 COMMANDS = {
+    "publish plan": False,
+    "publish run": True,
+    "extension init": True,
+    "extension prepare": True,
+    "extension plan": False,
+    "extension build": True,
     "dev open": True,
     "dev status": False,
     "dev patch": True,
@@ -92,6 +98,12 @@ def capabilities() -> dict[str, Any]:
             "pg_maker/environment/v1",
             "pg_maker/lock/v1",
             "pg_maker/plan/v1",
+            "pg_maker/publication/v1",
+            "pg_maker/publication-plan/v1",
+            "pg_maker/publication-result/v1",
+            "pg_maker/extension-build/v1",
+            "pg_maker/extension-lock/v1",
+            "pg_maker/extension-plan/v1",
             "pg_maker/doc-rules/v1",
             "pg_maker/translations/v1",
         ],
@@ -104,6 +116,7 @@ def capabilities() -> dict[str, Any]:
             "baseline-package",
             "docs",
             "documentation",
+            "package",
         ],
         "operation_kinds": {
             key: {"resume": key not in {"container_commands", "development_command"}}
@@ -114,6 +127,9 @@ def capabilities() -> dict[str, Any]:
                 "build",
                 "runtime_image",
                 "development_command",
+                "extension_prepare",
+                "extension_build",
+                "publication",
             )
         },
         "environment_checked": False,

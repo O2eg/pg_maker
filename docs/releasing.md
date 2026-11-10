@@ -14,6 +14,7 @@ python -m pip install -e '.[dev]'
 ruff check .
 ruff format --check .
 python tools/generate_planning_schemas.py
+python tools/generate_publication_schemas.py
 git diff --exit-code -- src/pg_maker/schemas
 python tools/check_release.py --tag v0.5.0
 python -m pytest -q tests/unit tests/contracts
@@ -23,7 +24,9 @@ python tools/check_release.py --dist dist --tag v0.5.0
 python tools/smoke_wheel.py dist/*.whl
 ```
 
-Substitute the intended version when it changes. The checker validates English Markdown,
+Run both schema generators: the planning generator includes standalone extensions
+but does not regenerate publication schemas. Substitute the intended version when
+it changes. The checker validates English Markdown,
 local file links, matching versions, exact wheel/sdist documentation and runtime
 resources, source test/tooling files, license and exclusion of local/generated data.
 The isolated wheel check exercises all three entry points, capabilities, init/validate

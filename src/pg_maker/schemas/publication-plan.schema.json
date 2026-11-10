@@ -1,0 +1,250 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pg-maker.dev/schemas/publication-plan.schema.json",
+  "type": "object",
+  "properties": {
+    "api_version": {
+      "const": "pg_maker/publication-plan/v1"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^\\u0000\\r\\n]+$"
+    },
+    "source_input_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "config_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "plan_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "receivers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\u0000\\r\\n]+$"
+          },
+          "adapter": {
+            "enum": [
+              "nexus-apt",
+              "nexus-yum",
+              "nexus-raw",
+              "directory"
+            ]
+          },
+          "formats": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "deb",
+                "rpm"
+              ]
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\u0000\\r\\n]+$"
+          },
+          "repository": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\u0000\\r\\n]+$"
+          },
+          "directory": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\u0000\\r\\n]+$"
+          },
+          "path_prefix": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\u0000\\r\\n]+$"
+          },
+          "auth": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "username_env": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000\\r\\n]+$"
+                  },
+                  "password_env": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000\\r\\n]+$"
+                  }
+                },
+                "required": [
+                  "username_env",
+                  "password_env"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "netrc_file": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000\\r\\n]+$"
+                  }
+                },
+                "required": [
+                  "netrc_file"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "bearer_env": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000\\r\\n]+$"
+                  }
+                },
+                "required": [
+                  "bearer_env"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "tls": {
+            "type": "object",
+            "properties": {
+              "verify": {
+                "type": "boolean"
+              },
+              "ca_file": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[^\\u0000\\r\\n]+$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "allow_http": {
+            "type": "boolean"
+          },
+          "suite": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\u0000\\r\\n]+$"
+          },
+          "component": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\u0000\\r\\n]+$"
+          }
+        },
+        "required": [
+          "id",
+          "adapter",
+          "formats"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    },
+    "destinations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "receiver": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\u0000\\r\\n]+$"
+          },
+          "package": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[^\\u0000\\r\\n]+$"
+              },
+              "filename": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[^\\u0000\\r\\n]+$"
+              },
+              "format": {
+                "enum": [
+                  "deb",
+                  "rpm"
+                ]
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              "size_bytes": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[^\\u0000\\r\\n]+$"
+              },
+              "version": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[^\\u0000\\r\\n]+$"
+              },
+              "architecture": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[^\\u0000\\r\\n]+$"
+              }
+            },
+            "required": [
+              "path",
+              "filename",
+              "format",
+              "sha256",
+              "size_bytes",
+              "name",
+              "version",
+              "architecture"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "receiver",
+          "package"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "api_version",
+    "source",
+    "source_input_hash",
+    "config_hash",
+    "plan_hash",
+    "receivers",
+    "destinations"
+  ],
+  "additionalProperties": false
+}

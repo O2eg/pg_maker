@@ -1,0 +1,28 @@
+api_version: pg_maker/component/v1
+kind: ComponentRecipe
+metadata:
+  id: pg-wait-sampling
+  revision: 1
+spec:
+  type: pgxs
+  source:
+    kind: archive
+    location: https://codeload.github.com/postgrespro/pg_wait_sampling/tar.gz/7e3a5fc937393596c0a51c5881dd63d7208408d1
+    sha256: sha256:20538b1543f2004b4bafd43ed8e1de3a50de1aea395fbe81dc9748dc80b982a7
+    strip_components: 1
+  compatible_postgresql: '>=14,<20'
+  requires: []
+  conflicts: []
+  build_dependencies: []
+  runtime_dependencies: []
+  make_targets: [all]
+  test_targets: [installcheck]
+  install_targets: [install]
+  required_tests: []
+  sql_extension: pg_wait_sampling
+  sql_extension_versions: {pg_wait_sampling: '1.1'}
+  runtime_files:
+  - lib/postgresql/pg_wait_sampling.so
+  - share/postgresql/extension/pg_wait_sampling.control
+  - share/postgresql/extension/pg_wait_sampling--*.sql
+  preload: [pg_wait_sampling]

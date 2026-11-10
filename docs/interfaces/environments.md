@@ -25,7 +25,10 @@ commit. A RepoDigests entry is not claimed to be a platform-specific manifest.
 APT repositories are mutable: installed versions and resulting image IDs are
 recorded, without promising byte-identical future APT installations.
 
-The build image holds a local APT runtime repository. Runtime dependencies and their
+When package tests or documentation are enabled, the build image holds a local APT
+runtime repository. Source tests imply package-test preparation. If all three are
+disabled before preparation, the test image and runtime dependency downloads are
+omitted; see [test modes](build.md#test-modes-and-publication). Runtime dependencies and their
 transitive closure are downloaded using an empty dpkg status database. The manifest
 records filenames, hashes, sizes and repository hash. The test image does not
 implicitly receive product runtime libraries; validation installs them from this

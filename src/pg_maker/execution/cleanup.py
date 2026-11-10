@@ -9,6 +9,13 @@ from pg_maker.models import TERMINAL_STATUSES
 from pg_maker.sources.store import inventory
 from pg_maker.storage import content_hash, exclusive_lock, read_json, write_json
 
+SCRATCH_PATHS = (
+    "workspace/build",
+    "workspace/source",
+    "workspace/package-test-workspace",
+    "checkpoints",
+)
+
 
 def _export(directory: Path, exported: Path) -> dict:
     if exported.is_relative_to(directory) or any(
@@ -43,7 +50,7 @@ def cleanup_plan(service, directory: Path, exported: Path) -> dict:
         raise PreconditionError("cleanup requires a terminal operation with no owned resources")
     manifest = _export(directory, exported)
     entries = []
-    for name in ("workspace/build", "workspace/source", "checkpoints"):
+    for name in SCRATCH_PATHS:
         path = directory / name
         if not path.exists():
             continue
@@ -91,7 +98,7 @@ def apply_cleanup(service, plan: dict) -> dict:
         if manifest["tree_hash"] != plan["export_hash"]:
             raise PreconditionError("export changed after cleanup planning")
         for entry in plan["entries"]:
-            if entry["path"] not in {"workspace/build", "workspace/source", "checkpoints"}:
+            if entry["path"] not in SCRATCH_PATHS:
                 raise PreconditionError("cleanup path is outside private scratch")
             path = directory / entry["path"]
             if (

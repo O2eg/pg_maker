@@ -301,6 +301,267 @@
         "timeout_seconds"
       ],
       "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "api_version": {
+          "const": "pg_maker/operation-input/v1"
+        },
+        "kind": {
+          "const": "OperationInput"
+        },
+        "operation_kind": {
+          "enum": [
+            "extension_prepare",
+            "extension_build"
+          ]
+        },
+        "config": {
+          "type": "object"
+        },
+        "output": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\u0000\\r\\n]+$"
+        },
+        "input_store": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\u0000\\r\\n]+$"
+        },
+        "offline": {
+          "type": "boolean"
+        },
+        "lock": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "api_version",
+        "kind",
+        "operation_kind",
+        "config",
+        "output",
+        "input_store",
+        "offline",
+        "lock"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "api_version": {
+          "const": "pg_maker/operation-input/v1"
+        },
+        "kind": {
+          "const": "OperationInput"
+        },
+        "operation_kind": {
+          "const": "publication"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\u0000\\r\\n]+$"
+        },
+        "source_input_hash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "config": {
+          "type": "object",
+          "properties": {
+            "repositories": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000\\r\\n]+$"
+                  },
+                  "adapter": {
+                    "enum": [
+                      "nexus-apt",
+                      "nexus-yum",
+                      "nexus-raw",
+                      "directory"
+                    ]
+                  },
+                  "formats": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "deb",
+                        "rpm"
+                      ]
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true
+                  },
+                  "url": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000\\r\\n]+$"
+                  },
+                  "repository": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000\\r\\n]+$"
+                  },
+                  "directory": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000\\r\\n]+$"
+                  },
+                  "path_prefix": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000\\r\\n]+$"
+                  },
+                  "auth": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "username_env": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "^[^\\u0000\\r\\n]+$"
+                          },
+                          "password_env": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "^[^\\u0000\\r\\n]+$"
+                          }
+                        },
+                        "required": [
+                          "username_env",
+                          "password_env"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "netrc_file": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "^[^\\u0000\\r\\n]+$"
+                          }
+                        },
+                        "required": [
+                          "netrc_file"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "bearer_env": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "^[^\\u0000\\r\\n]+$"
+                          }
+                        },
+                        "required": [
+                          "bearer_env"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  },
+                  "tls": {
+                    "type": "object",
+                    "properties": {
+                      "verify": {
+                        "type": "boolean"
+                      },
+                      "ca_file": {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "^[^\\u0000\\r\\n]+$"
+                      }
+                    },
+                    "required": [],
+                    "additionalProperties": false
+                  },
+                  "allow_http": {
+                    "type": "boolean"
+                  },
+                  "suite": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000\\r\\n]+$"
+                  },
+                  "component": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[^\\u0000\\r\\n]+$"
+                  }
+                },
+                "required": [
+                  "id",
+                  "adapter",
+                  "formats"
+                ],
+                "additionalProperties": false
+              },
+              "minItems": 1
+            },
+            "request_timeout_seconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "verification_timeout_seconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "poll_interval_seconds": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "source_timeout_seconds": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "repositories"
+          ],
+          "additionalProperties": false
+        },
+        "wait_for_source": {
+          "type": "boolean"
+        },
+        "source_plan_hash": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "api_version",
+        "kind",
+        "operation_kind",
+        "source",
+        "source_input_hash",
+        "config",
+        "wait_for_source"
+      ],
+      "additionalProperties": false
     }
   ]
 }

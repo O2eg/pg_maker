@@ -133,13 +133,18 @@ Package goals run these checks by default. Source verification and every require
 installed check, acceptance and declared upgrade must pass for package-verified.
 Every selected component and declared SQL extension version requires explicit passed
 evidence. An explicitly skipped-test package remains unverified; verified refuses skips. Only candidate can become
-publication-eligible, after the entire matrix including baseline succeeds. Baseline
+`publication_eligible=true`, after the entire matrix including baseline succeeds. Baseline
 failure blocks promotion before candidate manifests change. The internal run_database=False
 fixture mode never qualifies PostgreSQL. See [executed evidence](../validation/stage56.md).
 
-Every packaging goal preserves the pinned runtime repository and manifest, even without
-docs. Exact file sets/hashes are checked; symlinks/extra files fail. trusted=yes is
-limited to this verified offline local set and does not mean APT publication.
+Packaging preserves the pinned runtime repository and manifest when package tests
+or documentation are enabled. A completely untested build with documentation off
+does not export that repository, even if preparation previously downloaded it.
+Such an export is insufficient for [runtime image handoff](runtime.md), which requires
+the offline dependency set. Exact file sets/hashes are checked; symlinks/extra files
+fail. trusted=yes is limited to this verified offline local set and does not mean
+APT publication. See the [test-mode matrix](build.md#test-modes-and-publication) for
+the distinction between build qualification and the publisher's package-test gate.
 
 The Debian recipe declares optional lz4/zstd, XML/XSLT, PAM, systemd, UUID, PL/Perl,
 PL/Python, PL/Tcl, LDAP and GSSAPI dependencies. Build options select them explicitly;

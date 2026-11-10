@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+- Publish tested DEB/RPM artifacts to configured Nexus APT/YUM/Raw and filesystem
+  receivers, directly or automatically after builds. Add durable publication workers,
+  package-test and checksum gates, request deduplication, remote reconciliation and
+  native index verification. Credentials remain external references.
+- Bind publication retries to the tested artifact plan, reject incomplete exported
+  build matrices, and reconcile interrupted HTTP response reads without reuploading.
+
+- Add standalone extension projects with packaged PostgreSQL SDK targets, independent
+  native package versions, DEB/RPM dependencies, and isolated installation checks.
+- Include pg_wait_sampling, pg_stat_kcache and pg_repack as initial packaging cases.
+- Provide an explicit, non-destructive migration of bundled kcache/repack files into
+  separate packages while retaining the full standard contrib inventory.
+- Correct synchronous extension CLI outcomes and idempotent request IDs; bind SDK
+  caches and native migration versions to the selected modules and original inputs.
+- Install runtime dependencies in extension SDKs, clean owned test tablespaces on
+  retry, and preserve live command output through timeouts and cancellation.
+
 ## 0.5.0 — 2026-11-10
 
 - Include the full standard PostgreSQL contrib by default, including optional

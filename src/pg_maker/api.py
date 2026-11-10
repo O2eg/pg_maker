@@ -22,8 +22,10 @@ from pg_maker.models import (
     BuildRequest,
     CleanupPolicy,
     EnvironmentSpec,
+    ExtensionRequest,
     OperationRequest,
     PreparationRequest,
+    PublicationRequest,
     RuntimeRequest,
     parse_request,
 )
@@ -45,6 +47,114 @@ class MakerService:
             raise ValidationError("operations_directory must be absolute")
         self.directory = operations_directory
         self._children: dict[str, subprocess.Popen] = {}
+
+    def extension_init(self, directory, **options):
+        from pg_maker.extensions.config import initialize
+
+        return initialize(directory, **options)
+
+    def extension_prepare(
+        self, manifest, *, output, input_store, offline=False, operation_id=None, request_id=None
+    ):
+        from pg_maker.extensions.config import load_project
+
+        request = ExtensionRequest(
+            "extension_prepare",
+            load_project(manifest),
+            str(output.absolute()),
+            str(input_store.absolute()),
+            offline,
+        )
+        return self.start_operation(request, operation_id=operation_id, request_id=request_id)
+
+    def extension_plan(self, lock):
+        from pg_maker.extensions.config import load_lock, plan
+
+        return plan(load_lock(lock))
+
+    def extension_build(
+        self, lock, *, operation_id=None, input_store=None, request_id=None, publish_config=None
+    ):
+        from pg_maker.extensions.config import load_lock, plan
+
+        locked = load_lock(lock)
+        plan(locked)
+        store = input_store or Path(locked["transport"]["input_store"])
+        request = ExtensionRequest(
+            "extension_build",
+            locked["spec"]["config"],
+            str((self.directory / "placeholder").absolute()),
+            str(store.absolute()),
+            True,
+            locked,
+        )
+        # The result path is part of the request hash. Keep it stable on retries.
+        identifier = operation_id or "extensions-" + (
+            content_hash(request_id)[7:39] if request_id is not None else uuid.uuid4().hex
+        )
+        from dataclasses import replace
+
+        request = replace(request, output=str(self.directory / identifier / "result.json"))
+        return self._start_build(
+            request, operation_id=identifier, request_id=request_id, publish_config=publish_config
+        )
+
+    def publication_plan(self, source, config):
+        from pg_maker.publishing.artifacts import plan
+        from pg_maker.publishing.config import load
+
+        return plan(source, load(config))
+
+    def publish(self, source, config, *, wait_for_source=False, operation_id=None, request_id=None):
+        from pg_maker.publishing.artifacts import plan, source_state
+        from pg_maker.publishing.config import load, validate
+
+        configuration = load(config) if isinstance(config, Path) else validate(config)
+        state = source_state(source)
+        document = None if wait_for_source else plan(source, configuration)
+        request = PublicationRequest(
+            str(source),
+            state["input_hash"],
+            configuration,
+            wait_for_source,
+            source_plan_hash=document["plan_hash"] if document else None,
+        )
+        result = self.start_operation(request, operation_id=operation_id, request_id=request_id)
+        # Automatic publication is scheduled before the artifacts exist. Its request
+        # must stay stable, but a completed retry must still refer to the same bytes.
+        if wait_for_source and result["status"] == "succeeded":
+            if plan(source, configuration)["plan_hash"] != result["result"]["plan_hash"]:
+                raise PreconditionError("publication source changed since the successful attempt")
+        return result
+
+    def _start_build(self, request, *, operation_id, request_id, publish_config=None):
+        from pg_maker.publishing.config import load
+
+        configuration = load(publish_config) if publish_config else None
+        if configuration is not None:
+            tested = (
+                (
+                    request.plan["spec"].get("run_package_tests")
+                    and request.plan["spec"]["goal"] in {"package", "verified"}
+                )
+                if isinstance(request, BuildRequest)
+                else request.config["validation"]["run_tests"]
+            )
+            if not tested:
+                raise PreconditionError("automatic publication requires installed-package tests")
+        state = self.start_operation(request, operation_id=operation_id, request_id=request_id)
+        if configuration is None:
+            return state
+        # Independent durable worker waits for the build even if the initiating CLI disconnects.
+        publication_id = (
+            "publication-" + content_hash([str(self.directory), state["operation_id"]])[7:39]
+        )
+        return self.publish(
+            self.directory / state["operation_id"],
+            configuration,
+            wait_for_source=True,
+            request_id=publication_id,
+        )
 
     @staticmethod
     def _reference(directory: Path) -> Path:
@@ -120,7 +230,12 @@ class MakerService:
 
     def start_operation(
         self,
-        request: OperationRequest | PreparationRequest | BuildRequest | RuntimeRequest,
+        request: OperationRequest
+        | PreparationRequest
+        | BuildRequest
+        | RuntimeRequest
+        | ExtensionRequest
+        | PublicationRequest,
         *,
         operation_id: str | None = None,
         request_id: str | None = None,
@@ -275,9 +390,16 @@ class MakerService:
             from pg_maker.integrations.runtime import verify_runtime_plan
 
             verify_runtime_plan(request.plan, plan_hash)
-        elif isinstance(request, PreparationRequest):
+        elif isinstance(request, (PreparationRequest, ExtensionRequest, PublicationRequest)):
             if input_hash is None or input_hash != state["input_hash"]:
                 raise PreconditionError("preparation resume requires the original --input-hash")
+            if (
+                isinstance(request, ExtensionRequest)
+                and request.operation_kind == "extension_build"
+            ):
+                from pg_maker.extensions.config import plan
+
+                plan(request.lock)
         else:
             raise UnsupportedError("arbitrary container command operations cannot resume")
         # Reconcile only the exact recorded resources, before granting a new attempt ownership.
@@ -520,6 +642,7 @@ class MakerService:
         build_mode: str | None = None,
         components: list[str] | None = None,
         reuse_from: Path | None = None,
+        publish_config: Path | None = None,
     ) -> dict:
         from pg_maker.builders.autotools import validate_build
         from pg_maker.planning.documents import verify
@@ -597,4 +720,6 @@ class MakerService:
             str((cache_store or self.directory / ".cache").absolute()) if use_cache else None,
             reuse_from=str(reuse_from.absolute()) if reuse_from else None,
         )
-        return self.start_operation(request, operation_id=operation_id, request_id=request_id)
+        return self._start_build(
+            request, operation_id=operation_id, request_id=request_id, publish_config=publish_config
+        )

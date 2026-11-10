@@ -25,8 +25,11 @@ current build's private headers and pg_config. Libraries, control/SQL and licens
 are assigned to the server DEB.
 
 pg_stat_kcache requires selected pg_stat_statements; validation rejects a missing
-dependency. pg_wait_sampling can be selected independently. The engine does not add
-components outside the feature list; `components: []` omits all three. pg_play runtime
+dependency. pg_wait_sampling can be selected independently. `components: []` removes
+the three explicit component recipes, including the two external extensions. With
+`packaging.standard_contrib: true` (the default), upstream contrib files such as
+pg_stat_statements still ship in the server package. Select `standard_contrib: false`
+as well when deliberately creating a minimal custom distribution. pg_play runtime
 profiles may select others explicitly. Resolve downloads and freezes external sources;
 builds use locked inputs without networking.
 

@@ -35,17 +35,17 @@ All YC profiles initialize these editable settings:
 | PGDATA | same file, `spec.paths.data_directory` | `/var/lib/postgresql-yc-clone/18/data` |
 | Unit name | same file, `spec.naming.service` | `postgresql-yc-clone-18` |
 
-PG16/17 substitute their major; debug appends `-debug`. Feature IDs such as `yc18-icu70`
+Other profiles substitute their major; debug appends `-debug`. Feature IDs such as `yc18-icu70`
 select recipes and name branches, not installation directories. Existing projects
 keep copied settings when pip is upgraded. Update their YAML and resolve again;
 changing a profile does not modify published DEBs or move data.
 
-## Prepare the image and build without tests
+## Prepare images and build with tests
 
 ```bash
 pg-maker env prepare yc18/build.yaml --input-store yc18/inputs --out yc18/environments.json --operations yc18/operations
 pg-maker resolve yc18/build.yaml --environments yc18/environments.json --input-store yc18/inputs --out yc18/lock.json --operations yc18/operations
-pg-maker plan yc18/lock.json --goal package --skip-db-tests --out yc18/plan.json
+pg-maker plan yc18/lock.json --goal package --out yc18/plan.json
 pg-maker build yc18/lock.json --plan yc18/plan.json --operations yc18/operations --operation-id build --detach
 pg-maker status yc18/operations/build
 pg-maker wait yc18/operations/build
@@ -61,12 +61,12 @@ limits and compiles with networking disabled. No manual `docker run` is needed.
 Operation files remain on the host after container removal. Use a new operation ID
 for another build.
 
-Tests run by default. `--skip-db-tests` applies to the saved plan; build inherits it.
-With documentation disabled as in this example, this omits database/component/
-installed-package test stages but retains build and packaging integrity checks.
-Enabling documentation retains rendering and installed-documentation checks without
-starting PostgreSQL. Results remain `unverified`, `db_tests=skipped` and
-`publication_eligible=false`; an external upload does not qualify them.
+Tests run by default: core, standard contrib, selected extension source suites and
+installed-package checks in fresh Debian 13 containers. Build/test failures stop the
+operation; inspect its diagnostics before resuming. Proceed to publication only after
+`wait` succeeds. The expensive additional core suites are separate: use the
+`test-full` goal, or set `validation.test_suites: [standard, long]` before preparing
+and resolving to require them in a package build.
 
 DEBs first appear on the host in:
 
@@ -85,22 +85,95 @@ Files: `postgresql-18-yc-clone_18.6-1.deb13_amd64.deb`,
 `libpq5-yc-clone_18.6-1.deb13_amd64.deb`. `libpq5` identifies the ABI.
 
 Prepared images avoid repeated dependency installation. The input store avoids source
-downloads (`resolve --offline` reuses it). Shared cache and checkpoints reuse matching
-work; changes to source, options, libraries or toolchain invalidate affected outputs.
-Native compilation, suitable parallelism and explicitly omitted tests reduce elapsed
-time further. Retain images/inputs/cache and budget disk for them. Increase
+downloads (`resolve --offline` reuses it). Retained workspaces reuse matching component
+builds; checkpoints provide fallback recovery. Changes to source, options, libraries
+or toolchain invalidate affected outputs. Native compilation and suitable parallelism
+reduce elapsed time. See [recovery](interfaces/recovery.md) and
+[disk management](development-storage.md) for retention settings. Increase
 `spec.product.package_revision` before publishing changed package contents.
 
-## Upload to Nexus
+## Publish to Nexus
 
-Use a hosted APT repository with the intended suite and signing key, a separately
-provisioned netrc file with permission `0600`, and a trusted TLS CA. Substitute your
-host, repository and credential-file path:
+Use a hosted APT repository with the intended suite and signing key and **Disable
+redeploy** (`ALLOW_ONCE`). Provide a netrc file with permission `0600` through your
+secret store. Save this receiver configuration as `yc18/publication.yaml`, replacing
+the example host, repository and credential-file path:
+
+```yaml
+api_version: pg_maker/publication/v1
+kind: PublicationConfig
+spec:
+  repositories:
+    - id: nexus-debian
+      adapter: nexus-apt
+      url: https://nexus.example.org
+      repository: postgresql-apt
+      formats: [deb]
+      suite: deb
+      component: main
+      auth:
+        netrc_file: /run/secrets/nexus.netrc
+      tls:
+        verify: true
+```
+
+For an internal CA, add `ca_file: /path/to/corporate-ca.pem` under `tls`.
+Publish the export with its test evidence:
 
 ```bash
-NEXUS=https://nexus.example.invalid
-REPOSITORY=platform-dba-apt
-NETRC=/path/to/nexus.netrc
+pg-maker publish plan yc18/delivery --config yc18/publication.yaml --out yc18/publication-plan.json
+pg-maker publish run yc18/delivery --config yc18/publication.yaml \
+  --operations yc18/operations --operation-id publication --detach
+pg-maker wait yc18/operations/publication
+```
+
+The plan checks local evidence without contacting Nexus. The publication worker
+checks repository policy, uploads missing packages and verifies package identity,
+APT index entries and downloaded SHA256 values. Matching existing packages are
+verified; different bytes under an existing identity are rejected. A successful
+upload response alone is insufficient. The exported manifests/reports are required;
+a directory containing only DEBs cannot pass the publication gate.
+
+For a single CI command, add `--publish-config yc18/publication.yaml` to the earlier
+`build` command. Its returned operation ID then identifies the publisher; wait on
+that ID to cover both build and upload failures. See [publication](interfaces/publication.md)
+for credentials, multiple receivers, idempotency and resume behavior.
+
+## Explicit faster builds
+
+Select the test policy in `yc18/build.yaml` **before** preparing environments and
+resolving. For source-test-free builds that retain installed-package checks, add:
+
+```yaml
+spec:
+  validation:
+    run_db_tests: false
+    run_package_tests: true
+```
+
+This is a fragment to merge into the existing manifest. Use the same package plan
+and build commands above with a new operation ID. Clean-container package checks
+still run, and their sealed evidence permits publication. Source qualification
+remains `unverified`, `db_tests=skipped` and `publication_eligible=false`; publication
+does not turn skipped core/extension source suites into passing evidence.
+
+To omit all database/package tests, set both values to false. With documentation
+disabled this also avoids preparing the test image and runtime repository. Build
+and packaging integrity checks still run, but **the built-in publisher rejects
+these artifacts**. Documentation-only checks do not satisfy the publication gate.
+A late `--skip-db-tests` plan option cannot undo dependency preparation and does
+not disable explicitly enabled package tests. See the [test-mode matrix](interfaces/build.md#test-modes-and-publication).
+
+## Manual upload alternative
+
+External upload tools operate outside pg-maker's test/evidence policy. Use them only
+when deliberately managing publication checks yourself; uploading does not change
+the artifact's recorded qualification. Substitute your endpoints and credentials:
+
+```bash
+NEXUS=https://nexus.example.org
+REPOSITORY=postgresql-apt
+NETRC=/run/secrets/nexus.netrc
 PACKAGES=yc18/delivery/output/yc18-icu70.debian13-x64.candidate/packages
 for package in "$PACKAGES"/*.deb; do
   curl --fail --silent --show-error --netrc-file "$NETRC" \
@@ -109,11 +182,11 @@ for package in "$PACKAGES"/*.deb; do
 done
 ```
 
-For an internal CA, add `--cacert /path/to/corporate-ca.pem`. Replacement of an existing
-version requires the repository's redeploy policy; normally publish a new revision.
+For an internal CA, add `--cacert /path/to/corporate-ca.pem`. Publish changed contents
+under a new package revision.
 Verify Package/Version/Architecture and SHA256 in the APT index and compare downloaded
 DEBs against local hashes. A successful POST alone is not this check. This API upload
-is external to pg-maker's publication eligibility policy.
+does not create pg-maker publication evidence.
 
 ## Install on Debian 13
 
@@ -122,12 +195,12 @@ uses an already binary `.gpg` keyring. The suite must match Nexus configuration;
 can be `deb` even though the OS is Debian 13.
 
 ```bash
-sudo install -m 0644 /path/to/repository-public.gpg /usr/share/keyrings/platform-dba-apt.gpg
-REPO_URL=https://nexus.example.invalid/repository/platform-dba-apt
+sudo install -m 0644 /path/to/repository-public.gpg /usr/share/keyrings/postgresql-apt.gpg
+REPO_URL=https://nexus.example.org/repository/postgresql-apt
 SUITE=deb
 ARCH=$(dpkg --print-architecture)
-echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/platform-dba-apt.gpg] $REPO_URL $SUITE main" \
-  | sudo tee /etc/apt/sources.list.d/platform-dba-apt.list
+echo "deb [arch=$ARCH signed-by=/usr/share/keyrings/postgresql-apt.gpg] $REPO_URL $SUITE main" \
+  | sudo tee /etc/apt/sources.list.d/postgresql-apt.list
 sudo apt-get update
 sudo apt-get install postgresql-18-yc-clone postgresql-client-18-yc-clone libpq5-yc-clone
 /opt/postgresql-yc-clone/18/bin/pg_config --version
@@ -142,5 +215,5 @@ but does not initialize/start a database. Initialize or restore the intended clu
 before starting it. Older `/opt/test/...` and `/var/lib/test/...` installations need an
 explicit migration plan; package replacement does not relocate data.
 
-Recipe and qualification limits: [PG16](managed-16-icu70.md), [PG17](managed-17-icu70.md),
+Recipe and qualification limits: [PG15](managed-15-icu70.md), [PG16](managed-16-icu70.md), [PG17](managed-17-icu70.md),
 [PG18](managed-18-icu70.md).

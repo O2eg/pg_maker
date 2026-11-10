@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pg-maker.dev/schemas/publication-result.schema.json",
+  "type": "object",
+  "properties": {
+    "api_version": {
+      "const": "pg_maker/publication-result/v1"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^\\u0000\\r\\n]+$"
+    },
+    "plan_hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "status": {
+      "enum": [
+        "running",
+        "incomplete",
+        "succeeded"
+      ]
+    },
+    "qualification": {
+      "enum": [
+        "unverified",
+        "publication-verified"
+      ]
+    },
+    "repository_installation_tests": {
+      "const": "not-run"
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "receiver": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\u0000\\r\\n]+$"
+          },
+          "package": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[^\\u0000\\r\\n]+$"
+              },
+              "filename": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[^\\u0000\\r\\n]+$"
+              },
+              "format": {
+                "enum": [
+                  "deb",
+                  "rpm"
+                ]
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              "size_bytes": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[^\\u0000\\r\\n]+$"
+              },
+              "version": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[^\\u0000\\r\\n]+$"
+              },
+              "architecture": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[^\\u0000\\r\\n]+$"
+              }
+            },
+            "required": [
+              "path",
+              "filename",
+              "format",
+              "sha256",
+              "size_bytes",
+              "name",
+              "version",
+              "architecture"
+            ],
+            "additionalProperties": false
+          },
+          "destination": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[^\\u0000\\r\\n]+$"
+          },
+          "action": {
+            "enum": [
+              "uploaded",
+              "reused"
+            ]
+          },
+          "index_verified": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "receiver",
+          "package",
+          "destination",
+          "action",
+          "index_verified"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "api_version",
+    "source",
+    "plan_hash",
+    "status",
+    "qualification",
+    "repository_installation_tests",
+    "artifacts"
+  ],
+  "additionalProperties": false
+}

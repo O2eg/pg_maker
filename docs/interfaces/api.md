@@ -14,7 +14,10 @@ Python API does not read argparse state or change the working directory.
 | config_show / validate | Manifest and overrides | Effective config/provenance/bindings or validated variants/requirements |
 | prepare_environments / resolve | Manifest and operation options | Durable operation producing EnvironmentManifest or BuildLock |
 | plan | Lock, goal, input store and test override | BuildPlan without downloads, Docker or compilation |
-| build | Lock or saved plan and execution options | Durable build operation |
+| build | Lock, optional saved plan and execution options | Build operation, or publication operation when `publish_config` is set |
+| extension_init / extension_prepare | Extension project, target SDK/package inputs | Editable recipes or durable preparation producing ExtensionLock |
+| extension_plan / extension_build | ExtensionLock and operation options | Pure ExtensionPlan or extension build; `publish_config` returns its publication operation |
+| publication_plan / publish | Source operation/export and receiver configuration | Verified local publication plan or durable upload/verification operation |
 | resume / export | Operation/result references | Verified retry or portable output export |
 | dev_open / dev_status / dev_patch | Session and patch inputs | Owned Git session and patch stack operations |
 | dev_build / dev_explain / dev_execute | Session and iteration/selection options | New iteration, reuse reasons or durable debug operation |
@@ -48,19 +51,37 @@ writes JSON; otherwise it returns the document.
 `build(lock, goal=None, plan=None, plan_hash=None, run_db_tests=None,
 input_store=None, cache_store=None, use_cache=True, operation_id=None,
 request_id=None, with_doc=None, doc_languages=None, features=None, build_mode=None,
-components=None, reuse_from=None)` validates and starts BuildRequest.
+components=None, reuse_from=None, publish_config=None)` validates and starts BuildRequest.
 A supplied plan determines the default goal; otherwise it is build. The plan must
 match the reconstructed DAG and requested plan hash. Plan
 creation timestamps do not change request idempotency. The plan or lock controls
 the default test mode; explicit overrides must agree with a supplied plan. Changing
 that mode changes plan/input identity.
 
+`build` and `extension_build` accept `publish_config=Path(...)`. With this option,
+the service starts the build plus an independent publisher and returns the
+publisher's OperationState. Wait on that returned operation ID to include upload
+and index failures in the CI outcome. Its input/result identifies the source build.
+Cancelling the publisher does not cancel the source build. Without this option,
+the returned state belongs to the build itself.
+
+`publication_plan(source, config)` accepts an absolute source directory and a
+configuration file Path, validates local evidence and returns a plan without
+contacting receivers. `publish(source, config, wait_for_source=False,
+operation_id=None, request_id=None)` accepts a configuration Path or validated
+configuration mapping. Completed-source requests bind package hashes through the
+publication plan. Waiting requests seal that plan after the source finishes; a
+repeated successful request must still match the current artifacts. See
+[publication](publication.md) for receiver settings and recovery.
+
 Goals include source/build/package/verified/test-full and doc-source/translations/
 translated-docs/docs. Documentation commands use the same build service. Build-time
 feature/mode/documentation flags validate the lock instead of modifying it. Resolve
 again to change the locked configuration; development sessions create new locks for
 code edits. Results record reports, hashes, qualification, database tests, failures
-and publication eligibility. Only full successful qualification can grant eligibility.
+and publication eligibility. Only full successful qualification can grant that historical eligibility flag. The
+[publication API](publication.md) separately gates uploads on successful installed-package
+tests and exact hashes, including explicitly selected package-test-only builds.
 
 `pg-maker artifacts DIRECTORY` reads verified output references through
 `artifacts.catalog.operation_artifacts(directory, state)`; there is no
