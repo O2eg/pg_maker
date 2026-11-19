@@ -1,7 +1,8 @@
 # PostgreSQL 15 YC clone candidate profiles
 
 `yc-15.18-icu70` and `yc-15.19-icu70` target Debian 13 amd64 with private ICU 70.1,
-package revision 1, full standard contrib and PLV8 disabled. They share one audited
+package revision 2, full standard contrib and PLV8 disabled. Both profiles enable
+LZ4 for TOAST and WAL full-page images through `--with-lz4`. They share one audited
 managed extension inventory. These profiles are prepared candidates, not a
 qualified physical replica distribution. See the [compatibility contract](yc-clone-compatibility.md).
 
@@ -64,6 +65,10 @@ Every selected external source archive is pinned by SHA256. The TimescaleDB
 The pgRouting GCC14 pointer fix and Timescale archive metadata patch are rebased
 to these exact sources. pglogical's test configuration handles the
 output_plugin_libraries GUC introduced in PostgreSQL 15.19, leaving it out on 15.18.
+The PG15 patch for `pg_stat_query_plans` 1.0 assigns query IDs to statements
+inside cursors, EXPLAIN and CREATE TABLE AS, and checks the caller's
+`pg_read_all_stats` privileges when returning other users' plan statistics.
+The regression suite uses libpq to exercise named and unnamed statements on PG15.
 Core/contrib/extension tests stay enabled by default; test-full adds the long core
 suites. Passing these tests qualifies the build itself, not vendor physical compatibility.
 The Debian 13 package build backports the GIDX accessors from
@@ -73,7 +78,7 @@ by GCC14 without changing GIDX structures, stored index layouts or the SQL
 extension version. Installed-package checks compare GiST, SP-GiST and BRIN
 index scans against sequential scans for 2D, 3D and 4D geometries, and verify
 that each tested query actually uses its index. Compiler diagnostic checks
-remain enabled. Physical WAL replay qualification has not been performed.
+remain enabled. Physical WAL replay from the managed source remains unverified.
 
 ## Create a project
 
@@ -85,9 +90,9 @@ pg-maker init yc15-18 --profile yc-15.18-icu70
 ```
 
 Use the ordinary [build workflow](yc-clone-packages.md) with these profile names.
-Expected names are `postgresql-15-yc-clone_15.19-1.deb13_amd64.deb`,
-`postgresql-client-15-yc-clone_15.19-1.deb13_amd64.deb` and
-`libpq5-yc-clone_15.19-1.deb13_amd64.deb`; replace 15.19 with 15.18 for that profile.
+Expected names are `postgresql-15-yc-clone_15.19-2.deb13_amd64.deb`,
+`postgresql-client-15-yc-clone_15.19-2.deb13_amd64.deb` and
+`libpq5-yc-clone_15.19-2.deb13_amd64.deb`. The 15.18 profile uses the same names with version `15.18-2.deb13`.
 Binaries use `/opt/postgresql-yc-clone/15/bin`, PGDATA defaults to
 `/var/lib/postgresql-yc-clone/15/data`, service `postgresql-yc-clone-15`.
 

@@ -15,7 +15,7 @@ spec:
     version: '15.18'
   product:
     release: 0
-    package_revision: 1
+    package_revision: 2
     version_format: postgresql
   naming:
     package_by_role:
@@ -43,3 +43,4 @@ spec:
   build:
     options:
       llvm: false
+      lz4: true

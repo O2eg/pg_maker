@@ -74,11 +74,14 @@ SELECT * FROM finish();"""
     ]
 
 
-def test_pg16_upstream_disabled_tests_require_matching_source_and_platform():
+def test_upstream_disabled_tests_require_matching_source_and_platform():
     recovery = "src/test/recovery/t/031_recovery_conflict.pl"
     source = 'plan skip_all => "disabled due to instability";'
-    assert skip_policy(recovery, source, {"MAJORVERSION": "16"}) == "disabled due to instability"
-    assert skip_policy(recovery, "", {"MAJORVERSION": "16"}) is None
+    for major in ("15", "16"):
+        assert (
+            skip_policy(recovery, source, {"MAJORVERSION": major}) == "disabled due to instability"
+        )
+        assert skip_policy(recovery, "", {"MAJORVERSION": major}) is None
     assert skip_policy(recovery, source, {"MAJORVERSION": "17"}) is None
     windows = "src/test/modules/test_cloexec/t/001_cloexec.pl"
     source = "plan skip_all => 'test is Windows-specific';"

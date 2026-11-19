@@ -1,0 +1,313 @@
+--- a/pg_maker_extended.c
++++ b/pg_maker_extended.c
+@@ -1,4 +1,4 @@
+-/* PG16 client adapter for the upstream named/unnamed protocol scenario. */
++/* PG15 client adapter for the upstream named/unnamed protocol scenario. */
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+@@ -41,7 +41,7 @@
+ }
+ 
+ int
+-main(void)
++main(int argc, char **argv)
+ {
+     PGconn *conn = PQconnectdb("");
+     PGresult *res;
+@@ -62,6 +62,21 @@
+     res = PQexec(conn, "SET pg_stat_query_plans.track_utility = FALSE");
+     require_result(conn, res, PGRES_COMMAND_OK);
+     PQclear(res);
++    if (argc == 2 && strcmp(argv[1], "query-id") == 0)
++    {
++        res = PQexecParams(conn, "SELECT query_id IS NOT NULL FROM pg_stat_activity "
++                           "WHERE pid = pg_backend_pid()", 0, NULL, NULL, NULL, NULL, 0);
++        require_result(conn, res, PGRES_TUPLES_OK);
++        if (PQntuples(res) != 1 || strcmp(PQgetvalue(res, 0, 0), "t") != 0)
++        {
++            fprintf(stderr, "missing extended protocol query ID\n");
++            return 1;
++        }
++        PQclear(res);
++        PQfinish(conn);
++        puts("extended protocol query ID verified");
++        return 0;
++    }
+     for (i = 0; i < 3; i++)
+     {
+         res = PQprepare(conn, names[i], queries[i], i + 1, NULL);
+--- a/sql/extended.sql
++++ b/sql/extended.sql
+@@ -2,13 +2,12 @@
+ 
+ SET pg_stat_query_plans.track_utility = FALSE;
+ 
+--- This test checks that an execute message sets a query ID.
+-SELECT query_id IS NOT NULL AS query_id_set
+-  FROM pg_stat_activity WHERE pid = pg_backend_pid() \bind \g
++-- Verify that an extended-protocol Execute sets the backend query ID.
++\setenv PGDATABASE :DBNAME
++\! ./pg_maker_extended query-id
+ 
+ SELECT pg_stat_query_plans_reset() IS NOT NULL AS t;
+--- PG16 libpq adapter exercises the same seven protocol executions.
+-\setenv PGDATABASE :DBNAME
++-- PG15 libpq adapter exercises the same seven protocol executions.
+ \! ./pg_maker_extended
+ 
+ SELECT calls, rows, query FROM pg_stat_query_plans ORDER BY query COLLATE "C";
+--- a/expected/extended.out
++++ b/expected/extended.out
+@@ -1,21 +1,16 @@
+ -- Tests with extended query protocol
+ SET pg_stat_query_plans.track_utility = FALSE;
+--- This test checks that an execute message sets a query ID.
+-SELECT query_id IS NOT NULL AS query_id_set
+-  FROM pg_stat_activity WHERE pid = pg_backend_pid() \bind \g
+- query_id_set 
+---------------
+- t
+-(1 row)
+-
++-- Verify that an extended-protocol Execute sets the backend query ID.
++\setenv PGDATABASE :DBNAME
++\! ./pg_maker_extended query-id
++extended protocol query ID verified
+ SELECT pg_stat_query_plans_reset() IS NOT NULL AS t;
+  t 
+ ---
+  t
+ (1 row)
+ 
+--- PG16 libpq adapter exercises the same seven protocol executions.
+-\setenv PGDATABASE :DBNAME
++-- PG15 libpq adapter exercises the same seven protocol executions.
+ \! ./pg_maker_extended
+ named and unnamed extended protocol: 7 results verified
+ SELECT calls, rows, query FROM pg_stat_query_plans ORDER BY query COLLATE "C";
+--- a/sql/level_tracking.sql
++++ b/sql/level_tracking.sql
+@@ -69,7 +69,7 @@
+ EXPLAIN (COSTS OFF) DELETE FROM stats_track_tab;
+ EXPLAIN (COSTS OFF) INSERT INTO stats_track_tab VALUES ((1));
+ EXPLAIN (COSTS OFF) MERGE INTO stats_track_tab
+-  USING (SELECT id FROM generate_series(1, 10) id) ON x = id
++  USING (SELECT id FROM generate_series(1, 10) id) AS src ON x = id
+   WHEN MATCHED THEN UPDATE SET x = id
+   WHEN NOT MATCHED THEN INSERT (x) VALUES (id);
+ EXPLAIN (COSTS OFF) SELECT 1 UNION SELECT 2;
+@@ -89,7 +89,7 @@
+ EXPLAIN (COSTS OFF) DELETE FROM stats_track_tab;
+ EXPLAIN (COSTS OFF) INSERT INTO stats_track_tab VALUES ((1));
+ EXPLAIN (COSTS OFF) MERGE INTO stats_track_tab
+-  USING (SELECT id FROM generate_series(1, 10) id) ON x = id
++  USING (SELECT id FROM generate_series(1, 10) id) AS src ON x = id
+   WHEN MATCHED THEN UPDATE SET x = id
+   WHEN NOT MATCHED THEN INSERT (x) VALUES (id);
+ EXPLAIN (COSTS OFF) SELECT 1 UNION SELECT 2;
+@@ -117,7 +117,7 @@
+ SELECT pg_stat_query_plans_reset() IS NOT NULL AS t;
+ -- MERGE, worth its own.
+ EXPLAIN (COSTS OFF) MERGE INTO stats_track_tab
+-  USING (SELECT id FROM generate_series(1, 10) id) ON x = id
++  USING (SELECT id FROM generate_series(1, 10) id) AS src ON x = id
+   WHEN MATCHED THEN UPDATE SET x = id
+   WHEN NOT MATCHED THEN INSERT (x) VALUES (id)\; EXPLAIN (COSTS OFF) SELECT 1, 2, 3, 4, 5;
+ SELECT toplevel, calls, query FROM pg_stat_query_plans
+@@ -133,7 +133,7 @@
+ EXPLAIN (COSTS OFF) UPDATE stats_track_tab SET x = 1 WHERE x = 1\; EXPLAIN (COSTS OFF) UPDATE stats_track_tab SET x = 1;
+ EXPLAIN (COSTS OFF) DELETE FROM stats_track_tab\; EXPLAIN (COSTS OFF) DELETE FROM stats_track_tab WHERE x = 1;
+ EXPLAIN (COSTS OFF) INSERT INTO stats_track_tab VALUES ((1))\; EXPLAIN (COSTS OFF) INSERT INTO stats_track_tab VALUES ((1), (2));
+-EXPLAIN (COSTS OFF) MERGE INTO stats_track_tab USING (SELECT id FROM generate_series(1, 10) id) ON x = id
++EXPLAIN (COSTS OFF) MERGE INTO stats_track_tab USING (SELECT id FROM generate_series(1, 10) id) AS src ON x = id
+   WHEN MATCHED THEN UPDATE SET x = id
+   WHEN NOT MATCHED THEN INSERT (x) VALUES (id)\; EXPLAIN (COSTS OFF) SELECT 1, 2, 3, 4, 5;
+ EXPLAIN (COSTS OFF) SELECT 1, 2 UNION SELECT 3, 4\; EXPLAIN (COSTS OFF) (SELECT 1, 2, 3) UNION SELECT 3, 4, 5;
+@@ -149,7 +149,7 @@
+ EXPLAIN (COSTS OFF) WITH a AS (SELECT 4) DELETE FROM stats_track_tab;
+ EXPLAIN (COSTS OFF) WITH a AS (SELECT 4) INSERT INTO stats_track_tab VALUES ((1));
+ EXPLAIN (COSTS OFF) WITH a AS (SELECT 4) MERGE INTO stats_track_tab
+-  USING (SELECT id FROM generate_series(1, 10) id) ON x = id
++  USING (SELECT id FROM generate_series(1, 10) id) AS src ON x = id
+   WHEN MATCHED THEN UPDATE SET x = id
+   WHEN NOT MATCHED THEN INSERT (x) VALUES (id);
+ EXPLAIN (COSTS OFF) WITH a AS (select 4) SELECT 1 UNION SELECT 2;
+@@ -165,7 +165,7 @@
+ EXPLAIN (COSTS OFF) WITH a AS (SELECT 4) DELETE FROM stats_track_tab;
+ EXPLAIN (COSTS OFF) WITH a AS (SELECT 4) INSERT INTO stats_track_tab VALUES ((1));
+ EXPLAIN (COSTS OFF) WITH a AS (SELECT 4) MERGE INTO stats_track_tab
+-  USING (SELECT id FROM generate_series(1, 10) id) ON x = id
++  USING (SELECT id FROM generate_series(1, 10) id) AS src ON x = id
+   WHEN MATCHED THEN UPDATE SET x = id
+   WHEN NOT MATCHED THEN INSERT (x) VALUES (id);
+ EXPLAIN (COSTS OFF) WITH a AS (select 4) SELECT 1 UNION SELECT 2;
+@@ -278,8 +278,8 @@
+ SELECT pg_stat_query_plans_reset() IS NOT NULL AS t;
+ COPY (SELECT 1) TO stdout;
+ COPY (SELECT 1 UNION SELECT 2) TO stdout;
+--- PG16 has no MERGE RETURNING; test MERGE and COPY as separate commands.
+-MERGE INTO stats_track_tab USING (SELECT 1 id) ON x = id
++-- PG15 has no MERGE RETURNING; test MERGE and COPY as separate commands.
++MERGE INTO stats_track_tab USING (SELECT 1 id) AS src ON x = id
+   WHEN MATCHED THEN UPDATE SET x = id
+   WHEN NOT MATCHED THEN INSERT (x) VALUES (id);
+ COPY (SELECT x FROM stats_track_tab WHERE x = 1) TO stdout;
+@@ -294,8 +294,8 @@
+ SELECT pg_stat_query_plans_reset() IS NOT NULL AS t;
+ COPY (SELECT 1) TO stdout;
+ COPY (SELECT 1 UNION SELECT 2) TO stdout;
+--- PG16 has no MERGE RETURNING; test MERGE and COPY as separate commands.
+-MERGE INTO stats_track_tab USING (SELECT 1 id) ON x = id
++-- PG15 has no MERGE RETURNING; test MERGE and COPY as separate commands.
++MERGE INTO stats_track_tab USING (SELECT 1 id) AS src ON x = id
+   WHEN MATCHED THEN UPDATE SET x = id
+   WHEN NOT MATCHED THEN INSERT (x) VALUES (id);
+ COPY (SELECT x FROM stats_track_tab WHERE x = 1) TO stdout;
+--- a/expected/level_tracking.out
++++ b/expected/level_tracking.out
+@@ -161,7 +161,7 @@
+ (2 rows)
+ 
+ EXPLAIN (COSTS OFF) MERGE INTO stats_track_tab
+-  USING (SELECT id FROM generate_series(1, 10) id) ON x = id
++  USING (SELECT id FROM generate_series(1, 10) id) AS src ON x = id
+   WHEN MATCHED THEN UPDATE SET x = id
+   WHEN NOT MATCHED THEN INSERT (x) VALUES (id);
+                       QUERY PLAN                       
+@@ -187,16 +187,16 @@
+ 
+ SELECT toplevel, calls, query FROM pg_stat_query_plans
+   ORDER BY query COLLATE "C";
+- toplevel | calls |                               query                               
+-----------+-------+-------------------------------------------------------------------
++ toplevel | calls |                                query                                
++----------+-------+---------------------------------------------------------------------
+  f        |     1 | EXPLAIN (COSTS OFF) (SELECT 1, 2);
+  f        |     1 | EXPLAIN (COSTS OFF) (TABLE test_table);
+  f        |     1 | EXPLAIN (COSTS OFF) (VALUES (1, 2));
+  f        |     1 | EXPLAIN (COSTS OFF) DELETE FROM stats_track_tab;
+  f        |     1 | EXPLAIN (COSTS OFF) INSERT INTO stats_track_tab VALUES ((1));
+- f        |     1 | EXPLAIN (COSTS OFF) MERGE INTO stats_track_tab                   +
+-          |       |   USING (SELECT id FROM generate_series(1, 10) id) ON x = id     +
+-          |       |   WHEN MATCHED THEN UPDATE SET x = id                            +
++ f        |     1 | EXPLAIN (COSTS OFF) MERGE INTO stats_track_tab                     +
++          |       |   USING (SELECT id FROM generate_series(1, 10) id) AS src ON x = id+
++          |       |   WHEN MATCHED THEN UPDATE SET x = id                              +
+           |       |   WHEN NOT MATCHED THEN INSERT (x) VALUES (id);
+  f        |     1 | EXPLAIN (COSTS OFF) SELECT 1 UNION SELECT 2;
+  f        |     1 | EXPLAIN (COSTS OFF) SELECT 1;
+@@ -273,7 +273,7 @@
+ (2 rows)
+ 
+ EXPLAIN (COSTS OFF) MERGE INTO stats_track_tab
+-  USING (SELECT id FROM generate_series(1, 10) id) ON x = id
++  USING (SELECT id FROM generate_series(1, 10) id) AS src ON x = id
+   WHEN MATCHED THEN UPDATE SET x = id
+   WHEN NOT MATCHED THEN INSERT (x) VALUES (id);
+                       QUERY PLAN                       
+@@ -464,7 +464,7 @@
+ 
+ -- MERGE, worth its own.
+ EXPLAIN (COSTS OFF) MERGE INTO stats_track_tab
+-  USING (SELECT id FROM generate_series(1, 10) id) ON x = id
++  USING (SELECT id FROM generate_series(1, 10) id) AS src ON x = id
+   WHEN MATCHED THEN UPDATE SET x = id
+   WHEN NOT MATCHED THEN INSERT (x) VALUES (id)\; EXPLAIN (COSTS OFF) SELECT 1, 2, 3, 4, 5;
+                       QUERY PLAN                       
+@@ -487,11 +487,11 @@
+  toplevel | calls |                                           query                                           
+ ----------+-------+-------------------------------------------------------------------------------------------
+  f        |     1 | EXPLAIN (COSTS OFF) MERGE INTO stats_track_tab                                           +
+-          |       |   USING (SELECT id FROM generate_series(1, 10) id) ON x = id                             +
++          |       |   USING (SELECT id FROM generate_series(1, 10) id) AS src ON x = id                      +
+           |       |   WHEN MATCHED THEN UPDATE SET x = id                                                    +
+           |       |   WHEN NOT MATCHED THEN INSERT (x) VALUES (id); EXPLAIN (COSTS OFF) SELECT 1, 2, 3, 4, 5;
+  f        |     1 | EXPLAIN (COSTS OFF) MERGE INTO stats_track_tab                                           +
+-          |       |   USING (SELECT id FROM generate_series(1, 10) id) ON x = id                             +
++          |       |   USING (SELECT id FROM generate_series(1, 10) id) AS src ON x = id                      +
+           |       |   WHEN MATCHED THEN UPDATE SET x = id                                                    +
+           |       |   WHEN NOT MATCHED THEN INSERT (x) VALUES (id); EXPLAIN (COSTS OFF) SELECT 1, 2, 3, 4, 5;
+  t        |     1 | SELECT pg_stat_query_plans_reset() IS NOT NULL AS t;
+@@ -587,7 +587,7 @@
+ ERROR:  INSERT has more expressions than target columns
+ LINE 1: ...N (COSTS OFF) INSERT INTO stats_track_tab VALUES ((1), (2));
+                                                                    ^
+-EXPLAIN (COSTS OFF) MERGE INTO stats_track_tab USING (SELECT id FROM generate_series(1, 10) id) ON x = id
++EXPLAIN (COSTS OFF) MERGE INTO stats_track_tab USING (SELECT id FROM generate_series(1, 10) id) AS src ON x = id
+   WHEN MATCHED THEN UPDATE SET x = id
+   WHEN NOT MATCHED THEN INSERT (x) VALUES (id)\; EXPLAIN (COSTS OFF) SELECT 1, 2, 3, 4, 5;
+                       QUERY PLAN                       
+@@ -676,7 +676,7 @@
+ (2 rows)
+ 
+ EXPLAIN (COSTS OFF) WITH a AS (SELECT 4) MERGE INTO stats_track_tab
+-  USING (SELECT id FROM generate_series(1, 10) id) ON x = id
++  USING (SELECT id FROM generate_series(1, 10) id) AS src ON x = id
+   WHEN MATCHED THEN UPDATE SET x = id
+   WHEN NOT MATCHED THEN INSERT (x) VALUES (id);
+                       QUERY PLAN                       
+@@ -708,7 +708,7 @@
+  f        |     1 | EXPLAIN (COSTS OFF) WITH a AS (SELECT 4) DELETE FROM stats_track_tab;
+  f        |     1 | EXPLAIN (COSTS OFF) WITH a AS (SELECT 4) INSERT INTO stats_track_tab VALUES ((1));
+  f        |     1 | EXPLAIN (COSTS OFF) WITH a AS (SELECT 4) MERGE INTO stats_track_tab                   +
+-          |       |   USING (SELECT id FROM generate_series(1, 10) id) ON x = id                          +
++          |       |   USING (SELECT id FROM generate_series(1, 10) id) AS src ON x = id                   +
+           |       |   WHEN MATCHED THEN UPDATE SET x = id                                                 +
+           |       |   WHEN NOT MATCHED THEN INSERT (x) VALUES (id);
+  f        |     1 | EXPLAIN (COSTS OFF) WITH a AS (SELECT 4) SELECT 1;
+@@ -760,7 +760,7 @@
+ (2 rows)
+ 
+ EXPLAIN (COSTS OFF) WITH a AS (SELECT 4) MERGE INTO stats_track_tab
+-  USING (SELECT id FROM generate_series(1, 10) id) ON x = id
++  USING (SELECT id FROM generate_series(1, 10) id) AS src ON x = id
+   WHEN MATCHED THEN UPDATE SET x = id
+   WHEN NOT MATCHED THEN INSERT (x) VALUES (id);
+                       QUERY PLAN                       
+@@ -1058,8 +1058,8 @@
+ COPY (SELECT 1 UNION SELECT 2) TO stdout;
+ 1
+ 2
+--- PG16 has no MERGE RETURNING; test MERGE and COPY as separate commands.
+-MERGE INTO stats_track_tab USING (SELECT 1 id) ON x = id
++-- PG15 has no MERGE RETURNING; test MERGE and COPY as separate commands.
++MERGE INTO stats_track_tab USING (SELECT 1 id) AS src ON x = id
+   WHEN MATCHED THEN UPDATE SET x = id
+   WHEN NOT MATCHED THEN INSERT (x) VALUES (id);
+ COPY (SELECT x FROM stats_track_tab WHERE x = 1) TO stdout;
+@@ -1082,7 +1082,7 @@
+  f        |     1 | COPY (SELECT 1) TO stdout;
+  f        |     1 | COPY (SELECT x FROM stats_track_tab WHERE x = 1) TO stdout;
+  f        |     1 | COPY (UPDATE stats_track_tab SET x = 2 WHERE x = 1 RETURNING x) TO stdout;
+- t        |     1 | MERGE INTO stats_track_tab USING (SELECT 1 id) ON x = id                  +
++ t        |     1 | MERGE INTO stats_track_tab USING (SELECT 1 id) AS src ON x = id           +
+           |       |   WHEN MATCHED THEN UPDATE SET x = id                                     +
+           |       |   WHEN NOT MATCHED THEN INSERT (x) VALUES (id);
+  t        |     1 | SELECT pg_stat_query_plans_reset() IS NOT NULL AS t;
+@@ -1101,8 +1101,8 @@
+ COPY (SELECT 1 UNION SELECT 2) TO stdout;
+ 1
+ 2
+--- PG16 has no MERGE RETURNING; test MERGE and COPY as separate commands.
+-MERGE INTO stats_track_tab USING (SELECT 1 id) ON x = id
++-- PG15 has no MERGE RETURNING; test MERGE and COPY as separate commands.
++MERGE INTO stats_track_tab USING (SELECT 1 id) AS src ON x = id
+   WHEN MATCHED THEN UPDATE SET x = id
+   WHEN NOT MATCHED THEN INSERT (x) VALUES (id);
+ COPY (SELECT x FROM stats_track_tab WHERE x = 1) TO stdout;
+@@ -1117,10 +1117,10 @@
+ 2
+ SELECT toplevel, calls, query FROM pg_stat_query_plans
+   ORDER BY query COLLATE "C";
+- toplevel | calls |                          query                           
+-----------+-------+----------------------------------------------------------
+- t        |     1 | MERGE INTO stats_track_tab USING (SELECT 1 id) ON x = id+
+-          |       |   WHEN MATCHED THEN UPDATE SET x = id                   +
++ toplevel | calls |                              query                              
++----------+-------+-----------------------------------------------------------------
++ t        |     1 | MERGE INTO stats_track_tab USING (SELECT 1 id) AS src ON x = id+
++          |       |   WHEN MATCHED THEN UPDATE SET x = id                          +
+           |       |   WHEN NOT MATCHED THEN INSERT (x) VALUES (id);
+  t        |     1 | SELECT pg_stat_query_plans_reset() IS NOT NULL AS t;
+ (2 rows)

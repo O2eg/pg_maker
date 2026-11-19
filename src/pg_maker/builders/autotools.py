@@ -228,7 +228,7 @@ def skip_policy(path: str, source: str, config: dict) -> str | None:
         return "test is Windows-specific"
     if (
         path == "src/test/recovery/t/031_recovery_conflict.pl"
-        and config.get("MAJORVERSION") == "16"
+        and config.get("MAJORVERSION") in {"15", "16"}
         and re.search(r'^plan skip_all => "disabled due to instability";$', source, re.M)
     ):
         return "disabled due to instability"

@@ -2,7 +2,7 @@ api_version: pg_maker/component/v1
 kind: ComponentRecipe
 metadata:
   id: yc15-pg-partman
-  revision: 1
+  revision: 2
 spec:
   type: pgxs
   source:
@@ -46,6 +46,9 @@ spec:
   - - make
     - -C
     - '{source:faketime}/src'
+    # PG15 starts background workers from a signal handler during select().
+    # Keep the fixture's wall-clock offset active inside that handler.
+    - FAKETIME_COMPILE_CFLAGS=-UFAKE_SLEEP
     - -j
     - '{jobs}'
   - - make

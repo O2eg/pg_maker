@@ -15,8 +15,12 @@ with source-pinned ICU 70.1, installs the required ICU runtime libraries inside 
 product prefix and selects public-source extensions from the managed catalog.
 It does not reproduce Yandex patches or claim vendor binary compatibility.
 
+Revision 2 of `yc-16.15-icu70` builds with `--with-lz4` to support replay of
+LZ4-compressed full-page images in WAL. Set `wal_compression = lz4` on a primary
+to write such images. A fresh cluster defaults to `wal_compression = off`.
+
 `yc-16.14-icu70` selects PostgreSQL 16.14 with its official archive SHA256 and
-otherwise uses the same settings and component recipes as `yc-16.15-icu70`.
+shares the ICU and extension recipes with `yc-16.15-icu70`.
 The extension catalog remains the audit of the 16.15 source system. Examples and
 historical qualification records below refer to 16.15.
 
@@ -66,11 +70,11 @@ postgresql:
   version: '16.15'
 product:
   release: 0
-  package_revision: 1
+  package_revision: 2
   version_format: postgresql
 ```
 
-Product version is `16.15`; the Debian package version remains `16.15-1.deb13`.
+The product version is `16.15` and the Debian package version is `16.15-2.deb13`.
 The latter suffix is packaging metadata, not an extra PostgreSQL version component.
 Set `version_format: three-part` to get `16.15.0`; this remains the backward-compatible
 default when omitted. PostgreSQL format requires `release: 0`, avoiding silently
@@ -89,7 +93,7 @@ in `build.yaml`, following Debian/PGDG names with the suffix `yc-clone`:
 | libpq | `test-yc16-icu70-libpq5-16` | `libpq5-yc-clone` |
 
 For example, the server filename becomes
-`postgresql-16-yc-clone_16.15-1.deb13_amd64.deb`. The optional documentation package
+`postgresql-16-yc-clone_16.15-2.deb13_amd64.deb`. The optional documentation package
 is `postgresql-doc-16-yc-clone`. Debug builds insert `-debug` before `-yc-clone`.
 The `5` in libpq5 is its ABI version; it is not a PostgreSQL major. This package
 name allows one libpq clone version per architecture rather than parallel packages

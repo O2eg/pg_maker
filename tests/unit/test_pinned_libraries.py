@@ -75,6 +75,9 @@ def test_managed_profile_preserves_all_38_names_and_explains_exclusions(tmp_path
             assert declared[entry["name"]] == entry["managed_default_version"]
     assert next(e for e in entries if e["name"] == "plv8")["status"] == "disabled"
     requirements = environment_requirements(config)
+    build_image = next(r for r in requirements["environments"] if r["role"] == "build")
+    assert "liblz4-dev" in build_image["packages"]
+    assert "liblz4-1" in build_image["runtime_packages"]
     test_image = next(r for r in requirements["environments"] if r["role"] == "test")
     assert "build-essential" in test_image["packages"]
     packages = {

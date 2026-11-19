@@ -20,12 +20,13 @@ def test_pg15_profiles_preserve_contrib_and_managed_inventory(tmp_path, version)
     assert config["defaults"]["validation"]["run_db_tests"] is True
     assert config["defaults"]["packaging"]["standard_contrib"] is True
     variant = config["variants"][0]
+    assert variant["build"]["options"]["lz4"] is True
     assert all(variant["build"]["options"][name] for name in REQUIRED_OPTIONS)
     assert variant["identity"]["paths"]["runtime_prefix"] == "/opt/postgresql-yc-clone/15"
     assert {p["filename"] for p in variant["identity"]["packages"]} == {
-        f"postgresql-15-yc-clone_{version}-1.deb13_amd64.deb",
-        f"postgresql-client-15-yc-clone_{version}-1.deb13_amd64.deb",
-        f"libpq5-yc-clone_{version}-1.deb13_amd64.deb",
+        f"postgresql-15-yc-clone_{version}-2.deb13_amd64.deb",
+        f"postgresql-client-15-yc-clone_{version}-2.deb13_amd64.deb",
+        f"libpq5-yc-clone_{version}-2.deb13_amd64.deb",
     }
     components = {
         c["metadata"]["id"]: c["spec"] for c in config["features"][0]["spec"]["components"]
